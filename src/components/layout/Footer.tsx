@@ -87,11 +87,21 @@ export function Footer() {
                 <MapPin className="h-4 w-4 text-brand-red mt-0.5 flex-shrink-0" />
                 <span>Commercial Road, Sunyani Central, Bono Region, Ghana</span>
               </div>
-              <div className="flex items-center gap-2.5">
-                <Phone className="h-4 w-4 text-brand-red flex-shrink-0" />
-                <a href="tel:+233240000000" className="hover:text-white transition-colors">
-                  +233 24 000 0000
-                </a>
+              <div className="flex items-start gap-2.5">
+                <Phone className="h-4 w-4 text-brand-red mt-0.5 flex-shrink-0" />
+                <div className="flex flex-col text-xs space-y-1">
+                  <span className="text-gray-400 font-semibold uppercase tracking-wider">Call / WhatsApp</span>
+                  <div className="flex flex-wrap gap-2 text-white">
+                    <a href="tel:+233533376760" className="hover:text-brand-red transition-colors font-medium">
+                      0533376760
+                    </a>
+                    <span className="text-gray-500">/</span>
+                    <a href="tel:+233554406681" className="hover:text-brand-red transition-colors font-medium">
+                      0554406681
+                    </a>
+                  </div>
+                  <span className="text-gray-400 text-[11px]">@sikacuisine.restaurant</span>
+                </div>
               </div>
               <div className="flex items-center gap-2.5">
                 <Mail className="h-4 w-4 text-brand-red flex-shrink-0" />

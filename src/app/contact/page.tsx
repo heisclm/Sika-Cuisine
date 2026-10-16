@@ -53,8 +53,9 @@ export default function ContactPage() {
                     <Phone className="h-5 w-5" />
                   </div>
                   <div>
-                    <h4 className="font-semibold text-white">Customer Support & Orders</h4>
-                    <p className="text-gray-400 text-xs mt-0.5">+233 24 000 0000 / +233 20 000 0000</p>
+                    <h4 className="font-semibold text-white">Call / WhatsApp</h4>
+                    <p className="text-gray-300 text-xs mt-0.5 font-medium">0533376760 / 0554406681</p>
+                    <p className="text-gray-400 text-[11px] mt-0.5">Social: @sikacuisine.restaurant</p>
                   </div>
                 </div>
 
