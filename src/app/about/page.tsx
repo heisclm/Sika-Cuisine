@@ -5,7 +5,6 @@ import { Sparkles, ShieldCheck, Heart, Utensils, MapPin, ArrowRight } from "luci
 export default function AboutPage() {
   return (
     <div className="min-h-screen bg-background pb-24">
-      {/* Banner */}
       <div className="border-b border-border-subtle bg-surface-300 py-16 sm:py-24 text-center">
         <div className="mx-auto max-w-3xl px-4">
           <span className="text-xs font-bold uppercase tracking-widest text-brand-red flex items-center justify-center gap-1.5 mb-2">
@@ -22,7 +21,6 @@ export default function AboutPage() {
       </div>
 
       <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 pt-16 space-y-16">
-        {/* Core Pillars */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div className="rounded-3xl bg-surface-300 border border-border-subtle p-8 text-center space-y-3">
             <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-red/10 text-brand-red mx-auto">
@@ -55,7 +53,6 @@ export default function AboutPage() {
           </div>
         </div>
 
-        {/* Narrative & Kitchen Section */}
         <div className="rounded-3xl bg-surface-300 border border-border-subtle p-8 sm:p-12 grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
           <div className="space-y-4">
             <span className="text-xs font-bold uppercase tracking-widest text-brand-red">

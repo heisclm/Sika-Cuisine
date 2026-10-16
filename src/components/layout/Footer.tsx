@@ -7,7 +7,6 @@ export function Footer() {
     <footer className="w-full border-t border-border-subtle bg-surface-400 text-gray-400 pt-16 pb-12">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 mb-12">
-          {/* Brand & Culinary Philosophy */}
           <div className="space-y-4">
             <Link href="/" className="inline-block">
               <span className="font-serif text-2xl font-black tracking-tight text-white flex items-center">
@@ -24,7 +23,6 @@ export function Footer() {
             </div>
           </div>
 
-          {/* Quick Links */}
           <div className="space-y-3">
             <h3 className="text-sm font-semibold text-white uppercase tracking-wider font-serif">
               Explore
@@ -58,7 +56,6 @@ export function Footer() {
             </ul>
           </div>
 
-          {/* Operating Hours (Sunyani Kitchen) */}
           <div className="space-y-3">
             <h3 className="text-sm font-semibold text-white uppercase tracking-wider font-serif">
               Kitchen Hours
@@ -81,7 +78,6 @@ export function Footer() {
             </div>
           </div>
 
-          {/* Contact & Location in Sunyani */}
           <div className="space-y-3">
             <h3 className="text-sm font-semibold text-white uppercase tracking-wider font-serif">
               Find Us
@@ -107,7 +103,6 @@ export function Footer() {
           </div>
         </div>
 
-        {/* Payment Channels & Copyright */}
         <div className="border-t border-border-subtle/80 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-gray-500">
           <div>
             &copy; {new Date().getFullYear()} Sika Cuisine Restaurant. All rights reserved. Built for Sunyani, Ghana.

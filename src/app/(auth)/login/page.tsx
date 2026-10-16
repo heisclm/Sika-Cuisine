@@ -17,7 +17,6 @@ export default function LoginPage() {
     setLoading(true);
     setError(null);
 
-    // Check staff/admin email to redirect to admin dashboard, or customer to menu
     setTimeout(() => {
       setLoading(false);
       if (email.includes("admin") || email.includes("staff")) {
@@ -103,7 +102,6 @@ export default function LoginPage() {
           </button>
         </form>
 
-        {/* Demo Credentials Help Box */}
         <div className="rounded-2xl bg-surface-200 p-4 border border-border-subtle/70 text-xs text-gray-400 space-y-1.5">
           <p className="font-semibold text-white flex items-center gap-1.5">
             <ShieldCheck className="h-4 w-4 text-brand-red" />

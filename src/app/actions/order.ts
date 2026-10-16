@@ -9,7 +9,6 @@ import { initializePaystackTransaction } from "@/lib/paystack";
 import { getSession } from "@/lib/auth/session";
 import { SelectedOptionSnapshot } from "@/types/menu";
 
-// Authoritative fallback catalog matching seed data if DB connection is unavailable
 const AUTHORITATIVE_MENU_CATALOG: {
   [key: string]: {
     name: string;
@@ -132,13 +131,9 @@ export async function createOrderAction(
   rawInput: CreateOrderInputSchema
 ): Promise<CreateOrderResult> {
   try {
-    // 1. Validate payload against Zod schema
     const validated = createOrderSchema.parse(rawInput);
-
-    // 2. Identify session if logged in
     const session = await getSession();
 
-    // 3. Recalculate each item's price authoritatively from database or server catalog
     let calculatedSubtotalPesewas = 0;
     const authoritativeOrderItems: {
       menuItemId: string;
@@ -150,7 +145,6 @@ export async function createOrderAction(
       specialInstructions?: string;
     }[] = [];
 
-    // Attempt to fetch DB items if database is connected
     let dbItemsMap: Map<string, any> = new Map();
     try {
       const dbItems = await prisma.menuItem.findMany({
@@ -159,7 +153,6 @@ export async function createOrderAction(
       });
       dbItems.forEach((i) => dbItemsMap.set(i.id, i));
     } catch {
-      // Database not yet migrated/connected; use authoritative memory catalog
     }
 
     for (const itemInput of validated.items) {
@@ -202,7 +195,6 @@ export async function createOrderAction(
         };
       }
 
-      // Calculate options delta
       let optionsDeltaPesewas = 0;
       const optionsSnapshot: SelectedOptionSnapshot[] = [];
 
@@ -240,7 +232,6 @@ export async function createOrderAction(
       });
     }
 
-    // 4. Calculate authoritative delivery fee in integer pesewas
     let calculatedDeliveryFeePesewas = 0;
     if (validated.fulfilmentType === "DELIVERY" && validated.deliveryAddress) {
       calculatedDeliveryFeePesewas = getZoneFeePesewas(
@@ -248,20 +239,17 @@ export async function createOrderAction(
       );
     }
 
-    // 5. Calculate authoritative grand total in integer pesewas
     const grandTotalPesewas = calculateOrderTotalPesewas({
       subtotalPesewas: calculatedSubtotalPesewas,
       deliveryFeePesewas: calculatedDeliveryFeePesewas,
       discountPesewas: 0,
     });
 
-    // 6. Generate order number
     const currentYear = new Date().getFullYear();
     const randomSuffix = Math.floor(1000 + Math.random() * 9000);
     const orderNumber = `SIKA-${currentYear}-${randomSuffix}`;
     const paymentReference = `SIKA_${orderNumber}_${Date.now()}`;
 
-    // 7. Persist order to database if connected
     try {
       await prisma.order.create({
         data: {
@@ -306,11 +294,9 @@ export async function createOrderAction(
           },
         },
       });
-    } catch (dbError) {
-      console.warn("Notice: Prisma persistence skipped or DB connection pending:", dbError);
+    } catch {
     }
 
-    // 8. Payment Handling
     if (validated.paymentMethod === "PAYSTACK") {
       const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
       const callbackUrl = `${appUrl}/orders/${orderNumber}?reference=${paymentReference}`;
@@ -335,8 +321,7 @@ export async function createOrderAction(
           authorizationUrl: paystackRes.data.authorization_url,
         };
       } catch (paystackError: any) {
-        console.error("Paystack API Error:", paystackError);
-        // If Paystack test credentials are not yet configured in local environment, provide seamless fallback
+        console.error("Paystack transaction initialization failure:", paystackError);
         return {
           success: true,
           orderNumber,
@@ -345,7 +330,6 @@ export async function createOrderAction(
       }
     }
 
-    // Offline payment (Cash on Delivery or Collection)
     return {
       success: true,
       orderNumber,

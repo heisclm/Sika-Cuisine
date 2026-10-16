@@ -1,11 +1,5 @@
 /**
- * Paystack Payment Gateway Integration Module for Sika Cuisine (Ghana - GHS)
- *
- * CRITICAL SECURITY RULES:
- * - Secret keys are strictly server-only.
- * - Paystack expects amounts in the subunit of the currency (pesewas for GHS).
- * - Webhook signatures are verified using HMAC SHA512 with timing-safe comparison.
- * - Orders are never fulfilled solely on client redirect.
+ * Paystack API client and HMAC verification utilities.
  */
 
 import * as crypto from "crypto";
@@ -19,7 +13,7 @@ export interface InitializePaystackParams {
   reference: string;
   callbackUrl: string;
   metadata?: Record<string, unknown>;
-  channels?: string[]; // e.g. ["mobile_money", "card"]
+  channels?: string[];
 }
 
 export interface InitializePaystackResponse {
@@ -40,12 +34,12 @@ export interface VerifyPaystackResponse {
     domain: string;
     status: "success" | "failed" | "abandoned";
     reference: string;
-    amount: number; // in pesewas
+    amount: number;
     gateway_response: string;
     paid_at: string;
     created_at: string;
     channel: string;
-    currency: string; // "GHS"
+    currency: string;
     customer: {
       id: number;
       email: string;

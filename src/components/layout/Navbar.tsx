@@ -26,7 +26,6 @@ export function Navbar() {
   return (
     <header className="sticky top-0 z-40 w-full border-b border-border-subtle/70 bg-surface-400/85 backdrop-blur-xl">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8 h-20">
-        {/* Brand Logo */}
         <Link href="/" className="flex items-center gap-2 group">
           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-red/10 border border-brand-red/30 text-brand-red font-serif font-black text-xl group-hover:scale-105 transition-transform">
             S
@@ -41,7 +40,6 @@ export function Navbar() {
           </div>
         </Link>
 
-        {/* Desktop Navigation Links */}
         <nav className="hidden md:flex items-center gap-8">
           {navLinks.map((link) => (
             <Link
@@ -58,9 +56,7 @@ export function Navbar() {
           ))}
         </nav>
 
-        {/* Right Action Icons: Cart & Auth */}
         <div className="flex items-center gap-4">
-          {/* Cart Icon Button with Badge */}
           <button
             id="header-cart-button"
             onClick={() => setIsCartOpen(true)}
@@ -75,7 +71,6 @@ export function Navbar() {
             )}
           </button>
 
-          {/* Customer / Staff Sign In */}
           <Link
             href="/login"
             className="hidden sm:inline-flex btn-red-gradient items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold text-white tracking-wide"
@@ -84,7 +79,6 @@ export function Navbar() {
             <span>Sign In</span>
           </Link>
 
-          {/* Mobile menu toggle */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             className="md:hidden flex h-10 w-10 items-center justify-center rounded-lg bg-surface-100 text-gray-300 hover:text-white"
@@ -95,7 +89,6 @@ export function Navbar() {
         </div>
       </div>
 
-      {/* Mobile Drawer Navigation */}
       {mobileMenuOpen && (
         <div className="md:hidden border-b border-border-subtle bg-surface-300 px-4 pt-3 pb-6 space-y-3">
           {navLinks.map((link) => (

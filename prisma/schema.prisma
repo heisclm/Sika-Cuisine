@@ -1,9 +1,3 @@
-// ==============================================================================
-// SIKA CUISINE — PRISMA DATABASE SCHEMA (PostgreSQL / Supabase)
-// Location: Sunyani, Bono Region, Ghana
-// Currency Standard: Strict integer pesewas (1 GHS = 100 pesewas)
-// ==============================================================================
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -13,10 +7,6 @@ datasource db {
   url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
 }
-
-// ------------------------------------------------------------------------------
-// ENUMS
-// ------------------------------------------------------------------------------
 
 enum Role {
   CUSTOMER
@@ -60,10 +50,6 @@ enum PaymentAttemptStatus {
   ABANDONED
 }
 
-// ------------------------------------------------------------------------------
-// USERS & AUTHENTICATION
-// ------------------------------------------------------------------------------
-
 model User {
   id           String   @id @default(cuid())
   email        String   @unique
@@ -74,18 +60,14 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  orders          Order[]
-  addresses       DeliveryAddress[]
-  auditLogs       AuditLog[]
-  statusChanges   OrderStatusHistory[]
+  orders        Order[]
+  addresses     DeliveryAddress[]
+  auditLogs     AuditLog[]
+  statusChanges OrderStatusHistory[]
 
   @@index([email])
   @@index([role])
 }
-
-// ------------------------------------------------------------------------------
-// MENU ARCHITECTURE
-// ------------------------------------------------------------------------------
 
 model MenuCategory {
   id          String   @id @default(cuid())
@@ -110,12 +92,11 @@ model MenuItem {
   name                   String
   slug                   String   @unique
   description            String
-  /** Strictly stored in integer pesewas (e.g. 5000 = GH₵50.00) */
   basePricePesewas       Int
   imageUrl               String
   isAvailable            Boolean  @default(true)
   isFeatured             Boolean  @default(false)
-  spiceLevel             Int      @default(0) // 0 to 3
+  spiceLevel             Int      @default(0)
   preparationTimeMinutes Int      @default(20)
   sortOrder              Int      @default(0)
   createdAt              DateTime @default(now())
@@ -134,7 +115,7 @@ model MenuItem {
 model MenuItemOptionGroup {
   id          String   @id @default(cuid())
   menuItemId  String
-  name        String   // e.g. "Choose Protein", "Pepper Sauce Level"
+  name        String
   description String?
   minSelect   Int      @default(0)
   maxSelect   Int      @default(1)
@@ -151,8 +132,7 @@ model MenuItemOptionGroup {
 model MenuItemOption {
   id                String   @id @default(cuid())
   optionGroupId     String
-  name              String   // e.g. "Grilled Tilapia", "Fried Fish", "Extra Shito"
-  /** Additional price in integer pesewas (e.g. 500 = GH₵5.00) */
+  name              String
   priceDeltaPesewas Int      @default(0)
   isAvailable       Boolean  @default(true)
   createdAt         DateTime @default(now())
@@ -163,10 +143,6 @@ model MenuItemOption {
   @@index([optionGroupId])
 }
 
-// ------------------------------------------------------------------------------
-// DELIVERY ADDRESSES (Sunyani, Bono Region)
-// ------------------------------------------------------------------------------
-
 model DeliveryAddress {
   id             String   @id @default(cuid())
   customerId     String?
@@ -174,8 +150,8 @@ model DeliveryAddress {
   recipientPhone String
   alternatePhone String?
   streetAddress  String
-  areaLocality   String   // e.g. "Fiapre", "Berlin Top", "Sunyani Central"
-  landmark       String?  // e.g. "Opposite UENR Gate", "Near Regional Hospital"
+  areaLocality   String
+  landmark       String?
   city           String   @default("Sunyani")
   deliveryNotes  String?
   createdAt      DateTime @default(now())
@@ -188,13 +164,9 @@ model DeliveryAddress {
   @@index([areaLocality])
 }
 
-// ------------------------------------------------------------------------------
-// ORDERS & FINANCIAL RECORDS
-// ------------------------------------------------------------------------------
-
 model Order {
   id                       String           @id @default(cuid())
-  orderNumber              String           @unique // e.g. "SIKA-2026-9281"
+  orderNumber              String           @unique
   customerId               String?
   guestEmail               String?
   guestPhone               String?
@@ -205,7 +177,6 @@ model Order {
   paymentStatus            PaymentStatus    @default(PENDING)
   paymentMethod            PaymentMethod    @default(PAYSTACK)
 
-  /** Authoritative financial amounts strictly in integer pesewas */
   subtotalPesewas          Int
   deliveryFeePesewas       Int              @default(0)
   discountPesewas          Int              @default(0)
@@ -237,14 +208,10 @@ model OrderItem {
   id                      String   @id @default(cuid())
   orderId                 String
   menuItemId              String?
-  /** Immutable snapshot of item name when order was placed */
   itemNameSnapshot        String
-  /** Immutable unit price in integer pesewas when order was placed */
   unitPricePesewas        Int
   quantity                Int
-  /** Total line cost in integer pesewas (unitPricePesewas + optionsDelta) * quantity */
   subtotalPesewas         Int
-  /** JSON array of selected options snapshot */
   selectedOptionsSnapshot Json
   specialInstructions     String?
   createdAt               DateTime @default(now())
@@ -257,13 +224,13 @@ model OrderItem {
 }
 
 model OrderStatusHistory {
-  id                String            @id @default(cuid())
-  orderId           String
-  fromStatus        FulfilmentStatus?
-  toStatus          FulfilmentStatus
-  note              String?
-  changedByUserId   String?
-  createdAt         DateTime          @default(now())
+  id              String            @id @default(cuid())
+  orderId         String
+  fromStatus      FulfilmentStatus?
+  toStatus        FulfilmentStatus
+  note            String?
+  changedByUserId String?
+  createdAt       DateTime          @default(now())
 
   order     Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
   changedBy User? @relation(fields: [changedByUserId], references: [id], onDelete: SetNull)
@@ -272,19 +239,15 @@ model OrderStatusHistory {
   @@index([createdAt])
 }
 
-// ------------------------------------------------------------------------------
-// PAYSTACK TRANSACTIONS & WEBHOOK IDEMPOTENCY
-// ------------------------------------------------------------------------------
-
 model PaymentAttempt {
   id               String               @id @default(cuid())
   orderId          String
   provider         PaymentMethod        @default(PAYSTACK)
-  reference        String               @unique // Paystack transaction reference
+  reference        String               @unique
   amountPesewas    Int
   currency         String               @default("GHS")
   status           PaymentAttemptStatus @default(INITIALIZED)
-  channel          String?              // "mobile_money" (MTN, Telecel, AT) or "card"
+  channel          String?
   providerMetadata Json?
   createdAt        DateTime             @default(now())
   updatedAt        DateTime             @updatedAt
@@ -298,25 +261,21 @@ model PaymentAttempt {
 
 model PaystackWebhookEvent {
   id        String   @id @default(cuid())
-  eventId   String   @unique // Paystack event ID or reference for idempotency
-  eventType String   // e.g. "charge.success"
+  eventId   String   @unique
+  eventType String
   payload   Json
-  status    String   @default("PROCESSED") // "PROCESSED" | "FAILED" | "IGNORED"
+  status    String   @default("PROCESSED")
   createdAt DateTime @default(now())
 
   @@index([eventId])
   @@index([eventType])
 }
 
-// ------------------------------------------------------------------------------
-// AUDIT LOGGING
-// ------------------------------------------------------------------------------
-
 model AuditLog {
   id         String   @id @default(cuid())
   userId     String?
-  action     String   // e.g. "UPDATE_MENU_PRICE", "CANCEL_ORDER", "REJECT_ORDER"
-  entityType String   // e.g. "MenuItem", "Order", "User"
+  action     String
+  entityType String
   entityId   String
   metadata   Json?
   ipAddress  String?

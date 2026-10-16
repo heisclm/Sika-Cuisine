@@ -1,11 +1,6 @@
-/**
- * Menu Domain Contracts for Sika Cuisine (Sunyani, Ghana)
- */
-
 export interface MenuItemOption {
   id: string;
   name: string;
-  /** Additional price in integer pesewas (e.g. 500 = GH₵5.00) */
   priceDeltaPesewas: number;
   isAvailable: boolean;
 }
@@ -27,12 +22,11 @@ export interface MenuItem {
   name: string;
   slug: string;
   description: string;
-  /** Base price stored strictly as integer pesewas (e.g. 5000 = GH₵50.00) */
   basePricePesewas: number;
   imageUrl: string;
   isAvailable: boolean;
   isFeatured: boolean;
-  spiceLevel?: number; // 0 to 3 peppers
+  spiceLevel?: number;
   preparationTimeMinutes?: number;
   optionGroups?: MenuItemOptionGroup[];
   sortOrder: number;
@@ -49,9 +43,6 @@ export interface MenuCategory {
   items?: MenuItem[];
 }
 
-/**
- * Snapshot of selected options saved immutably inside an OrderItem.
- */
 export interface SelectedOptionSnapshot {
   optionGroupId: string;
   groupName: string;

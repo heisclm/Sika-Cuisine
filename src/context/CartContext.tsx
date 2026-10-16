@@ -5,13 +5,13 @@ import { MenuItem, SelectedOptionSnapshot } from "@/types/menu";
 import { calculateLineTotalPesewas } from "@/lib/currency";
 
 export interface CartItem {
-  id: string; // generated unique key for this combination of item + options
+  id: string;
   menuItemId: string;
   name: string;
   imageUrl: string;
   basePricePesewas: number;
   optionsDeltaPesewas: number;
-  unitPricePesewas: number; // base + optionsDelta
+  unitPricePesewas: number;
   quantity: number;
   selectedOptions: SelectedOptionSnapshot[];
   specialInstructions?: string;
@@ -55,7 +55,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const [flyingItems, setFlyingItems] = useState<FlyingItem[]>([]);
   const [isHydrated, setIsHydrated] = useState(false);
 
-  // Restore cart from localStorage on mount
   useEffect(() => {
     try {
       const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
@@ -63,19 +62,16 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         setItems(JSON.parse(saved));
       }
     } catch {
-      // localStorage unavailable or corrupted
     } finally {
       setIsHydrated(true);
     }
   }, []);
 
-  // Save cart to localStorage on changes
   useEffect(() => {
     if (isHydrated) {
       try {
         localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(items));
       } catch {
-        // ignore storage errors
       }
     }
   }, [items, isHydrated]);
@@ -92,21 +88,18 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       specialInstructions?: string,
       sourceElement?: HTMLElement | null
     ) => {
-      // 1. Calculate integer options delta
       const optionsDelta = selectedOptions.reduce(
         (sum, opt) => sum + opt.priceDeltaPesewas,
         0
       );
       const unitPrice = item.basePricePesewas + optionsDelta;
 
-      // Unique identifier for item + selected options combination
       const optionKey = selectedOptions
         .map((o) => o.optionId)
         .sort()
         .join("-");
       const cartItemId = `${item.id}_${optionKey}_${specialInstructions || ""}`;
 
-      // 2. Trigger flying micro-animation if source element coordinates exist
       if (sourceElement && typeof window !== "undefined") {
         const rect = sourceElement.getBoundingClientRect();
         const flyingId = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
@@ -121,7 +114,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         ]);
       }
 
-      // 3. Immediately update cart items in integer pesewas
       setItems((prevItems) => {
         const existingIndex = prevItems.findIndex((i) => i.id === cartItemId);
         if (existingIndex > -1) {

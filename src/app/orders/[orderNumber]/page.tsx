@@ -28,7 +28,6 @@ export default async function OrderDetailPage({ params, searchParams }: PageProp
   const { orderNumber } = await params;
   const { reference, simulated } = await searchParams;
 
-  // Placeholder order state representation
   const order = {
     orderNumber,
     fulfilmentType: "DELIVERY",
@@ -101,7 +100,6 @@ export default async function OrderDetailPage({ params, searchParams }: PageProp
   return (
     <div className="min-h-screen bg-background py-12 px-4 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-4xl">
-        {/* Header Confirmation Banner */}
         <div className="rounded-3xl bg-surface-300 border border-border-subtle p-8 sm:p-10 mb-8 text-center relative overflow-hidden">
           <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-950/60 border border-emerald-600/40 text-emerald-400 mx-auto mb-4">
             <CheckCircle2 className="h-8 w-8" />
@@ -132,14 +130,12 @@ export default async function OrderDetailPage({ params, searchParams }: PageProp
           </div>
         </div>
 
-        {/* Live Delivery Timeline */}
         <div className="rounded-3xl bg-surface-300 border border-border-subtle p-6 sm:p-8 mb-8">
           <h2 className="font-serif text-xl font-bold text-white mb-6">
             Live Kitchen & Delivery Status
           </h2>
 
           <div className="relative">
-            {/* Timeline connectors */}
             <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
               {steps.map((step, idx) => {
                 const Icon = step.icon;
@@ -178,9 +174,7 @@ export default async function OrderDetailPage({ params, searchParams }: PageProp
           </div>
         </div>
 
-        {/* Order Details & Delivery Address Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-          {/* Destination */}
           <div className="rounded-3xl bg-surface-300 border border-border-subtle p-6">
             <h3 className="font-serif text-lg font-bold text-white mb-4 flex items-center gap-2">
               <MapPin className="h-5 w-5 text-brand-red" />
@@ -194,7 +188,6 @@ export default async function OrderDetailPage({ params, searchParams }: PageProp
             </div>
           </div>
 
-          {/* Payment & Receipt Summary */}
           <div className="rounded-3xl bg-surface-300 border border-border-subtle p-6">
             <h3 className="font-serif text-lg font-bold text-white mb-4 flex items-center gap-2">
               <ShoppingBag className="h-5 w-5 text-brand-red" />
@@ -217,7 +210,6 @@ export default async function OrderDetailPage({ params, searchParams }: PageProp
           </div>
         </div>
 
-        {/* Return Button */}
         <div className="text-center">
           <Link
             href="/menu"

@@ -9,7 +9,6 @@ export function FlyingCartAnimation() {
   const [targetPos, setTargetPos] = useState<{ x: number; y: number } | null>(null);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
 
-  // Check reduced motion preference
   useEffect(() => {
     if (typeof window !== "undefined") {
       const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -23,7 +22,6 @@ export function FlyingCartAnimation() {
     }
   }, []);
 
-  // Update target coordinates to header cart button
   useEffect(() => {
     const updateTarget = () => {
       const cartBtn = document.getElementById("header-cart-button");
@@ -71,11 +69,10 @@ export function FlyingCartAnimation() {
             }}
             transition={{
               duration: 0.75,
-              ease: [0.25, 1, 0.5, 1], // fluid cubic bezier
+              ease: [0.25, 1, 0.5, 1],
             }}
             onAnimationComplete={() => {
               removeFlyingItem(item.id);
-              // Trigger slight shake/pulse on cart icon
               const cartBtn = document.getElementById("header-cart-button");
               if (cartBtn) {
                 cartBtn.classList.add("scale-110", "shadow-glow");

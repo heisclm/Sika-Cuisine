@@ -1,31 +1,13 @@
 /**
- * Currency Utility Module for Sika Cuisine (Sunyani, Ghana)
- *
- * CRITICAL RULE:
- * Monetary amounts are stored as integer pesewas, NEVER floating-point numbers.
- * - 1 GHS (Ghana Cedi) = 100 pesewas.
- * - GH₵50.00 = 5000 pesewas.
- * - GH₵125.50 = 12550 pesewas.
- * - GH₵1.00 = 100 pesewas.
- * - 50 cedis is 5000 pesewas, NOT 50000 pesewas.
+ * Currency utilities for Sika Cuisine.
+ * Monetary amounts are represented strictly as integer pesewas (100 pesewas = 1 GHS).
  */
 
 export interface FormatCurrencyOptions {
-  /** Include the currency symbol (defaults to true) */
   showSymbol?: boolean;
-  /** Use the 3-letter currency code (GHS) instead of symbol (GH₵) */
   useCode?: boolean;
 }
 
-/**
- * Formats an integer pesewas amount into a user-facing GHS display string.
- *
- * @example
- * formatPesewasToGhs(5000) => "GH₵50.00"
- * formatPesewasToGhs(12550) => "GH₵125.50"
- * formatPesewasToGhs(100) => "GH₵1.00"
- * formatPesewasToGhs(5000, { useCode: true }) => "GHS 50.00"
- */
 export function formatPesewasToGhs(
   pesewas: number,
   options: FormatCurrencyOptions = {}
@@ -34,7 +16,6 @@ export function formatPesewasToGhs(
     throw new TypeError(`Invalid pesewas amount: ${pesewas}`);
   }
 
-  // Ensure safe integer arithmetic
   const roundedPesewas = Math.round(pesewas);
   const isNegative = roundedPesewas < 0;
   const absPesewas = Math.abs(roundedPesewas);
@@ -54,15 +35,6 @@ export function formatPesewasToGhs(
   return `${sign}${prefix}${cedisFormatted}.${pesewasString}`;
 }
 
-/**
- * Safely parses a string or number input into integer pesewas without floating-point drift.
- * Handles user inputs such as "50", "50.00", "GH₵125.50", "1,250.75".
- *
- * @example
- * parseGhsToPesewas("50.00") => 5000
- * parseGhsToPesewas("125.50") => 12550
- * parseGhsToPesewas("GH₵1.00") => 100
- */
 export function parseGhsToPesewas(input: string | number): number {
   if (typeof input === "number") {
     if (!Number.isFinite(input)) {
@@ -71,7 +43,6 @@ export function parseGhsToPesewas(input: string | number): number {
     return Math.round(input * 100);
   }
 
-  // Sanitize string input: remove currency symbols, spaces, commas
   const sanitized = input.replace(/[GH₵ghsGHS,\s]/g, "").trim();
   if (!sanitized) {
     throw new Error(`Invalid GHS monetary string: "${input}"`);
@@ -87,7 +58,6 @@ export function parseGhsToPesewas(input: string | number): number {
   let decimalPart = 0;
 
   if (parts.length === 2) {
-    // Take only up to 2 decimal digits, right-pad with zero if single digit (e.g., .5 => 50 pesewas)
     const rawDecimal = parts[1].slice(0, 2).padEnd(2, "0");
     decimalPart = parseInt(rawDecimal, 10);
     if (Number.isNaN(decimalPart)) {
@@ -99,13 +69,6 @@ export function parseGhsToPesewas(input: string | number): number {
   return isNegative ? -totalPesewas : totalPesewas;
 }
 
-/**
- * Converts integer pesewas to a standard two-decimal string representation.
- * Useful for form inputs or third-party gateways that expect "50.00".
- *
- * @example
- * pesewasToDecimalString(5000) => "50.00"
- */
 export function pesewasToDecimalString(pesewas: number): string {
   const rounded = Math.round(pesewas);
   const isNegative = rounded < 0;
@@ -115,9 +78,6 @@ export function pesewasToDecimalString(pesewas: number): string {
   return `${isNegative ? "-" : ""}${cedis}.${cents}`;
 }
 
-/**
- * Calculates line-item total in integer pesewas.
- */
 export function calculateLineTotalPesewas(
   unitPricePesewas: number,
   quantity: number,
@@ -130,9 +90,6 @@ export function calculateLineTotalPesewas(
   return Math.round(itemEffectivePrice * quantity);
 }
 
-/**
- * Calculates final order grand total in integer pesewas.
- */
 export function calculateOrderTotalPesewas(params: {
   subtotalPesewas: number;
   deliveryFeePesewas: number;
@@ -144,17 +101,10 @@ export function calculateOrderTotalPesewas(params: {
 }
 
 /**
- * Maps internal integer pesewas to Paystack's API amount parameter.
- *
- * NOTE: For GHS currency, Paystack expects the transaction amount in pesewas
- * (the subunit of GHS, exactly like kobo for NGN or cents for USD).
- *
- * @param pesewas Integer amount in pesewas
- * @returns Amount formatted for Paystack payload (integer pesewas)
+ * Maps integer pesewas to Paystack's GHS subunit requirements.
  */
 export function pesewasToPaystackAmount(pesewas: number): number {
   const safePesewas = Math.round(pesewas);
-  // Paystack minimum charge for GHS is typically 100 pesewas (GH₵1.00)
   if (safePesewas < 100) {
     throw new Error(
       `Paystack amount must be at least 100 pesewas (GH₵1.00). Received: ${safePesewas}`

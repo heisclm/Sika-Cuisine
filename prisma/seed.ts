@@ -1,21 +1,11 @@
-/**
- * Sika Cuisine Database Seed Script
- * Location: Sunyani, Bono Region, Ghana
- *
- * NOTE: All monetary amounts are stored strictly as integer pesewas (1 GHS = 100 pesewas).
- * All menu items are realistic Ghanaian dishes clearly designated as placeholders
- * until finalized business assets are provided.
- */
-
 import { PrismaClient, Role, FulfilmentType, FulfilmentStatus, PaymentStatus, PaymentMethod } from "@prisma/client";
 import * as bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log("🌱 Starting Sika Cuisine Database Seed (Sunyani, Ghana)...");
+  console.log("Seeding database...");
 
-  // 1. Clean existing records in referential order
   await prisma.auditLog.deleteMany();
   await prisma.paystackWebhookEvent.deleteMany();
   await prisma.paymentAttempt.deleteMany();
@@ -29,15 +19,12 @@ async function main() {
   await prisma.menuCategory.deleteMany();
   await prisma.user.deleteMany();
 
-  console.log("🧹 Cleared existing database tables.");
-
-  // 2. Seed Users
   const passwordSalt = await bcrypt.genSalt(10);
   const adminPasswordHash = await bcrypt.hash("Admin123!@#", passwordSalt);
   const staffPasswordHash = await bcrypt.hash("Staff123!@#", passwordSalt);
   const customerPasswordHash = await bcrypt.hash("Customer123!@#", passwordSalt);
 
-  const admin = await prisma.user.create({
+  await prisma.user.create({
     data: {
       email: "admin@sikacuisine.com",
       passwordHash: adminPasswordHash,
@@ -67,9 +54,6 @@ async function main() {
     },
   });
 
-  console.log("👤 Created initial users: Admin, Staff, and Customer.");
-
-  // 3. Seed Sunyani Delivery Address for demo customer
   const customerAddress = await prisma.deliveryAddress.create({
     data: {
       customerId: customer.id,
@@ -83,7 +67,6 @@ async function main() {
     },
   });
 
-  // 4. Seed Menu Categories
   const catTraditional = await prisma.menuCategory.create({
     data: {
       name: "Traditional Ghanaian Mains",
@@ -124,18 +107,13 @@ async function main() {
     },
   });
 
-  console.log("📂 Created 4 menu categories.");
-
-  // 5. Seed Menu Items & Option Groups (Strictly Integer Pesewas)
-  
-  // Item 1: Sika Jollof Special (GH₵65.00 = 6500 pesewas)
   const itemJollof = await prisma.menuItem.create({
     data: {
       categoryId: catTraditional.id,
       name: "Sika Signature Jollof Special",
       slug: "sika-signature-jollof-special",
       description: "Fragrant jasmine rice slow-cooked in rich spiced tomato-rosemary stew, served with sweet fried plantain and homemade black shito.",
-      basePricePesewas: 6500, // GH₵65.00
+      basePricePesewas: 6500,
       imageUrl: "https://images.unsplash.com/photo-1604382354936-07c5d9983bd3?auto=format&fit=crop&w=800&q=80",
       isAvailable: true,
       isFeatured: true,
@@ -152,10 +130,10 @@ async function main() {
             isRequired: true,
             options: {
               create: [
-                { name: "Charcoal Grilled Tilapia Half", priceDeltaPesewas: 2000, isAvailable: true }, // +GH₵20.00
-                { name: "Spicy Fried Quarter Chicken", priceDeltaPesewas: 1500, isAvailable: true }, // +GH₵15.00
-                { name: "Crispy Fried Red Fish", priceDeltaPesewas: 1800, isAvailable: true },       // +GH₵18.00
-                { name: "Braised Spicy Goat Meat", priceDeltaPesewas: 2500, isAvailable: true },     // +GH₵25.00
+                { name: "Charcoal Grilled Tilapia Half", priceDeltaPesewas: 2000, isAvailable: true },
+                { name: "Spicy Fried Quarter Chicken", priceDeltaPesewas: 1500, isAvailable: true },
+                { name: "Crispy Fried Red Fish", priceDeltaPesewas: 1800, isAvailable: true },
+                { name: "Braised Spicy Goat Meat", priceDeltaPesewas: 2500, isAvailable: true },
               ],
             },
           },
@@ -168,7 +146,7 @@ async function main() {
               create: [
                 { name: "Mild Shito", priceDeltaPesewas: 0, isAvailable: true },
                 { name: "Extra Spicy Black Shito", priceDeltaPesewas: 0, isAvailable: true },
-                { name: "Fresh Ground Green Chili Sauce", priceDeltaPesewas: 300, isAvailable: true }, // +GH₵3.00
+                { name: "Fresh Ground Green Chili Sauce", priceDeltaPesewas: 300, isAvailable: true },
               ],
             },
           },
@@ -177,14 +155,13 @@ async function main() {
     },
   });
 
-  // Item 2: Waakye Royale (GH₵60.00 = 6000 pesewas)
   await prisma.menuItem.create({
     data: {
       categoryId: catTraditional.id,
       name: "Waakye Royale Feast",
       slug: "waakye-royale-feast",
       description: "Traditional red sorghum-infused rice and black-eyed beans, served with talia (spaghetti), gari foto, boiled egg, tender wele, and dark shito.",
-      basePricePesewas: 6000, // GH₵60.00
+      basePricePesewas: 6000,
       imageUrl: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80",
       isAvailable: true,
       isFeatured: true,
@@ -211,14 +188,13 @@ async function main() {
     },
   });
 
-  // Item 3: Banku with Fresh Tilapia (GH₵75.00 = 7500 pesewas)
   await prisma.menuItem.create({
     data: {
       categoryId: catTraditional.id,
       name: "Banku with Grilled Tilapia & Hot Pepper",
       slug: "banku-with-grilled-tilapia",
       description: "Two steaming hot dumplings of fermented corn and cassava dough, served with whole seasoned grilled tilapia, freshly ground green hot pepper, and sliced onions.",
-      basePricePesewas: 7500, // GH₵75.00
+      basePricePesewas: 7500,
       imageUrl: "https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=800&q=80",
       isAvailable: true,
       isFeatured: true,
@@ -228,14 +204,13 @@ async function main() {
     },
   });
 
-  // Item 4: Fufu with Light Goat Soup (GH₵80.00 = 8000 pesewas)
   await prisma.menuItem.create({
     data: {
       categoryId: catSoups.id,
       name: "Pounded Fufu with Light Goat Soup",
       slug: "fufu-with-light-goat-soup",
       description: "Silky pounded plantain and cassava swallow submerged in a rich, deeply aromatic spiced tomato soup with generous cuts of tender local goat meat.",
-      basePricePesewas: 8000, // GH₵80.00
+      basePricePesewas: 8000,
       imageUrl: "https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=800&q=80",
       isAvailable: true,
       isFeatured: true,
@@ -245,14 +220,13 @@ async function main() {
     },
   });
 
-  // Item 5: Kelewele (GH₵25.00 = 2500 pesewas)
   await prisma.menuItem.create({
     data: {
       categoryId: catGrills.id,
       name: "Golden Spiced Kelewele",
       slug: "golden-spiced-kelewele",
       description: "Bite-sized cubes of ripe plantain marinated in freshly crushed ginger, cayenne chili pepper, cloves, and nutmeg, fried to golden perfection and paired with roasted peanuts.",
-      basePricePesewas: 2500, // GH₵25.00
+      basePricePesewas: 2500,
       imageUrl: "https://images.unsplash.com/photo-1589301760014-d929f3979dbc?auto=format&fit=crop&w=800&q=80",
       isAvailable: true,
       isFeatured: false,
@@ -262,14 +236,13 @@ async function main() {
     },
   });
 
-  // Item 6: Suya Beef Skewers (GH₵45.00 = 4500 pesewas)
   await prisma.menuItem.create({
     data: {
       categoryId: catGrills.id,
       name: "Charcoal Suya Beef Skewers (Chichinga)",
       slug: "suya-beef-skewers",
       description: "Four skewers of thinly sliced beef flank rubbed with northern Yaji spice blend, flash-grilled over charcoal embers and garnished with sharp red onions.",
-      basePricePesewas: 4500, // GH₵45.00
+      basePricePesewas: 4500,
       imageUrl: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=800&q=80",
       isAvailable: true,
       isFeatured: true,
@@ -279,14 +252,13 @@ async function main() {
     },
   });
 
-  // Item 7: House Special Iced Sobolo (GH₵15.00 = 1500 pesewas)
   await prisma.menuItem.create({
     data: {
       categoryId: catDrinks.id,
       name: "House Special Chilled Sobolo",
       slug: "house-special-chilled-sobolo",
       description: "Deep ruby hibiscus flower brew steeped with fiery ginger, sweet pineapple juice, cloves, and mint leaves, served cold over ice.",
-      basePricePesewas: 1500, // GH₵15.00
+      basePricePesewas: 1500,
       imageUrl: "https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?auto=format&fit=crop&w=800&q=80",
       isAvailable: true,
       isFeatured: false,
@@ -296,14 +268,13 @@ async function main() {
     },
   });
 
-  // Item 8: Fresh Creamy Asaana (GH₵18.00 = 1800 pesewas)
   await prisma.menuItem.create({
     data: {
       categoryId: catDrinks.id,
       name: "Sunyani Chilled Asaana with Milk",
       slug: "sunyani-chilled-asaana",
       description: "Traditional fermented crushed corn nectar naturally caramelized and chilled, served with creamy evaporated milk.",
-      basePricePesewas: 1800, // GH₵18.00
+      basePricePesewas: 1800,
       imageUrl: "https://images.unsplash.com/photo-1572490122747-3968b75cc699?auto=format&fit=crop&w=800&q=80",
       isAvailable: true,
       isFeatured: false,
@@ -313,9 +284,6 @@ async function main() {
     },
   });
 
-  console.log("🍲 Seeded 8 authentic Ghanaian menu items with options.");
-
-  // 6. Seed a sample order with status history for customer
   const sampleOrder = await prisma.order.create({
     data: {
       orderNumber: "SIKA-2026-1001",
@@ -327,11 +295,11 @@ async function main() {
       fulfilmentStatus: FulfilmentStatus.PREPARING,
       paymentStatus: PaymentStatus.PAID,
       paymentMethod: PaymentMethod.PAYSTACK,
-      subtotalPesewas: 8500,      // GH₵85.00 (Jollof GH₵65 + Grilled Tilapia GH₵20)
-      deliveryFeePesewas: 1500,   // GH₵15.00 (Sunyani Fiapre zone)
+      subtotalPesewas: 8500,
+      deliveryFeePesewas: 1500,
       discountPesewas: 0,
-      totalPesewas: 10000,        // GH₵100.00
-      customerNotes: "Please make the shito very spicy.",
+      totalPesewas: 10000,
+      customerNotes: "Please pack sauce separately.",
       deliveryAddressId: customerAddress.id,
       estimatedDeliveryMinutes: 35,
       items: {
@@ -367,18 +335,18 @@ async function main() {
           {
             fromStatus: null,
             toStatus: FulfilmentStatus.PENDING_CONFIRMATION,
-            note: "Order placed online by customer.",
+            note: "Order placed online.",
           },
           {
             fromStatus: FulfilmentStatus.PENDING_CONFIRMATION,
             toStatus: FulfilmentStatus.CONFIRMED,
-            note: "Order confirmed by Sunyani kitchen staff.",
+            note: "Order confirmed by kitchen staff.",
             changedByUserId: staff.id,
           },
           {
             fromStatus: FulfilmentStatus.CONFIRMED,
             toStatus: FulfilmentStatus.PREPARING,
-            note: "Chef started grilling tilapia and assembling jollof pack.",
+            note: "Food preparation underway.",
             changedByUserId: staff.id,
           },
         ],
@@ -402,13 +370,13 @@ async function main() {
     },
   });
 
-  console.log(`📦 Seeded sample active order: ${sampleOrder.orderNumber}`);
-  console.log("✅ Seed completed successfully!");
+  console.log(`Seeded order: ${sampleOrder.orderNumber}`);
+  console.log("Database seed completed.");
 }
 
 main()
   .catch((e) => {
-    console.error("❌ Seed error:", e);
+    console.error("Database seed failed:", e);
     process.exit(1);
   })
   .finally(async () => {

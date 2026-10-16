@@ -13,7 +13,6 @@ export default function ContactPage() {
 
   return (
     <div className="min-h-screen bg-background pb-24">
-      {/* Banner */}
       <div className="border-b border-border-subtle bg-surface-300 py-16 sm:py-20 text-center">
         <div className="mx-auto max-w-3xl px-4">
           <span className="text-xs font-bold uppercase tracking-widest text-brand-red mb-2 block">
@@ -30,7 +29,6 @@ export default function ContactPage() {
 
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 pt-12">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-          {/* Contact Information Cards */}
           <div className="lg:col-span-5 space-y-6">
             <div className="rounded-3xl bg-surface-300 border border-border-subtle p-6 space-y-6">
               <h2 className="font-serif text-xl font-bold text-white border-b border-border-subtle pb-3">
@@ -86,7 +84,6 @@ export default function ContactPage() {
             </div>
           </div>
 
-          {/* Inquiry Form */}
           <div className="lg:col-span-7">
             <div className="rounded-3xl bg-surface-300 border border-border-subtle p-8 sm:p-10">
               <h2 className="font-serif text-2xl font-bold text-white mb-2">

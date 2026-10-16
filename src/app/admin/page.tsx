@@ -46,7 +46,7 @@ const INITIAL_ORDERS: MockAdminOrder[] = [
     paymentMethod: "PAYSTACK",
     locality: "Fiapre & UENR Campus",
     streetAddress: "House No. 14, Main Campus Gate",
-    totalPesewas: 8500, // GH₵85.00
+    totalPesewas: 8500,
     createdAt: "5 mins ago",
     items: [
       { name: "Sika Signature Jollof Special", quantity: 1, options: "Grilled Tilapia, Mild Shito" },
@@ -63,7 +63,7 @@ const INITIAL_ORDERS: MockAdminOrder[] = [
     paymentMethod: "PAYSTACK",
     locality: "Berlin Top",
     streetAddress: "Sunset View Hill, Villa 4",
-    totalPesewas: 12000, // GH₵120.00
+    totalPesewas: 12000,
     createdAt: "18 mins ago",
     items: [
       { name: "Banku with Grilled Tilapia", quantity: 1, options: "Extra hot green pepper" },
@@ -81,7 +81,7 @@ const INITIAL_ORDERS: MockAdminOrder[] = [
     paymentMethod: "CASH_ON_DELIVERY",
     locality: "Kitchen Counter",
     streetAddress: "Pick up at Sunyani Central",
-    totalPesewas: 6000, // GH₵60.00
+    totalPesewas: 6000,
     createdAt: "28 mins ago",
     items: [
       { name: "Waakye Royale Feast", quantity: 1, options: "Extra fish cutlet" },
@@ -110,7 +110,6 @@ export default function AdminDashboardPage() {
     return matchesFilter && matchesSearch;
   });
 
-  // Calculate live metrics in integer pesewas
   const totalRevenuePesewas = orders
     .filter((o) => o.paymentStatus === "PAID")
     .reduce((sum, o) => sum + o.totalPesewas, 0);
@@ -120,7 +119,6 @@ export default function AdminDashboardPage() {
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      {/* Top Banner */}
       <div className="border-b border-border-subtle bg-surface-300 py-8 px-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
@@ -151,7 +149,6 @@ export default function AdminDashboardPage() {
       </div>
 
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-8">
-        {/* Metric Cards Row */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <div className="rounded-3xl bg-surface-300 border border-border-subtle p-6">
             <div className="flex items-center justify-between text-gray-400 mb-2">
@@ -192,7 +189,6 @@ export default function AdminDashboardPage() {
           </div>
         </div>
 
-        {/* Filter and Search Bar */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
           <div className="flex items-center gap-2 overflow-x-auto w-full sm:w-auto pb-2 sm:pb-0">
             {["ALL", "PENDING_CONFIRMATION", "PREPARING", "OUT_FOR_DELIVERY", "COMPLETED"].map(
@@ -224,7 +220,6 @@ export default function AdminDashboardPage() {
           </div>
         </div>
 
-        {/* Orders List / Cards */}
         <div className="space-y-4">
           {filteredOrders.length === 0 ? (
             <div className="rounded-3xl bg-surface-300 border border-border-subtle p-12 text-center text-gray-400">
@@ -236,14 +231,12 @@ export default function AdminDashboardPage() {
                 key={order.id}
                 className="rounded-3xl bg-surface-300 border border-border-subtle p-6 flex flex-col lg:flex-row lg:items-center justify-between gap-6"
               >
-                {/* Left: Info */}
                 <div className="space-y-3 flex-1">
                   <div className="flex flex-wrap items-center gap-3">
                     <span className="font-mono font-bold text-white text-base bg-surface-100 px-3 py-1 rounded-xl border border-border-subtle">
                       {order.orderNumber}
                     </span>
 
-                    {/* Status Pill */}
                     <span
                       className={`text-xs font-bold px-3 py-1 rounded-full ${
                         order.fulfilmentStatus === "PENDING_CONFIRMATION"
@@ -290,7 +283,6 @@ export default function AdminDashboardPage() {
                     </div>
                   </div>
 
-                  {/* Order Items */}
                   <div className="pt-2 border-t border-border-subtle/60 flex flex-wrap gap-2">
                     {order.items.map((item, idx) => (
                       <span
@@ -304,7 +296,6 @@ export default function AdminDashboardPage() {
                   </div>
                 </div>
 
-                {/* Right: Actions & Total */}
                 <div className="flex flex-col sm:flex-row lg:flex-col items-end justify-between gap-4 border-t lg:border-t-0 pt-4 lg:pt-0">
                   <div className="text-right">
                     <span className="text-xs text-gray-400 block">Total Amount</span>
@@ -313,7 +304,6 @@ export default function AdminDashboardPage() {
                     </span>
                   </div>
 
-                  {/* Transition Action Buttons */}
                   <div className="flex flex-wrap items-center gap-2">
                     {order.fulfilmentStatus === "PENDING_CONFIRMATION" && (
                       <>

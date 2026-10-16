@@ -28,7 +28,6 @@ export function DishDetailModal({
 
   if (!isOpen || !dish) return null;
 
-  // Initialize defaults if needed
   const handleSelectOption = (
     groupId: string,
     option: MenuItemOption,
@@ -55,7 +54,6 @@ export function DishDetailModal({
     });
   };
 
-  // Compute options delta strictly in integer pesewas
   const selectedOptionsList: SelectedOptionSnapshot[] = [];
   let optionsDeltaPesewas = 0;
 
@@ -86,16 +84,13 @@ export function DishDetailModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
-      {/* Backdrop */}
       <div
         className="fixed inset-0 bg-black/80 backdrop-blur-md transition-opacity"
         onClick={onClose}
         aria-hidden="true"
       />
 
-      {/* Modal Card */}
       <div className="relative z-10 w-full max-w-xl rounded-3xl bg-surface-300 border border-border-subtle shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-        {/* Dish Banner Image */}
         <div className="relative h-60 w-full flex-shrink-0 bg-surface-200">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
@@ -121,7 +116,6 @@ export function DishDetailModal({
           )}
         </div>
 
-        {/* Modal Scrollable Body */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
           <div>
             <span className="text-xs uppercase font-bold tracking-wider text-brand-red">
@@ -135,7 +129,6 @@ export function DishDetailModal({
             </p>
           </div>
 
-          {/* Option Groups */}
           {dish.optionGroups && dish.optionGroups.length > 0 && (
             <div className="space-y-6 pt-2">
               {dish.optionGroups.map((group) => {
@@ -188,7 +181,6 @@ export function DishDetailModal({
             </div>
           )}
 
-          {/* Special Instructions */}
           <div>
             <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
               Kitchen Instructions (Optional)
@@ -203,9 +195,7 @@ export function DishDetailModal({
           </div>
         </div>
 
-        {/* Modal Footer */}
         <div className="p-6 border-t border-border-subtle bg-surface-300 flex items-center justify-between gap-4">
-          {/* Quantity Stepper */}
           <div className="flex items-center gap-3 rounded-full bg-surface-100 px-3 py-2 border border-border-subtle">
             <button
               onClick={() => setQuantity(Math.max(1, quantity - 1))}
@@ -226,7 +216,6 @@ export function DishDetailModal({
             </button>
           </div>
 
-          {/* Add to Plate Button */}
           <button
             onClick={handleAddToCart}
             className="btn-red-gradient flex-1 flex items-center justify-between px-6 py-3.5 rounded-full text-base font-semibold text-white shadow-glow"

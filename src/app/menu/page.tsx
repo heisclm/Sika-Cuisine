@@ -7,7 +7,6 @@ import { formatPesewasToGhs } from "@/lib/currency";
 import { useCart } from "@/context/CartContext";
 import { DishDetailModal } from "@/components/menu/DishDetailModal";
 
-// Full Ghanaian Menu catalogue strictly in integer pesewas
 const MENU_ITEMS: MenuItem[] = [
   {
     id: "item-jollof",
@@ -16,7 +15,7 @@ const MENU_ITEMS: MenuItem[] = [
     name: "Sika Signature Jollof Special",
     slug: "sika-signature-jollof-special",
     description: "Slow-simmered rosemary tomato jollof served with sweet golden plantains and smoky black shito.",
-    basePricePesewas: 6500, // GH₵65.00
+    basePricePesewas: 6500,
     imageUrl: "https://images.unsplash.com/photo-1604382354936-07c5d9983bd3?auto=format&fit=crop&w=800&q=80",
     isAvailable: true,
     isFeatured: true,
@@ -59,7 +58,7 @@ const MENU_ITEMS: MenuItem[] = [
     name: "Waakye Royale Feast",
     slug: "waakye-royale-feast",
     description: "Sorghum-infused rice & beans with gari foto, boiled egg, tender wele, and spicy talia.",
-    basePricePesewas: 6000, // GH₵60.00
+    basePricePesewas: 6000,
     imageUrl: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80",
     isAvailable: true,
     isFeatured: true,
@@ -88,7 +87,7 @@ const MENU_ITEMS: MenuItem[] = [
     name: "Banku with Grilled Tilapia & Hot Pepper",
     slug: "banku-with-grilled-tilapia",
     description: "Two steaming hot dumplings of fermented corn dough with whole seasoned grilled tilapia and fresh pepper.",
-    basePricePesewas: 7500, // GH₵75.00
+    basePricePesewas: 7500,
     imageUrl: "https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=800&q=80",
     isAvailable: true,
     isFeatured: true,
@@ -103,7 +102,7 @@ const MENU_ITEMS: MenuItem[] = [
     name: "Pounded Fufu with Light Goat Soup",
     slug: "fufu-with-light-goat-soup",
     description: "Silky pounded swallow submerged in deeply aromatic spiced tomato soup with cuts of tender local goat meat.",
-    basePricePesewas: 8000, // GH₵80.00
+    basePricePesewas: 8000,
     imageUrl: "https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=800&q=80",
     isAvailable: true,
     isFeatured: true,
@@ -118,7 +117,7 @@ const MENU_ITEMS: MenuItem[] = [
     name: "Golden Spiced Kelewele",
     slug: "golden-spiced-kelewele",
     description: "Ripe plantain cubes seasoned with crushed ginger, cayenne chili, and cloves, paired with roasted peanuts.",
-    basePricePesewas: 2500, // GH₵25.00
+    basePricePesewas: 2500,
     imageUrl: "https://images.unsplash.com/photo-1589301760014-d929f3979dbc?auto=format&fit=crop&w=800&q=80",
     isAvailable: true,
     isFeatured: false,
@@ -133,7 +132,7 @@ const MENU_ITEMS: MenuItem[] = [
     name: "Charcoal Suya Beef Skewers (Chichinga)",
     slug: "suya-beef-skewers",
     description: "Four skewers of beef flank rubbed with northern Yaji peanut spice blend and garnished with red onions.",
-    basePricePesewas: 4500, // GH₵45.00
+    basePricePesewas: 4500,
     imageUrl: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=800&q=80",
     isAvailable: true,
     isFeatured: true,
@@ -148,7 +147,7 @@ const MENU_ITEMS: MenuItem[] = [
     name: "House Special Chilled Sobolo",
     slug: "house-special-chilled-sobolo",
     description: "Ruby hibiscus flower brew steeped with fiery ginger, pineapple juice, and aromatic cloves over ice.",
-    basePricePesewas: 1500, // GH₵15.00
+    basePricePesewas: 1500,
     imageUrl: "https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?auto=format&fit=crop&w=800&q=80",
     isAvailable: true,
     isFeatured: false,
@@ -163,7 +162,7 @@ const MENU_ITEMS: MenuItem[] = [
     name: "Sunyani Chilled Asaana with Milk",
     slug: "sunyani-chilled-asaana",
     description: "Fermented corn nectar naturally caramelized and chilled, served with creamy evaporated milk.",
-    basePricePesewas: 1800, // GH₵18.00
+    basePricePesewas: 1800,
     imageUrl: "https://images.unsplash.com/photo-1572490122747-3968b75cc699?auto=format&fit=crop&w=800&q=80",
     isAvailable: true,
     isFeatured: false,
@@ -205,7 +204,6 @@ export default function MenuPage() {
 
   const handleQuickAdd = (dish: MenuItem, e: React.MouseEvent) => {
     e.stopPropagation();
-    // If dish has required option groups, open modal to let user choose
     if (dish.optionGroups && dish.optionGroups.some((g) => g.isRequired)) {
       setActiveDishForModal(dish);
     } else {
@@ -216,7 +214,6 @@ export default function MenuPage() {
 
   return (
     <div className="min-h-screen bg-background pb-24">
-      {/* Menu Header Banner */}
       <div className="relative border-b border-border-subtle bg-surface-300 py-14 sm:py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center relative z-10">
           <span className="text-xs font-bold uppercase tracking-widest text-brand-red flex items-center justify-center gap-1.5 mb-2">
@@ -233,9 +230,7 @@ export default function MenuPage() {
       </div>
 
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-8">
-        {/* Filters & Search Row */}
         <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-10">
-          {/* Category Tabs */}
           <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto pb-2 md:pb-0 scrollbar-none">
             {CATEGORIES.map((cat) => (
               <button
@@ -252,7 +247,6 @@ export default function MenuPage() {
             ))}
           </div>
 
-          {/* Search Box */}
           <div className="relative w-full md:w-72">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <input
@@ -265,7 +259,6 @@ export default function MenuPage() {
           </div>
         </div>
 
-        {/* Menu Cards Grid */}
         {filteredDishes.length === 0 ? (
           <div className="text-center py-20 rounded-3xl bg-surface-300 border border-border-subtle">
             <p className="text-lg font-serif text-white">No dishes found</p>
@@ -284,7 +277,6 @@ export default function MenuPage() {
                 onClick={() => handleCardClick(dish)}
                 className="group relative cursor-pointer rounded-3xl bg-surface-200/90 border border-border-subtle p-5 pt-16 transition-all duration-300 hover:-translate-y-2 hover:border-brand-red/40 hover:shadow-card flex flex-col justify-between"
               >
-                {/* Protruding circular dish plate overlapping top of card */}
                 <div className="absolute -top-12 left-1/2 -translate-x-1/2 h-28 w-28 rounded-full overflow-hidden border-2 border-surface-50 shadow-plate group-hover:scale-105 transition-transform duration-300">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
@@ -294,7 +286,6 @@ export default function MenuPage() {
                   />
                 </div>
 
-                {/* Dish info */}
                 <div className="mt-4 text-center">
                   <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">
                     {dish.categoryName}
@@ -314,7 +305,6 @@ export default function MenuPage() {
                   ) : null}
                 </div>
 
-                {/* Price & Action */}
                 <div className="mt-6 pt-4 border-t border-border-subtle/60 flex items-center justify-between">
                   <div>
                     <span className="text-xs text-gray-400 block -mb-0.5">Price</span>
@@ -337,7 +327,6 @@ export default function MenuPage() {
         )}
       </div>
 
-      {/* Dish Customization Modal */}
       <DishDetailModal
         dish={activeDishForModal}
         isOpen={!!activeDishForModal}

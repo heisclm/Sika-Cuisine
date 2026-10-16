@@ -1,6 +1,3 @@
-/**
- * Order Domain Contracts for Sika Cuisine (Sunyani, Ghana)
- */
 import { SelectedOptionSnapshot } from "./menu";
 
 export type FulfilmentType = "DELIVERY" | "COLLECTION";
@@ -28,9 +25,9 @@ export interface DeliveryAddress {
   recipientPhone: string;
   alternatePhone?: string;
   streetAddress: string;
-  areaLocality: string; // e.g. "Fiapre", "Berlin Top", "Sunyani Central"
-  landmark?: string;    // e.g. "Opposite UENR Main Gate", "Near Coronation Park"
-  city: string;         // Defaults to "Sunyani"
+  areaLocality: string;
+  landmark?: string;
+  city: string;
   deliveryNotes?: string;
 }
 
@@ -38,14 +35,10 @@ export interface OrderItem {
   id: string;
   orderId: string;
   menuItemId: string;
-  /** Immutable snapshot of item name at time of order */
   itemNameSnapshot: string;
-  /** Immutable unit price in integer pesewas at time of order */
   unitPricePesewas: number;
   quantity: number;
-  /** Total line cost in integer pesewas */
   subtotalPesewas: number;
-  /** Immutable snapshot of selected options and their price deltas */
   selectedOptionsSnapshot: SelectedOptionSnapshot[];
   specialInstructions?: string;
 }
@@ -63,7 +56,7 @@ export interface OrderStatusHistory {
 
 export interface Order {
   id: string;
-  orderNumber: string; // e.g. "SIKA-2026-8942"
+  orderNumber: string;
   customerId?: string | null;
   guestEmail?: string | null;
   guestPhone?: string | null;
@@ -74,7 +67,6 @@ export interface Order {
   paymentStatus: PaymentStatus;
   paymentMethod: PaymentMethod;
 
-  /** Stored strictly in integer pesewas */
   subtotalPesewas: number;
   deliveryFeePesewas: number;
   discountPesewas: number;
@@ -95,10 +87,6 @@ export interface Order {
   updatedAt: string;
 }
 
-/**
- * Payload sent by client when requesting order creation.
- * Notice: NO prices, discounts, or totals are accepted from the client.
- */
 export interface CreateOrderInput {
   fulfilmentType: FulfilmentType;
   paymentMethod: PaymentMethod;

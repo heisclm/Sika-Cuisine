@@ -7,7 +7,6 @@ import { useCart } from "@/context/CartContext";
 import { formatPesewasToGhs } from "@/lib/currency";
 import { MenuItem } from "@/types/menu";
 
-// Featured placeholder showcase dishes strictly in integer pesewas
 const FEATURED_DISHES: MenuItem[] = [
   {
     id: "dish-jollof",
@@ -16,7 +15,7 @@ const FEATURED_DISHES: MenuItem[] = [
     name: "Sika Signature Jollof Special",
     slug: "sika-signature-jollof-special",
     description: "Slow-simmered rosemary tomato jollof served with sweet golden plantains and smoky black shito.",
-    basePricePesewas: 6500, // GH₵65.00
+    basePricePesewas: 6500,
     imageUrl: "https://images.unsplash.com/photo-1604382354936-07c5d9983bd3?auto=format&fit=crop&w=800&q=80",
     isAvailable: true,
     isFeatured: true,
@@ -31,7 +30,7 @@ const FEATURED_DISHES: MenuItem[] = [
     name: "Waakye Royale Feast",
     slug: "waakye-royale-feast",
     description: "Sorghum-infused rice & beans with gari foto, boiled egg, tender wele, and spicy talia.",
-    basePricePesewas: 6000, // GH₵60.00
+    basePricePesewas: 6000,
     imageUrl: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80",
     isAvailable: true,
     isFeatured: true,
@@ -46,7 +45,7 @@ const FEATURED_DISHES: MenuItem[] = [
     name: "Banku & Grilled Tilapia",
     slug: "banku-with-grilled-tilapia",
     description: "Steaming hot fermented corn dough with whole charcoal-grilled tilapia and fiery green pepper.",
-    basePricePesewas: 7500, // GH₵75.00
+    basePricePesewas: 7500,
     imageUrl: "https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=800&q=80",
     isAvailable: true,
     isFeatured: true,
@@ -61,7 +60,7 @@ const FEATURED_DISHES: MenuItem[] = [
     name: "Charcoal Suya Beef Skewers",
     slug: "suya-beef-skewers",
     description: "Tender beef skewers marinated in northern Yaji peanut spice, flash-grilled over glowing coals.",
-    basePricePesewas: 4500, // GH₵45.00
+    basePricePesewas: 4500,
     imageUrl: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=800&q=80",
     isAvailable: true,
     isFeatured: true,
@@ -83,34 +82,27 @@ export default function HomePage() {
 
   return (
     <div className="relative min-h-screen bg-background overflow-hidden">
-      {/* Ambient background glows */}
       <div className="absolute top-10 left-1/2 -translate-x-1/2 w-[900px] h-[550px] ambient-glow pointer-events-none -z-10" />
 
-      {/* Hero Section */}
       <section className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-10 sm:pt-16 pb-20">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-          {/* Left Column: Headlines & Call to Actions */}
           <div className="lg:col-span-7 space-y-8 text-left">
-            {/* Pill Badge */}
             <div className="inline-flex items-center gap-2 rounded-full bg-surface-100/90 border border-border-subtle px-4 py-1.5 text-xs font-semibold text-gray-300">
               <span className="flex h-2 w-2 rounded-full bg-brand-red animate-pulse" />
               <span>Now Delivering Fast Across Sunyani, Bono Region</span>
             </div>
 
-            {/* Cinematic Serif Headline (Inspired by reference) */}
             <h1 className="font-serif text-5xl sm:text-6xl md:text-7xl font-bold tracking-tight text-white leading-[1.08]">
               It&apos;s not just <span className="text-white">Food</span>,{" "}
               <br className="hidden sm:inline" />
               It&apos;s an <span className="text-brand-red italic">Experience.</span>
             </h1>
 
-            {/* Subtext */}
             <p className="max-w-xl text-base sm:text-lg text-gray-300 leading-relaxed font-light">
               Indulge in Sunyani’s most celebrated culinary traditions. From rich woodsmoke-infused
               Jollof to charcoal-grilled tilapia and fiery spiced kelewele, delivered fresh to your doorstep.
             </p>
 
-            {/* CTAs */}
             <div className="flex flex-wrap items-center gap-4 pt-2">
               <Link
                 href="/menu"
@@ -128,7 +120,6 @@ export default function HomePage() {
               </button>
             </div>
 
-            {/* Social Proof / Reviews Stack */}
             <div className="pt-4 flex items-center gap-4">
               <div className="flex -space-x-3 overflow-hidden">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -166,12 +157,9 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Right Column: Hero Culinary Showcase Platter */}
           <div className="lg:col-span-5 relative flex items-center justify-center">
-            {/* Ambient circular backdrop */}
             <div className="absolute h-80 w-80 sm:h-96 sm:w-96 rounded-full bg-gradient-to-tr from-brand-red/20 via-surface-100 to-transparent blur-2xl pointer-events-none" />
 
-            {/* Overlapping Hero Plate Presentation */}
             <div className="relative group">
               <div className="h-72 w-72 sm:h-96 sm:w-96 rounded-full overflow-hidden border-4 border-surface-100/80 shadow-plate relative">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -182,7 +170,6 @@ export default function HomePage() {
                 />
               </div>
 
-              {/* Floating garnish badge */}
               <div className="absolute -bottom-4 -left-4 glass-panel rounded-2xl p-4 shadow-card flex items-center gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-red/15 text-brand-red">
                   <Flame className="h-5 w-5" />
@@ -193,7 +180,6 @@ export default function HomePage() {
                 </div>
               </div>
 
-              {/* Delivery time pill */}
               <div className="absolute -top-3 -right-3 glass-panel rounded-full px-4 py-2 shadow-card flex items-center gap-2">
                 <Clock className="h-4 w-4 text-brand-gold" />
                 <span className="text-xs font-semibold text-white">25-45 Min Sunyani Delivery</span>
@@ -203,7 +189,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Featured Dishes Showcase Section (Inspired by screenshot bottom cards) */}
       <section className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-12 gap-4">
           <div>
@@ -223,7 +208,6 @@ export default function HomePage() {
           </Link>
         </div>
 
-        {/* Featured Dish Cards Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
           {FEATURED_DISHES.map((dish) => (
             <div
@@ -233,7 +217,6 @@ export default function HomePage() {
               }}
               className="group relative rounded-3xl bg-surface-200/90 border border-border-subtle p-5 pt-16 transition-all duration-300 hover:-translate-y-2 hover:border-brand-red/40 hover:shadow-card flex flex-col justify-between"
             >
-              {/* Protruding Plate Image overlapping out of card top */}
               <div className="absolute -top-12 left-1/2 -translate-x-1/2 h-28 w-28 rounded-full overflow-hidden border-2 border-surface-50 shadow-plate group-hover:scale-105 transition-transform duration-300">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
@@ -243,7 +226,6 @@ export default function HomePage() {
                 />
               </div>
 
-              {/* Dish Metadata */}
               <div className="mt-4 text-center">
                 <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">
                   {dish.categoryName}
@@ -256,7 +238,6 @@ export default function HomePage() {
                 </p>
               </div>
 
-              {/* Price & Add to Cart Action */}
               <div className="mt-6 pt-4 border-t border-border-subtle/60 flex items-center justify-between">
                 <div>
                   <span className="text-xs text-gray-400 block -mb-0.5">Price</span>
@@ -265,7 +246,6 @@ export default function HomePage() {
                   </span>
                 </div>
 
-                {/* Circular Red Cart Button (matching screenshot design) */}
                 <button
                   onClick={(e) => handleQuickAdd(dish, e)}
                   className="flex h-11 w-11 items-center justify-center rounded-full bg-brand-red text-white shadow-glow hover:bg-brand-red-hover hover:scale-110 active:scale-95 transition-all duration-200"
@@ -279,7 +259,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Sunyani Delivery Localities Section */}
       <section className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16 border-t border-border-subtle/60">
         <div className="rounded-3xl bg-surface-300 border border-border-subtle p-8 sm:p-12 relative overflow-hidden">
           <div className="max-w-2xl relative z-10">

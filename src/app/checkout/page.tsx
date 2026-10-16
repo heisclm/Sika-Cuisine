@@ -27,13 +27,11 @@ export default function CheckoutPage() {
   const [fulfilmentType, setFulfilmentType] = useState<FulfilmentType>("DELIVERY");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("PAYSTACK");
 
-  // Customer contact details
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [notes, setNotes] = useState("");
 
-  // Delivery address details
   const [areaLocality, setAreaLocality] = useState(SUNYANI_DELIVERY_ZONES[0].name);
   const [streetAddress, setStreetAddress] = useState("");
   const [landmark, setLandmark] = useState("");
@@ -41,7 +39,6 @@ export default function CheckoutPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // Delivery fee dynamically computed based on selected Sunyani zone
   const deliveryFeePesewas =
     fulfilmentType === "DELIVERY" ? getZoneFeePesewas(areaLocality) : 0;
   const grandTotalPesewas = subtotalPesewas + deliveryFeePesewas;
@@ -94,10 +91,8 @@ export default function CheckoutPage() {
         return;
       }
 
-      // Clear local cart now that server has persisted order
       clearCart();
 
-      // If Paystack authorization URL is returned, redirect to Paystack
       if (result.authorizationUrl) {
         window.location.href = result.authorizationUrl;
       } else if (result.redirectUrl) {
@@ -162,9 +157,7 @@ export default function CheckoutPage() {
         )}
 
         <form onSubmit={handleSubmitOrder} className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* Left Column: Form Fields */}
           <div className="lg:col-span-7 space-y-6">
-            {/* 1. Fulfilment Method Selector */}
             <div className="rounded-3xl bg-surface-300 border border-border-subtle p-6">
               <h2 className="text-base font-bold text-white font-serif mb-4 flex items-center gap-2">
                 <Truck className="h-5 w-5 text-brand-red" />
@@ -202,7 +195,6 @@ export default function CheckoutPage() {
               </div>
             </div>
 
-            {/* 2. Customer Information */}
             <div className="rounded-3xl bg-surface-300 border border-border-subtle p-6 space-y-4">
               <h2 className="text-base font-bold text-white font-serif mb-2">
                 2. Contact Information
@@ -253,7 +245,6 @@ export default function CheckoutPage() {
               </div>
             </div>
 
-            {/* 3. Delivery Address (Only if Delivery selected) */}
             {fulfilmentType === "DELIVERY" && (
               <div className="rounded-3xl bg-surface-300 border border-border-subtle p-6 space-y-4">
                 <h2 className="text-base font-bold text-white font-serif mb-2 flex items-center gap-2">
@@ -307,7 +298,6 @@ export default function CheckoutPage() {
               </div>
             )}
 
-            {/* 4. Payment Method */}
             <div className="rounded-3xl bg-surface-300 border border-border-subtle p-6 space-y-4">
               <h2 className="text-base font-bold text-white font-serif mb-2 flex items-center gap-2">
                 <CreditCard className="h-5 w-5 text-brand-red" />
@@ -367,7 +357,6 @@ export default function CheckoutPage() {
               </div>
             </div>
 
-            {/* Order Notes */}
             <div className="rounded-3xl bg-surface-300 border border-border-subtle p-6">
               <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
                 Order Notes / Special Requests (Optional)
@@ -382,14 +371,12 @@ export default function CheckoutPage() {
             </div>
           </div>
 
-          {/* Right Column: Order Summary */}
           <div className="lg:col-span-5">
             <div className="sticky top-28 rounded-3xl bg-surface-300 border border-border-subtle p-6 space-y-6">
               <h2 className="font-serif text-xl font-bold text-white border-b border-border-subtle pb-4">
                 Order Summary
               </h2>
 
-              {/* Items List */}
               <div className="space-y-4 max-h-64 overflow-y-auto pr-1">
                 {items.map((item) => (
                   <div key={item.id} className="flex justify-between items-start text-sm">
@@ -411,7 +398,6 @@ export default function CheckoutPage() {
                 ))}
               </div>
 
-              {/* Price Calculation (Strictly in Integer Pesewas) */}
               <div className="border-t border-border-subtle pt-4 space-y-2.5 text-sm">
                 <div className="flex justify-between text-gray-400">
                   <span>Subtotal</span>
@@ -437,7 +423,6 @@ export default function CheckoutPage() {
                 </div>
               </div>
 
-              {/* Security Badge */}
               <div className="rounded-2xl bg-surface-200 p-3 flex items-center gap-3 border border-border-subtle text-xs text-gray-400">
                 <ShieldCheck className="h-5 w-5 text-emerald-400 flex-shrink-0" />
                 <span>
@@ -445,7 +430,6 @@ export default function CheckoutPage() {
                 </span>
               </div>
 
-              {/* Submit Button */}
               <button
                 type="submit"
                 disabled={isSubmitting}

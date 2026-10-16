@@ -59,7 +59,6 @@ export const createOrderSchema = z.object({
   customerNotes: z.string().trim().max(500).optional(),
 }).refine(
   (data) => {
-    // If delivery is chosen, a valid delivery address is mandatory
     if (data.fulfilmentType === "DELIVERY" && !data.deliveryAddress) {
       return false;
     }

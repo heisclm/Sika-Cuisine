@@ -21,16 +21,13 @@ export function CartDrawer() {
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
-      {/* Backdrop */}
       <div
         className="fixed inset-0 bg-black/75 backdrop-blur-sm transition-opacity"
         onClick={() => setIsCartOpen(false)}
         aria-hidden="true"
       />
 
-      {/* Drawer content */}
       <div className="relative z-10 flex h-full w-full max-w-md flex-col bg-surface-300 border-l border-border-subtle p-6 shadow-2xl">
-        {/* Header */}
         <div className="flex items-center justify-between pb-4 border-b border-border-subtle">
           <div className="flex items-center gap-2">
             <ShoppingBag className="h-5 w-5 text-brand-red" />
@@ -50,7 +47,6 @@ export function CartDrawer() {
           </button>
         </div>
 
-        {/* Cart items list */}
         {items.length === 0 ? (
           <div className="flex flex-1 flex-col items-center justify-center text-center p-6">
             <div className="flex h-20 w-20 items-center justify-center rounded-full bg-surface-100 text-gray-500 mb-4 border border-border-subtle">
@@ -99,7 +95,6 @@ export function CartDrawer() {
                         </button>
                       </div>
 
-                      {/* Selected options snapshot tags */}
                       {item.selectedOptions.length > 0 && (
                         <div className="mt-1 flex flex-wrap gap-1">
                           {item.selectedOptions.map((opt, idx) => (
@@ -146,7 +141,6 @@ export function CartDrawer() {
               ))}
             </div>
 
-            {/* Subtotal & Checkout */}
             <div className="pt-4 border-t border-border-subtle space-y-4">
               <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-400">Subtotal</span>
