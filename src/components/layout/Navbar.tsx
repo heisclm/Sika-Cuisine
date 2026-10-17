@@ -27,15 +27,16 @@ export function Navbar() {
   return (
     <header className="sticky top-0 z-40 w-full border-b border-border-subtle/70 bg-surface-400/85 backdrop-blur-xl">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8 h-20">
-        <Link href="/" className="flex items-center gap-2 group">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-red/10 border border-brand-red/30 text-brand-red font-serif font-black text-xl group-hover:scale-105 transition-transform">
-            S
+        <Link href="/" className="flex items-center gap-3 group">
+          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-[#2a0e13] via-[#1a080b] to-[#0c0406] border border-brand-red/40 font-serif font-black text-xl shadow-[0_4px_16px_rgba(225,29,72,0.25)] group-hover:scale-105 transition-all duration-300">
+            <span className="tracking-tight text-white">S</span>
+            <span className="text-[13px] text-brand-red font-sans font-bold -ml-0.5">C</span>
           </div>
           <div className="flex flex-col">
-            <span className="font-serif text-2xl font-black tracking-tight text-white flex items-center">
+            <span className="font-serif text-2xl font-black tracking-tight text-white flex items-center leading-none">
               Sika Cuisine<span className="text-brand-red ml-0.5">.</span>
             </span>
-            <span className="text-[10px] tracking-widest uppercase font-medium text-gray-400 -mt-1 flex items-center gap-1">
+            <span className="text-[10px] tracking-[0.2em] uppercase font-semibold text-gray-400 mt-1 flex items-center gap-1">
               <MapPin className="h-2.5 w-2.5 text-brand-red" /> Sunyani, Ghana
             </span>
           </div>

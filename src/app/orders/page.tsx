@@ -15,7 +15,6 @@ import {
   Phone,
   MessageCircle,
   RotateCcw,
-  Sparkles,
 } from "lucide-react";
 import { formatPesewasToGhs } from "@/lib/currency";
 import { useCart } from "@/context/CartContext";
@@ -130,9 +129,13 @@ export default function OrdersHubPage() {
       <div className="border-b border-border-subtle bg-surface-300 py-14 sm:py-20 text-center relative overflow-hidden">
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[300px] bg-brand-red/5 blur-[100px] pointer-events-none -z-10" />
         <div className="mx-auto max-w-4xl px-4">
-          <span className="text-xs font-bold uppercase tracking-widest text-brand-red flex items-center justify-center gap-1.5 mb-2">
-            <Sparkles className="h-4 w-4" /> Real-Time Kitchen Dispatch
-          </span>
+          <div className="inline-flex items-center gap-2.5 mb-3">
+            <span className="h-px w-6 bg-brand-red/60" />
+            <span className="text-[11px] font-semibold uppercase tracking-[0.25em] text-brand-red">
+              Live Dispatch &bull; Sunyani Central
+            </span>
+            <span className="h-px w-6 bg-brand-red/60" />
+          </div>
           <h1 className="font-serif text-3xl sm:text-5xl font-black text-white">
             Track Delivery & Orders
           </h1>

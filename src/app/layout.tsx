@@ -10,13 +10,14 @@ import { FlyingCartAnimation } from "@/components/cart/FlyingCartAnimation";
 export const metadata: Metadata = {
   title: "Sika Cuisine — Premium Ghanaian Dining & Fast Delivery in Sunyani",
   description:
-    "Order exquisite Ghanaian cuisine online in Sunyani, Bono Region. Savor authentic Jollof, Kelewele, Waakye, Grilled Tilapia, and refreshing local beverages delivered to your doorstep.",
+    "Order authentic Ghanaian cuisine and lounge specialties online in Sunyani, Bono Region. Savor charcoal-grilled tilapia with banku, slow-simmered jollof with chicken, pounded fufu with light soup, exotic fruit rice, and stone-baked artisan pizzas delivered piping hot.",
   keywords: [
     "Sika Cuisine",
     "Sunyani restaurant",
     "Ghanaian food delivery Sunyani",
     "Jollof Sunyani",
-    "Waakye Fiapre",
+    "Tilapia Banku Sunyani",
+    "Sika Cuisine Lounge",
     "Bono Region food delivery",
   ],
 };

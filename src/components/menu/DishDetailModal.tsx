@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { X, Plus, Minus, Flame, Sparkles } from "lucide-react";
+import { X, Plus, Minus, Flame } from "lucide-react";
 import { MenuItem, MenuItemOption, SelectedOptionSnapshot } from "@/types/menu";
 import { formatPesewasToGhs, calculateLineTotalPesewas } from "@/lib/currency";
 import { useCart } from "@/context/CartContext";

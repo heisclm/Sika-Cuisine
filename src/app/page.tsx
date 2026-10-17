@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, Star, ShoppingBag, MapPin, Sparkles, Flame, Clock } from "lucide-react";
+import { ArrowRight, Star, ShoppingBag, MapPin, Flame, Clock, Check, UtensilsCrossed } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import { formatPesewasToGhs } from "@/lib/currency";
 import { MenuItem } from "@/types/menu";
@@ -11,10 +11,10 @@ const FEATURED_DISHES: MenuItem[] = [
   {
     id: "special-combo-mixture",
     categoryId: "sika-specials",
-    categoryName: "Sika Specials",
+    categoryName: "Sika Specials (GH₵80)",
     name: "SIKA Special Combo (De Mixture)",
     slug: "special-combo-mixture",
-    description: "Chef's ultimate showcase platter featuring a rich mixture of meats, golden plantains, and savory sides.",
+    description: "Chef's ultimate showcase platter featuring seasoned meats, sweet plantains, sausages, and savory sides.",
     basePricePesewas: 8000,
     imageUrl: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80",
     isAvailable: true,
@@ -26,7 +26,7 @@ const FEATURED_DISHES: MenuItem[] = [
   {
     id: "seafood-tilapia-banku",
     categoryId: "seafood",
-    categoryName: "Seafood",
+    categoryName: "Seafood (GH₵80)",
     name: "Tilapia with Banku (Chilli)",
     slug: "seafood-tilapia-banku",
     description: "Whole succulent charcoal-grilled tilapia paired with steaming hot fermented corn dumplings and freshly ground chilli pepper.",
@@ -41,7 +41,7 @@ const FEATURED_DISHES: MenuItem[] = [
   {
     id: "pkg-grilled-chicken-jollof-rice",
     categoryId: "packages",
-    categoryName: "Packages",
+    categoryName: "Packages (GH₵40)",
     name: "Grilled Chicken with Jollof Rice",
     slug: "pkg-grilled-chicken-jollof-rice",
     description: "Charcoal-grilled spiced quarter chicken served alongside slow-simmered smoky Ghanaian jollof rice.",
@@ -56,7 +56,7 @@ const FEATURED_DISHES: MenuItem[] = [
   {
     id: "fruit-pineapple-fried-rice",
     categoryId: "sika-fruit-rice",
-    categoryName: "Sika Fruit Rice",
+    categoryName: "Fruit Rice (GH₵90)",
     name: "Pineapple Fried Rice",
     slug: "fruit-pineapple-fried-rice",
     description: "Wok-tossed fragrant jasmine rice infused with sweet caramelized Sunyani pineapples and crisp garden vegetables.",
@@ -70,6 +70,15 @@ const FEATURED_DISHES: MenuItem[] = [
   },
 ];
 
+const MENU_HIGHLIGHT_CATEGORIES = [
+  { name: "Packages", price: "GH₵40", desc: "Grilled or fried chicken with aromatic Ghanaian rice" },
+  { name: "Locals & Swallows", price: "GH₵50 - 70", desc: "Banku, Fufu, Tuo Zaafi (TZ), Omutuo & Red Red" },
+  { name: "Fresh Seafood", price: "GH₵80", desc: "Grilled Tilapia, Red Fish with Banku & Garlic Shrimps" },
+  { name: "Sika Specials", price: "GH₵80", desc: "Special Combo (De Mixture), Fries with Wings & Noodles" },
+  { name: "Fruit Rice", price: "GH₵90", desc: "Wok-infused Sunyani Pineapple & Coconut rice specialties" },
+  { name: "Artisan Pizza", price: "GH₵110 - 180", desc: "Stone-baked crispy pizzas in Mini, Medium & Family sizes" },
+];
+
 export default function HomePage() {
   const { addItem, setIsCartOpen } = useCart();
   const cardRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
@@ -81,7 +90,7 @@ export default function HomePage() {
   };
 
   return (
-    <div className="relative min-h-screen bg-background overflow-hidden">
+    <div className="relative min-h-screen bg-background overflow-hidden text-gray-200">
       <div className="absolute top-10 left-1/2 -translate-x-1/2 w-[900px] h-[550px] ambient-glow pointer-events-none -z-10" />
 
       <section className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-10 sm:pt-16 pb-20">
@@ -89,18 +98,17 @@ export default function HomePage() {
           <div className="lg:col-span-7 space-y-8 text-left">
             <div className="inline-flex items-center gap-2 rounded-full bg-surface-100/90 border border-border-subtle px-4 py-1.5 text-xs font-semibold text-gray-300">
               <span className="flex h-2 w-2 rounded-full bg-brand-red animate-pulse" />
-              <span>Now Delivering Fast Across Sunyani, Bono Region</span>
+              <span>Direct Kitchen Dispatch &bull; Sunyani, Bono Region</span>
             </div>
 
-            <h1 className="font-serif text-5xl sm:text-6xl md:text-7xl font-bold tracking-tight text-white leading-[1.08]">
+            <h1 className="font-serif text-5xl sm:text-6xl md:text-7xl font-bold tracking-tight text-white leading-[1.06]">
               It&apos;s not just <span className="text-white">Food</span>,{" "}
               <br className="hidden sm:inline" />
-              It&apos;s an <span className="text-brand-red italic">Experience.</span>
+              It&apos;s an <span className="text-brand-red italic font-normal">Experience.</span>
             </h1>
 
             <p className="max-w-xl text-base sm:text-lg text-gray-300 leading-relaxed font-light">
-              Indulge in Sunyani’s most celebrated culinary traditions. From rich woodsmoke-infused
-              Jollof to charcoal-grilled tilapia and fiery spiced kelewele, delivered fresh to your doorstep.
+              Sunyani&apos;s premier destination for authentic, slow-simmered Ghanaian gastronomy and vibrant lounge dining. Savor charcoal-grilled tilapia with banku, slow-simmered jollof with grilled chicken, pounded fufu with light soup, and stone-baked pizzas delivered piping hot across Sunyani.
             </p>
 
             <div className="flex flex-wrap items-center gap-4 pt-2">
@@ -111,16 +119,16 @@ export default function HomePage() {
                 <span>View Full Menu</span>
                 <ArrowRight className="h-4 w-4" />
               </Link>
-              <button
-                onClick={() => setIsCartOpen(true)}
+              <Link
+                href="/orders"
                 className="inline-flex items-center gap-2 px-7 py-4 rounded-full text-base font-medium text-white bg-surface-100/80 hover:bg-surface-50 border border-white/10 transition-all duration-200"
               >
-                <ShoppingBag className="h-5 w-5 text-brand-red" />
-                <span>My Plate</span>
-              </button>
+                <Clock className="h-4 w-4 text-brand-red" />
+                <span>Track Active Order</span>
+              </Link>
             </div>
 
-            <div className="pt-4 flex items-center gap-4">
+            <div className="pt-2 flex items-center gap-4">
               <div className="flex -space-x-3 overflow-hidden">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
@@ -141,7 +149,7 @@ export default function HomePage() {
                   alt="Customer"
                 />
                 <div className="flex h-10 w-10 items-center justify-center rounded-full bg-surface-50 border border-border-subtle text-xs font-bold text-white">
-                  +45
+                  +500
                 </div>
               </div>
               <div className="flex flex-col">
@@ -160,8 +168,8 @@ export default function HomePage() {
           <div className="lg:col-span-5 relative flex items-center justify-center">
             <div className="absolute h-80 w-80 sm:h-96 sm:w-96 rounded-full bg-gradient-to-tr from-brand-red/20 via-surface-100 to-transparent blur-2xl pointer-events-none" />
 
-            <div className="relative group">
-              <div className="h-72 w-72 sm:h-96 sm:w-96 rounded-full overflow-hidden border-4 border-surface-100/80 shadow-plate relative">
+            <div className="relative group animate-plate-float">
+              <div className="h-72 w-72 sm:h-96 sm:w-96 rounded-full overflow-hidden border-4 border-surface-100/80 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.9)] relative">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src="https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=1000&q=80"
@@ -175,14 +183,14 @@ export default function HomePage() {
                   <Flame className="h-5 w-5" />
                 </div>
                 <div>
-                  <p className="text-xs text-gray-400 font-medium">Daily Fresh Catch</p>
-                  <p className="text-sm font-bold text-white">Charcoal Grilled Tilapia</p>
+                  <p className="text-[11px] text-gray-400 font-medium">Chef&apos;s Signature</p>
+                  <p className="text-sm font-bold text-white">SIKA Special Combo (De Mixture)</p>
                 </div>
               </div>
 
               <div className="absolute -top-3 -right-3 glass-panel rounded-full px-4 py-2 shadow-card flex items-center gap-2">
                 <Clock className="h-4 w-4 text-brand-gold" />
-                <span className="text-xs font-semibold text-white">25-45 Min Sunyani Delivery</span>
+                <span className="text-xs font-semibold text-white">25-40 Min Sunyani Delivery</span>
               </div>
             </div>
           </div>
@@ -192,8 +200,8 @@ export default function HomePage() {
       <section className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-12 gap-4">
           <div>
-            <div className="flex items-center gap-2 text-brand-red text-xs font-bold uppercase tracking-widest mb-2">
-              <Sparkles className="h-4 w-4" /> Chef&apos;s Recommendations
+            <div className="text-[11px] font-semibold uppercase tracking-[0.25em] text-brand-red mb-2">
+              Chef&apos;s Signature Selection &bull; Sunyani Favourites
             </div>
             <h2 className="font-serif text-3xl sm:text-4xl font-bold text-white">
               Most Loved In Sunyani
@@ -203,7 +211,7 @@ export default function HomePage() {
             href="/menu"
             className="text-sm font-semibold text-gray-300 hover:text-brand-red transition-colors inline-flex items-center gap-1.5"
           >
-            <span>Explore All Delicacies</span>
+            <span>Explore All 36 Delicacies</span>
             <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
@@ -240,8 +248,8 @@ export default function HomePage() {
 
               <div className="mt-6 pt-4 border-t border-border-subtle/60 flex items-center justify-between">
                 <div>
-                  <span className="text-xs text-gray-400 block -mb-0.5">Price</span>
-                  <span className="text-base font-bold text-brand-red">
+                  <span className="text-[11px] text-gray-400 block -mb-0.5">Authoritative Price</span>
+                  <span className="text-base font-bold text-brand-red font-mono">
                     {formatPesewasToGhs(dish.basePricePesewas)}
                   </span>
                 </div>
@@ -260,13 +268,53 @@ export default function HomePage() {
       </section>
 
       <section className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16 border-t border-border-subtle/60">
-        <div className="rounded-3xl bg-surface-300 border border-border-subtle p-8 sm:p-12 relative overflow-hidden">
+        <div className="text-center max-w-2xl mx-auto mb-12">
+          <div className="text-[11px] font-semibold uppercase tracking-[0.25em] text-brand-red mb-2">
+            The Complete Sika Cuisine Experience
+          </div>
+          <h2 className="font-serif text-3xl sm:text-4xl font-bold text-white">
+            Explore By Culinary Category
+          </h2>
+          <p className="text-xs sm:text-sm text-gray-400 mt-2 font-light">
+            Every dish prepared to order according to authentic Bono culinary tradition.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {MENU_HIGHLIGHT_CATEGORIES.map((cat, idx) => (
+            <Link
+              key={idx}
+              href="/menu"
+              className="rounded-3xl bg-surface-300/80 border border-border-subtle p-6 hover:border-brand-red/40 hover:-translate-y-1 transition-all group shadow-card"
+            >
+              <div className="flex items-center justify-between mb-3">
+                <span className="font-serif text-lg font-bold text-white group-hover:text-brand-red transition-colors">
+                  {cat.name}
+                </span>
+                <span className="px-2.5 py-1 rounded-full bg-brand-red/10 border border-brand-red/30 text-brand-red text-xs font-bold font-mono">
+                  {cat.price}
+                </span>
+              </div>
+              <p className="text-xs text-gray-400 leading-relaxed font-light mb-4">
+                {cat.desc}
+              </p>
+              <div className="flex items-center text-xs font-semibold text-gray-300 group-hover:text-white transition-colors">
+                <span>View items</span>
+                <ArrowRight className="h-3.5 w-3.5 ml-1 text-brand-red group-hover:translate-x-1 transition-transform" />
+              </div>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      <section className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16 border-t border-border-subtle/60">
+        <div className="rounded-3xl bg-surface-300 border border-border-subtle p-8 sm:p-12 relative overflow-hidden shadow-card">
           <div className="max-w-2xl relative z-10">
-            <div className="flex items-center gap-2 text-brand-red text-xs font-bold uppercase tracking-widest mb-3">
-              <MapPin className="h-4 w-4" /> Fast & Reliable Dispatch
+            <div className="text-[11px] font-semibold uppercase tracking-[0.25em] text-brand-red mb-3">
+              Fast & Reliable Sunyani Dispatch
             </div>
             <h2 className="font-serif text-3xl sm:text-4xl font-bold text-white mb-4">
-              Delivering Across Sunyani Every Day
+              Delivering Hot & Fresh Across Sunyani
             </h2>
             <p className="text-gray-300 text-sm sm:text-base leading-relaxed mb-6 font-light">
               From Sunyani Central to UENR Campus in Fiapre, Berlin Top, Abesim, New Dormaa, and Penkwase.

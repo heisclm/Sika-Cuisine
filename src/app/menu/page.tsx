@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useMemo } from "react";
-import { Search, Flame, Sparkles, ShoppingBag } from "lucide-react";
+import { Search, Flame, ShoppingBag } from "lucide-react";
 import { MenuItem } from "@/types/menu";
 import { formatPesewasToGhs } from "@/lib/currency";
 import { useCart } from "@/context/CartContext";
@@ -721,9 +721,13 @@ export default function MenuPage() {
     <div className="min-h-screen bg-background pb-24">
       <div className="relative border-b border-border-subtle bg-surface-300 py-14 sm:py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center relative z-10">
-          <span className="text-xs font-bold uppercase tracking-widest text-brand-red flex items-center justify-center gap-1.5 mb-2">
-            <Sparkles className="h-4 w-4" /> Sika Cuisine Lounge — Sunyani, Ghana
-          </span>
+          <div className="inline-flex items-center gap-2.5 mb-3">
+            <span className="h-px w-6 bg-brand-red/60" />
+            <span className="text-[11px] font-semibold uppercase tracking-[0.25em] text-brand-red">
+              Sika Cuisine Lounge &bull; Sunyani, Ghana
+            </span>
+            <span className="h-px w-6 bg-brand-red/60" />
+          </div>
           <h1 className="font-serif text-4xl sm:text-5xl font-black text-white">
             Official Restaurant Menu
           </h1>

@@ -14,8 +14,8 @@ export function Footer() {
               </span>
             </Link>
             <p className="text-sm leading-relaxed text-gray-400">
-              Sunyani’s premier destination for authentic, slow-simmered Ghanaian gastronomy.
-              From sizzling street grills to royal waakye feasts, crafted with culinary pride.
+              Sunyani&apos;s premier destination for authentic, slow-simmered Ghanaian gastronomy and lounge dining.
+              From charcoal-grilled tilapia with banku to fragrant jollof, light soups, exotic fruit rice, and stone-baked artisan pizzas.
             </p>
             <div className="flex items-center gap-2 text-xs text-emerald-400 bg-emerald-950/40 border border-emerald-800/40 px-3 py-1.5 rounded-full w-fit">
               <ShieldCheck className="h-4 w-4" />
