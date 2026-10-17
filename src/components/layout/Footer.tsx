@@ -53,6 +53,11 @@ export function Footer() {
                   Staff Terminal
                 </Link>
               </li>
+              <li>
+                <Link href="/rider/login" className="text-gray-500 hover:text-gray-300 transition-colors">
+                  Rider Terminal
+                </Link>
+              </li>
             </ul>
           </div>
 

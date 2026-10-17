@@ -10,7 +10,9 @@ datasource db {
 
 enum Role {
   CUSTOMER
-  STAFF
+  STAFF_CASHIER
+  STAFF_KITCHEN
+  DELIVERY_RIDER
   ADMIN
 }
 
@@ -60,7 +62,8 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  orders        Order[]
+  orders        Order[]              @relation("CustomerOrders")
+  deliveries    Order[]              @relation("RiderDeliveries")
   addresses     DeliveryAddress[]
   auditLogs     AuditLog[]
   statusChanges OrderStatusHistory[]
@@ -186,12 +189,14 @@ model Order {
   rejectionReason          String?
   cancellationReason       String?
   deliveryAddressId        String?
+  assignedRiderId          String?
   estimatedDeliveryMinutes Int              @default(45)
 
   createdAt                DateTime         @default(now())
   updatedAt                DateTime         @updatedAt
 
-  customer        User?                @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  customer        User?                @relation("CustomerOrders", fields: [customerId], references: [id], onDelete: SetNull)
+  assignedRider   User?                @relation("RiderDeliveries", fields: [assignedRiderId], references: [id], onDelete: SetNull)
   deliveryAddress DeliveryAddress?     @relation(fields: [deliveryAddressId], references: [id], onDelete: SetNull)
   items           OrderItem[]
   statusHistory   OrderStatusHistory[]
@@ -199,6 +204,7 @@ model Order {
 
   @@index([orderNumber])
   @@index([customerId])
+  @@index([assignedRiderId])
   @@index([fulfilmentStatus])
   @@index([paymentStatus])
   @@index([createdAt])
