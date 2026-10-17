@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { fontSerif, fontSans } from "./fonts";
+import { fontSerif, fontSans, fontDisplay } from "./fonts";
 import "./globals.css";
 import { CartProvider } from "@/context/CartContext";
 import { ToastProvider } from "@/context/ToastContext";
@@ -58,7 +58,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${fontSerif.variable} ${fontSans.variable} dark`}>
+    <html lang="en" className={`${fontSerif.variable} ${fontSans.variable} ${fontDisplay.variable} dark`}>
       <body className="min-h-screen bg-background text-foreground antialiased selection:bg-brand-red selection:text-white flex flex-col justify-between">
         <ToastProvider>
           <CartProvider>

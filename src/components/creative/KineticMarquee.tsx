@@ -27,7 +27,7 @@ export function KineticMarquee({
 }: KineticMarqueeProps) {
   const content = items.map((text, i) => (
     <span key={i} className="inline-flex items-center gap-6 px-4">
-      <span className="font-serif tracking-[0.25em] uppercase text-xs sm:text-sm font-medium text-gray-300 transition-colors group-hover:text-white">
+      <span className="font-display tracking-[0.22em] uppercase text-xs sm:text-sm font-bold text-gray-300 transition-colors group-hover:text-white">
         {text}
       </span>
       <span className="h-1.5 w-1.5 rounded-full bg-brand-red/80 flex-shrink-0" />
