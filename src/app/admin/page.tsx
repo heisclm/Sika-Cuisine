@@ -194,10 +194,10 @@ export default function AdminDashboardPage() {
           </div>
         </div>
 
-        <div className="mx-auto max-w-7xl flex items-center gap-2 mt-4 pt-2 border-t border-white/5">
+        <div className="mx-auto max-w-7xl flex items-center gap-1.5 sm:gap-2 mt-3 sm:mt-4 pt-2 border-t border-white/5 overflow-x-auto scrollbar-none -mx-4 px-4 sm:mx-0 sm:px-0">
           <button
             onClick={() => setActiveTab("orders")}
-            className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
+            className={`inline-flex items-center gap-1.5 sm:gap-2 px-3.5 sm:px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
               activeTab === "orders"
                 ? "bg-brand-red text-white shadow-glow"
                 : "text-gray-400 hover:text-white hover:bg-surface-200"
@@ -214,7 +214,7 @@ export default function AdminDashboardPage() {
 
           <button
             onClick={() => setActiveTab("menu")}
-            className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
+            className={`inline-flex items-center gap-1.5 sm:gap-2 px-3.5 sm:px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
               activeTab === "menu"
                 ? "bg-brand-red text-white shadow-glow"
                 : "text-gray-400 hover:text-white hover:bg-surface-200"
@@ -226,7 +226,7 @@ export default function AdminDashboardPage() {
 
           <button
             onClick={() => setActiveTab("analytics")}
-            className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
+            className={`inline-flex items-center gap-1.5 sm:gap-2 px-3.5 sm:px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
               activeTab === "analytics"
                 ? "bg-brand-red text-white shadow-glow"
                 : "text-gray-400 hover:text-white hover:bg-surface-200"
@@ -291,13 +291,13 @@ export default function AdminDashboardPage() {
               </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-              <div className="flex flex-wrap items-center gap-1.5 w-full sm:w-auto">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
+              <div className="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto -mx-4 px-4 sm:mx-0 sm:px-0 pb-1 sm:pb-0 scrollbar-none touch-pan-x">
                 {["ALL", "PENDING_CONFIRMATION", "PREPARING", "OUT_FOR_DELIVERY", "COMPLETED"].map((status) => (
                   <button
                     key={status}
                     onClick={() => setStatusFilter(status)}
-                    className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
+                    className={`rounded-lg px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition-all ${
                       statusFilter === status
                         ? "bg-surface-100 text-white border border-brand-red"
                         : "bg-surface-300 text-gray-400 hover:text-white border border-transparent"
@@ -315,7 +315,7 @@ export default function AdminDashboardPage() {
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Filter order number, name..."
-                  className="w-full rounded-xl bg-surface-200 border border-white/5 pl-9 pr-3 py-1.5 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-brand-red"
+                  className="w-full rounded-xl bg-surface-200 border border-white/5 pl-9 pr-3 py-2 sm:py-1.5 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-brand-red"
                 />
               </div>
             </div>
@@ -485,7 +485,54 @@ export default function AdminDashboardPage() {
               </div>
             </div>
 
-            <div className="rounded-2xl bg-[#14161f] border border-white/10 overflow-hidden shadow-2xl">
+            {/* Mobile Card List for phones */}
+            <div className="sm:hidden space-y-3">
+              {filteredMenuItems.map((item) => {
+                const inStock = menuItemsStock[item.id] !== false;
+
+                return (
+                  <div
+                    key={item.id}
+                    className="rounded-2xl bg-[#14161f] border border-white/10 p-4 flex items-center justify-between gap-3 shadow-md"
+                  >
+                    <div className="space-y-1">
+                      <h4 className="font-semibold text-white text-sm line-clamp-1">{item.name}</h4>
+                      <div className="flex items-center gap-2 text-xs text-gray-400">
+                        <span className="font-mono font-bold text-brand-gold">
+                          {formatPesewasToGhs(item.basePricePesewas)}
+                        </span>
+                        <span>&bull;</span>
+                        <span className="text-[11px]">{item.categoryName}</span>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => toggleStock(item.id)}
+                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all flex-shrink-0 ${
+                        inStock
+                          ? "bg-emerald-950/60 text-emerald-300 border border-emerald-800 hover:bg-emerald-900"
+                          : "bg-red-950/60 text-red-300 border border-red-800 hover:bg-red-900"
+                      }`}
+                    >
+                      {inStock ? (
+                        <>
+                          <Check className="h-3 w-3" />
+                          <span>In Stock</span>
+                        </>
+                      ) : (
+                        <>
+                          <XCircle className="h-3 w-3" />
+                          <span>Sold Out</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Desktop & Tablet Table */}
+            <div className="hidden sm:block rounded-2xl bg-[#14161f] border border-white/10 overflow-hidden shadow-2xl">
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
                   <thead className="bg-[#1a1d28] border-b border-white/10 text-gray-400 uppercase tracking-wider font-semibold">

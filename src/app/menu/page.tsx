@@ -10,6 +10,8 @@ import { DishDetailModal } from "@/components/menu/DishDetailModal";
 import { TiltCard } from "@/components/creative/TiltCard";
 import { MagneticButton } from "@/components/creative/MagneticButton";
 import { AmbientEmbers } from "@/components/creative/AmbientEmbers";
+import { SvgFlourish } from "@/components/creative/SvgFlourish";
+import { KineticMarquee } from "@/components/creative/KineticMarquee";
 
 export const SIKA_MENU_ITEMS: MenuItem[] = [
   {
@@ -742,23 +744,31 @@ export default function MenuPage() {
             </span>
             <span className="h-px w-6 bg-brand-red/60" />
           </div>
-          <h1 className="font-serif text-4xl sm:text-5xl font-black text-white">
-            Official Restaurant Menu
-          </h1>
+          <div className="relative inline-block">
+            <h1 className="font-serif text-3xl sm:text-5xl font-black text-white">
+              Official Restaurant Menu
+            </h1>
+            <div className="flex justify-center mt-2">
+              <SvgFlourish width={220} height={18} color="#e11d48" />
+            </div>
+          </div>
           <p className="mt-3 text-sm sm:text-base text-gray-300 max-w-xl mx-auto font-light">
             Every delicacy prepared fresh to order in Sunyani. Select your favorite packages, local dishes, seafood, or specials.
           </p>
         </div>
       </div>
 
+      {/* Locomotive Kinetic Marquee */}
+      <KineticMarquee className="border-b border-border-subtle/80 bg-[#0c0d12]/80 backdrop-blur-md" />
+
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-8">
         <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-10">
-          <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto pb-2 md:pb-0 scrollbar-none">
+          <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto -mx-4 px-4 sm:mx-0 sm:px-0 pb-2 md:pb-0 scrollbar-none touch-pan-x">
             {CATEGORIES.map((cat) => (
               <button
                 key={cat.id}
                 onClick={() => setSelectedCategory(cat.id)}
-                className={`whitespace-nowrap rounded-full px-5 py-2.5 text-xs sm:text-sm font-semibold transition-all ${
+                className={`whitespace-nowrap rounded-full px-4 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-semibold transition-all touch-manipulation ${
                   selectedCategory === cat.id
                     ? "bg-brand-red text-white shadow-glow"
                     : "bg-surface-200 text-gray-300 hover:bg-surface-100 hover:text-white border border-border-subtle"

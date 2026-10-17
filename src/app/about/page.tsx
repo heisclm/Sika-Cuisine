@@ -4,11 +4,13 @@ import { ShieldCheck, Heart, MapPin, ArrowRight, Flame } from "lucide-react";
 import { AmbientEmbers } from "@/components/creative/AmbientEmbers";
 import { BespokeSeal } from "@/components/creative/BespokeSeal";
 import { TiltCard } from "@/components/creative/TiltCard";
+import { SvgFlourish } from "@/components/creative/SvgFlourish";
+import { KineticMarquee } from "@/components/creative/KineticMarquee";
 
 export default function AboutPage() {
   return (
     <div className="min-h-screen bg-background pb-24 text-gray-200">
-      <div className="border-b border-border-subtle bg-surface-300 py-16 sm:py-24 text-center relative overflow-hidden">
+      <div className="border-b border-border-subtle bg-surface-300 py-14 sm:py-20 text-center relative overflow-hidden">
         <AmbientEmbers count={14} minSize={1} maxSize={2.5} opacity={0.35} />
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] bg-brand-red/5 blur-[120px] pointer-events-none -z-10" />
         <div className="mx-auto max-w-3xl px-4 relative z-10">
@@ -22,14 +24,22 @@ export default function AboutPage() {
             </span>
             <span className="h-px w-8 bg-brand-red/60" />
           </div>
-          <h1 className="font-serif text-4xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight">
-            The Sika Cuisine Story
-          </h1>
-          <p className="mt-4 text-base sm:text-lg text-gray-300 leading-relaxed font-light max-w-2xl mx-auto">
+          <div className="relative inline-block">
+            <h1 className="font-serif text-3xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight">
+              The Sika Cuisine Story
+            </h1>
+            <div className="flex justify-center mt-2">
+              <SvgFlourish width={240} height={18} color="#e11d48" />
+            </div>
+          </div>
+          <p className="mt-4 text-sm sm:text-lg text-gray-300 leading-relaxed font-light max-w-2xl mx-auto">
             Rooted in the rich agricultural heart of the Bono Region, Sika Cuisine is Sunyani&apos;s premier destination for authentic, slow-simmered Ghanaian gastronomy and vibrant lounge dining.
           </p>
         </div>
       </div>
+
+      {/* Locomotive Kinetic Marquee */}
+      <KineticMarquee speedSeconds={42} direction="right" className="border-b border-border-subtle/80 bg-[#0c0d12]/80 backdrop-blur-md" />
 
       <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 pt-16 space-y-16">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">

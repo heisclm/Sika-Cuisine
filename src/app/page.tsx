@@ -11,6 +11,9 @@ import { TiltCard } from "@/components/creative/TiltCard";
 import { MagneticButton } from "@/components/creative/MagneticButton";
 import { AmbientEmbers } from "@/components/creative/AmbientEmbers";
 import { BespokeSeal } from "@/components/creative/BespokeSeal";
+import { SvgFlourish } from "@/components/creative/SvgFlourish";
+import { SteamAroma } from "@/components/creative/SteamAroma";
+import { KineticMarquee } from "@/components/creative/KineticMarquee";
 
 const FEATURED_DISHES: MenuItem[] = [
   {
@@ -118,31 +121,35 @@ export default function HomePage() {
               <span className="text-gray-500 font-mono text-[10px]">07°20&apos;N, 02°20&apos;W</span>
             </div>
 
-            <h1 className="font-serif text-5xl sm:text-6xl md:text-7xl font-bold tracking-tight text-white leading-[1.06]">
+            <h1 className="font-serif text-4xl sm:text-6xl md:text-7xl font-bold tracking-tight text-white leading-[1.08]">
               It&apos;s not just <span className="text-white">Food</span>,{" "}
               <br className="hidden sm:inline" />
-              It&apos;s an <span className="text-brand-red italic font-normal">Experience.</span>
+              It&apos;s an{" "}
+              <span className="relative inline-block text-brand-red italic font-normal">
+                Experience.
+                <SvgFlourish className="absolute -bottom-2 sm:-bottom-3.5 left-0 w-full max-w-[240px] pointer-events-none" />
+              </span>
             </h1>
 
-            <p className="max-w-xl text-base sm:text-lg text-gray-300 leading-relaxed font-light">
+            <p className="max-w-xl text-sm sm:text-lg text-gray-300 leading-relaxed font-light">
               Sunyani&apos;s premier destination for authentic, slow-simmered Ghanaian gastronomy and vibrant lounge dining. Savor charcoal-grilled tilapia with banku, slow-simmered jollof with grilled chicken, pounded fufu with light soup, and stone-baked pizzas delivered piping hot across Sunyani.
             </p>
 
-            <div className="flex flex-wrap items-center gap-4 pt-2">
-              <MagneticButton strength={0.3}>
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 pt-2 w-full sm:w-auto">
+              <MagneticButton strength={0.3} className="w-full sm:w-auto">
                 <Link
                   href="/menu"
-                  className="btn-red-gradient inline-flex items-center gap-2.5 px-8 py-4 rounded-full text-base font-semibold text-white tracking-wide shadow-glow"
+                  className="btn-red-gradient flex w-full sm:w-auto items-center justify-center gap-2.5 px-7 sm:px-8 py-3.5 sm:py-4 rounded-full text-sm sm:text-base font-semibold text-white tracking-wide shadow-glow"
                 >
                   <span>View Full Menu</span>
                   <ArrowRight className="h-4 w-4" />
                 </Link>
               </MagneticButton>
 
-              <MagneticButton strength={0.2}>
+              <MagneticButton strength={0.2} className="w-full sm:w-auto">
                 <Link
                   href="/orders"
-                  className="inline-flex items-center gap-2 px-7 py-4 rounded-full text-base font-medium text-white bg-surface-100/80 hover:bg-surface-50 border border-white/10 transition-all duration-200"
+                  className="flex w-full sm:w-auto items-center justify-center gap-2 px-6 sm:px-7 py-3.5 sm:py-4 rounded-full text-sm sm:text-base font-medium text-white bg-surface-100/80 hover:bg-surface-50 border border-white/10 transition-all duration-200"
                 >
                   <Clock className="h-4 w-4 text-brand-red" />
                   <span>Track Active Order</span>
@@ -154,45 +161,48 @@ export default function HomePage() {
               <div className="flex -space-x-3 overflow-hidden">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  className="inline-block h-10 w-10 rounded-full ring-2 ring-background object-cover"
+                  className="inline-block h-9 w-9 sm:h-10 sm:w-10 rounded-full ring-2 ring-background object-cover"
                   src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80"
                   alt="Customer"
                 />
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  className="inline-block h-10 w-10 rounded-full ring-2 ring-background object-cover"
+                  className="inline-block h-9 w-9 sm:h-10 sm:w-10 rounded-full ring-2 ring-background object-cover"
                   src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80"
                   alt="Customer"
                 />
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  className="inline-block h-10 w-10 rounded-full ring-2 ring-background object-cover"
+                  className="inline-block h-9 w-9 sm:h-10 sm:w-10 rounded-full ring-2 ring-background object-cover"
                   src="https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=150&q=80"
                   alt="Customer"
                 />
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-surface-50 border border-border-subtle text-xs font-bold text-white">
+                <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-surface-50 border border-border-subtle text-xs font-bold text-white">
                   +500
                 </div>
               </div>
               <div className="flex flex-col">
                 <div className="flex items-center gap-1">
                   {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="h-4 w-4 fill-brand-gold text-brand-gold" />
+                    <Star key={i} className="h-3.5 w-3.5 sm:h-4 sm:w-4 fill-brand-gold text-brand-gold" />
                   ))}
                 </div>
-                <span className="text-xs text-gray-400 font-medium mt-0.5">
+                <span className="text-[11px] sm:text-xs text-gray-400 font-medium mt-0.5">
                   Over 500+ Satisfied Orders in Sunyani
                 </span>
               </div>
             </div>
           </div>
 
-          <div className="lg:col-span-5 relative flex items-center justify-center">
-            <div className="absolute h-80 w-80 sm:h-96 sm:w-96 rounded-full bg-gradient-to-tr from-brand-red/20 via-surface-100 to-transparent blur-2xl pointer-events-none" />
+          <div className="lg:col-span-5 relative flex items-center justify-center mt-6 lg:mt-0">
+            <div className="absolute h-64 w-64 sm:h-80 sm:w-80 lg:h-96 lg:w-96 rounded-full bg-gradient-to-tr from-brand-red/20 via-surface-100 to-transparent blur-2xl pointer-events-none" />
 
             <TiltCard maxAngle={12} scale={1.03} glare={true} className="rounded-full">
               <div className="relative group animate-plate-float">
-                <div className="h-72 w-72 sm:h-96 sm:w-96 rounded-full overflow-hidden border-4 border-surface-100/80 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.9)] relative">
+                {/* Cassie Evans Steam Aroma Animation */}
+                <SteamAroma className="-top-12 sm:-top-16" />
+
+                <div className="h-60 w-60 sm:h-80 sm:w-80 md:h-96 md:w-96 rounded-full overflow-hidden border-4 border-surface-100/80 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.9)] relative">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src="https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=1000&q=80"
@@ -201,25 +211,28 @@ export default function HomePage() {
                   />
                 </div>
 
-                <div className="absolute -bottom-4 -left-4 glass-panel rounded-2xl p-4 shadow-card flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-red/15 text-brand-red">
-                    <Flame className="h-5 w-5" />
+                <div className="absolute -bottom-3 -left-2 sm:-bottom-4 sm:-left-4 glass-panel rounded-2xl p-2.5 sm:p-4 shadow-card flex items-center gap-2 sm:gap-3 max-w-[210px] sm:max-w-none">
+                  <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-xl bg-brand-red/15 text-brand-red flex-shrink-0">
+                    <Flame className="h-4 w-4 sm:h-5 sm:w-5" />
                   </div>
                   <div>
-                    <p className="text-[11px] text-gray-400 font-medium">Chef&apos;s Signature</p>
-                    <p className="text-sm font-bold text-white">SIKA Special Combo (De Mixture)</p>
+                    <p className="text-[10px] sm:text-[11px] text-gray-400 font-medium">Chef&apos;s Signature</p>
+                    <p className="text-xs sm:text-sm font-bold text-white line-clamp-1 sm:line-clamp-none">SIKA Special Combo</p>
                   </div>
                 </div>
 
-                <div className="absolute -top-3 -right-3 glass-panel rounded-full px-4 py-2 shadow-card flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-brand-gold" />
-                  <span className="text-xs font-semibold text-white">25-40 Min Sunyani Delivery</span>
+                <div className="absolute -top-3 -right-2 sm:-right-3 glass-panel rounded-full px-3 sm:px-4 py-1.5 sm:py-2 shadow-card flex items-center gap-1.5 sm:gap-2">
+                  <Clock className="h-3.5 w-3.5 text-brand-gold" />
+                  <span className="text-[10px] sm:text-xs font-semibold text-white">25-40 Min Sunyani Delivery</span>
                 </div>
               </div>
             </TiltCard>
           </div>
         </div>
       </section>
+
+      {/* Locomotive Kinetic Marquee Ticker */}
+      <KineticMarquee className="border-y border-border-subtle/80 bg-[#0c0d12]/80 backdrop-blur-md" />
 
       <section className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-12 gap-4">
@@ -341,21 +354,21 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16 border-t border-border-subtle/60">
-        <div className="rounded-3xl bg-surface-300 border border-border-subtle p-8 sm:p-12 relative overflow-hidden shadow-card">
+      <section className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16 border-t border-border-subtle/60">
+        <div className="rounded-3xl bg-surface-300 border border-border-subtle p-5 sm:p-10 md:p-12 relative overflow-hidden shadow-card">
           <div className="max-w-2xl relative z-10">
-            <div className="text-[11px] font-semibold uppercase tracking-[0.25em] text-brand-red mb-3">
+            <div className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-[0.25em] text-brand-red mb-3">
               Fast & Reliable Sunyani Dispatch
             </div>
-            <h2 className="font-serif text-3xl sm:text-4xl font-bold text-white mb-4">
+            <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-3 sm:mb-4">
               Delivering Hot & Fresh Across Sunyani
             </h2>
-            <p className="text-gray-300 text-sm sm:text-base leading-relaxed mb-6 font-light">
+            <p className="text-gray-300 text-xs sm:text-sm md:text-base leading-relaxed mb-6 font-light">
               From Sunyani Central to UENR Campus in Fiapre, Berlin Top, Abesim, New Dormaa, and Penkwase.
               Our dedicated delivery team ensures your food arrives piping hot with real-time status updates.
             </p>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs font-medium text-gray-300">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3 text-[11px] sm:text-xs font-medium text-gray-300">
               <div className="rounded-xl bg-surface-100 p-2.5 border border-border-subtle flex items-center gap-2">
                 <span className="h-1.5 w-1.5 rounded-full bg-brand-red" />
                 Sunyani Central
