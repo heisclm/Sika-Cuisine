@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { formatPesewasToGhs } from "@/lib/currency";
 import { useCart } from "@/context/CartContext";
+import { formatGhanaPhone } from "@/lib/phone";
 
 interface OrderSummary {
   orderNumber: string;
@@ -178,9 +179,10 @@ export default function OrdersHubPage() {
                 <input
                   type="tel"
                   value={lookupPhone}
-                  onChange={(e) => setLookupPhone(e.target.value)}
-                  placeholder="0244123456"
-                  className="w-full rounded-xl bg-surface-200 border border-border-subtle px-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-brand-red"
+                  onChange={(e) => setLookupPhone(formatGhanaPhone(e.target.value))}
+                  placeholder="053 337 6760"
+                  maxLength={12}
+                  className="w-full rounded-xl bg-surface-200 border border-border-subtle px-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-brand-red font-mono"
                 />
               </div>
 

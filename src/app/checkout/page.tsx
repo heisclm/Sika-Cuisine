@@ -19,6 +19,7 @@ import { formatPesewasToGhs } from "@/lib/currency";
 import { SUNYANI_DELIVERY_ZONES, getZoneFeePesewas } from "@/lib/delivery-zones";
 import { createOrderAction } from "@/app/actions/order";
 import { FulfilmentType, PaymentMethod } from "@/types/order";
+import { formatGhanaPhone, isValidGhanaPhone } from "@/lib/phone";
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -49,6 +50,11 @@ export default function CheckoutPage() {
 
     if (items.length === 0) {
       setErrorMessage("Your cart is empty. Please add delicious dishes first!");
+      return;
+    }
+
+    if (!isValidGhanaPhone(phone)) {
+      setErrorMessage("Please enter a valid 10-digit Ghanaian mobile number (e.g. 053 337 6760) for courier dispatch.");
       return;
     }
 
@@ -223,9 +229,10 @@ export default function CheckoutPage() {
                     type="tel"
                     required
                     value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="0244123456"
-                    className="w-full rounded-xl bg-surface-200 border border-border-subtle p-3 text-sm text-white focus:outline-none focus:border-brand-red"
+                    onChange={(e) => setPhone(formatGhanaPhone(e.target.value))}
+                    placeholder="053 337 6760"
+                    maxLength={12}
+                    className="w-full rounded-xl bg-surface-200 border border-border-subtle p-3 text-sm text-white focus:outline-none focus:border-brand-red font-mono"
                   />
                 </div>
               </div>

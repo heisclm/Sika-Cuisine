@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Lock, Mail, User, Phone, MapPin, ArrowRight, AlertCircle, Loader2, CheckCircle2 } from "lucide-react";
 import { SUNYANI_DELIVERY_ZONES } from "@/lib/delivery-zones";
+import { formatGhanaPhone, isValidGhanaPhone } from "@/lib/phone";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -31,6 +32,11 @@ export default function RegisterPage() {
 
     if (password.length < 6) {
       setError("Password must be at least 6 characters long.");
+      return;
+    }
+
+    if (!isValidGhanaPhone(phone)) {
+      setError("Please enter a valid 10-digit Ghanaian mobile number (e.g. 053 337 6760).");
       return;
     }
 
@@ -114,9 +120,10 @@ export default function RegisterPage() {
                     type="tel"
                     required
                     value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="0244123456"
-                    className="w-full rounded-xl bg-surface-200 border border-border-subtle pl-10 pr-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-brand-red"
+                    onChange={(e) => setPhone(formatGhanaPhone(e.target.value))}
+                    placeholder="053 337 6760"
+                    maxLength={12}
+                    className="w-full rounded-xl bg-surface-200 border border-border-subtle pl-10 pr-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-brand-red font-mono"
                   />
                 </div>
               </div>

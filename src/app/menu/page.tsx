@@ -5,6 +5,7 @@ import { Search, Flame, ShoppingBag } from "lucide-react";
 import { MenuItem } from "@/types/menu";
 import { formatPesewasToGhs } from "@/lib/currency";
 import { useCart } from "@/context/CartContext";
+import { useToast } from "@/context/ToastContext";
 import { DishDetailModal } from "@/components/menu/DishDetailModal";
 import { TiltCard } from "@/components/creative/TiltCard";
 import { MagneticButton } from "@/components/creative/MagneticButton";
@@ -688,7 +689,8 @@ const CATEGORIES = [
 ];
 
 export default function MenuPage() {
-  const { addItem } = useCart();
+  const { addItem, setIsCartOpen } = useCart();
+  const { success } = useToast();
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [activeDishForModal, setActiveDishForModal] = useState<MenuItem | null>(null);
@@ -717,6 +719,14 @@ export default function MenuPage() {
     } else {
       const element = cardRefs.current[dish.id];
       addItem(dish, [], 1, undefined, element);
+      success(
+        `Added ${dish.name} to plate`,
+        "Prepared fresh to order in Sunyani",
+        {
+          label: "View Plate",
+          onClick: () => setIsCartOpen(true),
+        }
+      );
     }
   };
 

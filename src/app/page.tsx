@@ -4,6 +4,7 @@ import React, { useRef } from "react";
 import Link from "next/link";
 import { ArrowRight, Star, ShoppingBag, MapPin, Flame, Clock, Compass } from "lucide-react";
 import { useCart } from "@/context/CartContext";
+import { useToast } from "@/context/ToastContext";
 import { formatPesewasToGhs } from "@/lib/currency";
 import { MenuItem } from "@/types/menu";
 import { TiltCard } from "@/components/creative/TiltCard";
@@ -85,12 +86,21 @@ const MENU_HIGHLIGHT_CATEGORIES = [
 
 export default function HomePage() {
   const { addItem, setIsCartOpen } = useCart();
+  const { success } = useToast();
   const cardRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
 
   const handleQuickAdd = (dish: MenuItem, e: React.MouseEvent) => {
     e.stopPropagation();
     const element = cardRefs.current[dish.id];
     addItem(dish, [], 1, undefined, element);
+    success(
+      `Added ${dish.name} to plate`,
+      "Prepared fresh to order in Sunyani",
+      {
+        label: "View Plate",
+        onClick: () => setIsCartOpen(true),
+      }
+    );
   };
 
   return (
