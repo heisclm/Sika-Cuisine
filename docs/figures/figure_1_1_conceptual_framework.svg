@@ -1,0 +1,180 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1800 2350" width="100%" height="100%" style="background-color: #ffffff; font-family: Segoe UI, Arial, Helvetica, sans-serif;">
+
+    <defs>
+      <filter id="shadow" x="-5%" y="-5%" width="112%" height="112%">
+        <feDropShadow dx="2" dy="3" stdDeviation="3" flood-color="#64748b" flood-opacity="0.18"/>
+      </filter>
+      <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M 0 1 L 10 5 L 0 9 z" fill="#334155" />
+      </marker>
+      <marker id="arr-green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M 0 1 L 10 5 L 0 9 z" fill="#16a34a" />
+      </marker>
+      <marker id="arr-red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M 0 1 L 10 5 L 0 9 z" fill="#dc2626" />
+      </marker>
+      <marker id="arr-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M 0 1 L 10 5 L 0 9 z" fill="#2563eb" />
+      </marker>
+    </defs>
+    
+
+    <text x="900.0" y="52" font-size="32" font-weight="bold" fill="#0f172a" text-anchor="middle">SIKA CUISINE WEB ORDERING &amp; DELIVERY PLATFORM</text>
+    <text x="900.0" y="92" font-size="18" fill="#475569" text-anchor="middle">Figure 1.1: Conceptual Framework &amp; Server-Authoritative Architecture</text>
+    <line x1="60" y1="128" x2="1740" y2="128" stroke="#cbd5e1" stroke-width="2" />
+    
+<rect x="60" y="150" width="520" height="1620" rx="14" fill="#f8fafc" stroke="#bfdbfe" stroke-width="2" />
+<path d="M 60 164 A 14 14 0 0 1 74 150 L 566 150 A 14 14 0 0 1 580 164 L 580 204 L 60 204 Z" fill="#1e3a8a" />
+<text x="320.0" y="184" font-size="20" font-weight="bold" fill="#ffffff" text-anchor="middle">1. CLIENT LAYER (CUSTOMER)</text>
+<rect x="640" y="150" width="520" height="1620" rx="14" fill="#eff6ff" stroke="#93c5fd" stroke-width="2" />
+<path d="M 640 164 A 14 14 0 0 1 654 150 L 1146 150 A 14 14 0 0 1 1160 164 L 1160 204 L 640 204 Z" fill="#1d4ed8" />
+<text x="900.0" y="184" font-size="20" font-weight="bold" fill="#ffffff" text-anchor="middle">2. SERVER &amp; FINANCIAL CORE</text>
+<rect x="1220" y="150" width="520" height="1620" rx="14" fill="#f0fdf4" stroke="#86efac" stroke-width="2" />
+<path d="M 1220 164 A 14 14 0 0 1 1234 150 L 1726 150 A 14 14 0 0 1 1740 164 L 1740 204 L 1220 204 Z" fill="#15803d" />
+<text x="1480.0" y="184" font-size="20" font-weight="bold" fill="#ffffff" text-anchor="middle">3. KITCHEN &amp; FULFILMENT</text>
+<rect x="120.0" y="222.0" width="400" height="56" rx="28.0" fill="#f1f5f9" stroke="#475569" stroke-width="2" filter="url(#shadow)" />
+<text x="320" y="256" font-size="16" font-weight="bold" fill="#0f172a" text-anchor="middle">Start: Customer Visits Platform</text>
+<line x1="320" y1="278" x2="320" y2="347" stroke="#334155" stroke-width="3" marker-end="url(#arr)" />
+<rect x="100.0" y="347.5" width="440" height="85" rx="10" fill="#ffffff" stroke="#94a3b8" stroke-width="2" filter="url(#shadow)" />
+<text x="320" y="383.0" font-size="18" font-weight="bold" fill="#0f172a" text-anchor="middle">Browse Categorized Menu</text>
+<text x="320" y="407.0" font-size="14.5" fill="#475569" text-anchor="middle">Authentic Ghanaian dishes, soups, sides</text>
+<line x1="320" y1="432" x2="320" y2="497" stroke="#334155" stroke-width="3" marker-end="url(#arr)" />
+<rect x="100.0" y="497.5" width="440" height="85" rx="10" fill="#ffffff" stroke="#94a3b8" stroke-width="2" filter="url(#shadow)" />
+<text x="320" y="533.0" font-size="18" font-weight="bold" fill="#0f172a" text-anchor="middle">Customize Meal &amp; Options</text>
+<text x="320" y="557.0" font-size="14.5" fill="#475569" text-anchor="middle">Select proteins, starches, spice levels</text>
+<line x1="320" y1="582" x2="320" y2="647" stroke="#334155" stroke-width="3" marker-end="url(#arr)" />
+<rect x="100.0" y="647.5" width="440" height="85" rx="10" fill="#ffffff" stroke="#94a3b8" stroke-width="2" filter="url(#shadow)" />
+<text x="320" y="683.0" font-size="18" font-weight="bold" fill="#0f172a" text-anchor="middle">Select Sunyani Locality / Pickup</text>
+<text x="320" y="707.0" font-size="14.5" fill="#475569" text-anchor="middle">Fiapre, Berlin Top, Penkwase, etc.</text>
+<line x1="320" y1="732" x2="320" y2="797" stroke="#334155" stroke-width="3" marker-end="url(#arr)" />
+<rect x="100.0" y="797.5" width="440" height="85" rx="10" fill="#eef2ff" stroke="#6366f1" stroke-width="2" filter="url(#shadow)" />
+<text x="320" y="833.0" font-size="18" font-weight="bold" fill="#0f172a" text-anchor="middle">Submit Order Checkout</text>
+<text x="320" y="857.0" font-size="14.5" fill="#475569" text-anchor="middle">Transmits Item IDs &amp; Delivery Zone ID</text>
+<rect x="100.0" y="1145.0" width="440" height="150" rx="10" fill="#ffffff" stroke="#93c5fd" stroke-width="2" filter="url(#shadow)" />
+<text x="320" y="1180.0" font-size="18" font-weight="bold" fill="#0f172a" text-anchor="middle">Client Security Protocol</text>
+<text x="320" y="1204.0" font-size="14.5" fill="#475569" text-anchor="middle">Client prices are strictly untrusted</text>
+<text x="320" y="1226.0" font-size="14.5" fill="#475569" text-anchor="middle">JavaScript totals discarded at server</text>
+<text x="320" y="1248.0" font-size="14.5" fill="#475569" text-anchor="middle">Strict parameter sanitization &amp; typing</text>
+<text x="320" y="1270.0" font-size="14.5" fill="#475569" text-anchor="middle">CSRF &amp; XSS protection active</text>
+<path d="M 540.0 840 L 610 840 L 610 260 L 665 260" fill="none" stroke="#2563eb" stroke-width="3" marker-end="url(#arr-blue)" />
+<rect x="520" y="540" width="180" height="22" rx="4" fill="#ffffff" stroke="#93c5fd" stroke-width="1" />
+<text x="525" y="556" font-size="12" font-weight="bold" fill="#1d4ed8">POST /api/actions/order</text>
+<rect x="675.0" y="212.5" width="450" height="95" rx="10" fill="#fef2f2" stroke="#ef4444" stroke-width="2" filter="url(#shadow)" />
+<text x="900" y="242.0" font-size="18" font-weight="bold" fill="#0f172a" text-anchor="middle">Enforce Server Authority</text>
+<text x="900" y="266.0" font-size="14.5" fill="#475569" text-anchor="middle">100% Discard client-submitted totals</text>
+<text x="900" y="288.0" font-size="14.5" fill="#475569" text-anchor="middle">Query authoritative PostgreSQL prices</text>
+<line x1="900" y1="307" x2="900" y2="372" stroke="#334155" stroke-width="3" marker-end="url(#arr)" />
+<rect x="675.0" y="372.5" width="450" height="95" rx="10" fill="#ecfdf5" stroke="#10b981" stroke-width="2" filter="url(#shadow)" />
+<text x="900" y="402.0" font-size="18" font-weight="bold" fill="#0f172a" text-anchor="middle">Integer Pesewas Standard Calculation</text>
+<text x="900" y="426.0" font-size="14.5" fill="#475569" text-anchor="middle">1 GHS = 100 pesewas (Zero drift)</text>
+<text x="900" y="448.0" font-size="14.5" fill="#475569" text-anchor="middle">Write immutable snapshot to OrderItem</text>
+<line x1="900" y1="467" x2="900" y2="527" stroke="#334155" stroke-width="3" marker-end="url(#arr)" />
+<polygon points="900,527.5 1035.0,580 900,632.5 765.0,580" fill="#fffbeb" stroke="#d97706" stroke-width="2" filter="url(#shadow)" />
+<text x="900" y="575.0" font-size="15" font-weight="bold" fill="#78350f" text-anchor="middle">Selected</text>
+<text x="900" y="595.0" font-size="15" font-weight="bold" fill="#78350f" text-anchor="middle">Payment Channel?</text>
+<path d="M 765 580 L 790 580 L 790 707" fill="none" stroke="#334155" stroke-width="3" marker-end="url(#arr)" />
+<rect x="706" y="590" width="56" height="22" rx="4" fill="#ffffff" stroke="#cbd5e1" stroke-width="1" />
+<text x="710" y="606" font-size="13" font-weight="bold" fill="#334155">Online</text>
+<path d="M 1035 580 L 1020 580 L 1020 707" fill="none" stroke="#334155" stroke-width="3" marker-end="url(#arr)" />
+<rect x="1026" y="590" width="40" height="22" rx="4" fill="#ffffff" stroke="#cbd5e1" stroke-width="1" />
+<text x="1030" y="606" font-size="13" font-weight="bold" fill="#334155">Cash</text>
+<rect x="680.0" y="707.5" width="220" height="85" rx="10" fill="#ffffff" stroke="#94a3b8" stroke-width="2" filter="url(#shadow)" />
+<text x="790" y="732.0" font-size="18" font-weight="bold" fill="#0f172a" text-anchor="middle">Paystack Gateway</text>
+<text x="790" y="756.0" font-size="14.5" fill="#475569" text-anchor="middle">MoMo / Card</text>
+<text x="790" y="778.0" font-size="14.5" fill="#475569" text-anchor="middle">API Initialize</text>
+<rect x="925.0" y="707.5" width="190" height="85" rx="10" fill="#ffffff" stroke="#94a3b8" stroke-width="2" filter="url(#shadow)" />
+<text x="1020" y="732.0" font-size="18" font-weight="bold" fill="#0f172a" text-anchor="middle">Cash Handover</text>
+<text x="1020" y="756.0" font-size="14.5" fill="#475569" text-anchor="middle">Flagged as</text>
+<text x="1020" y="778.0" font-size="14.5" fill="#475569" text-anchor="middle">PENDING_CASH</text>
+<line x1="790" y1="792" x2="790" y2="867" stroke="#334155" stroke-width="3" marker-end="url(#arr)" />
+<polygon points="790,867.5 905.0,920 790,972.5 675.0,920" fill="#fffbeb" stroke="#d97706" stroke-width="2" filter="url(#shadow)" />
+<text x="790" y="915.0" font-size="15" font-weight="bold" fill="#78350f" text-anchor="middle">HMAC SHA512</text>
+<text x="790" y="935.0" font-size="15" font-weight="bold" fill="#78350f" text-anchor="middle">Signature Valid?</text>
+<line x1="790" y1="972" x2="790" y2="1060" stroke="#dc2626" stroke-width="3" marker-end="url(#arr-red)" />
+<rect x="798.0" y="1004.0" width="64" height="22" rx="4" fill="#ffffff" stroke="#cbd5e1" stroke-width="1" />
+<text x="802.0" y="1020.0" font-size="13" font-weight="bold" fill="#dc2626" text-anchor="start">Invalid</text>
+<rect x="685.0" y="1060.0" width="210" height="80" rx="10" fill="#fef2f2" stroke="#ef4444" stroke-width="2" filter="url(#shadow)" />
+<text x="790" y="1082.0" font-size="18" font-weight="bold" fill="#0f172a" text-anchor="middle">Reject &amp; Terminate</text>
+<text x="790" y="1106.0" font-size="14.5" fill="#475569" text-anchor="middle">Log security alert</text>
+<text x="790" y="1128.0" font-size="14.5" fill="#475569" text-anchor="middle">Abort order creation</text>
+<path d="M 675 920 L 670 920 L 670 1250 L 775 1250" fill="none" stroke="#16a34a" stroke-width="3" marker-end="url(#arr-green)" />
+<rect x="675" y="1075" width="46" height="22" rx="4" fill="#ffffff" stroke="#86efac" stroke-width="1" />
+<text x="680" y="1091" font-size="12" font-weight="bold" fill="#15803d">Valid</text>
+<rect x="680.0" y="1210.0" width="220" height="80" rx="10" fill="#ecfdf5" stroke="#10b981" stroke-width="2" filter="url(#shadow)" />
+<text x="790" y="1232.0" font-size="18" font-weight="bold" fill="#0f172a" text-anchor="middle">Update: PAID</text>
+<text x="790" y="1256.0" font-size="14.5" fill="#475569" text-anchor="middle">Confirmed in DB ledger</text>
+<text x="790" y="1278.0" font-size="14.5" fill="#475569" text-anchor="middle">Notify kitchen board</text>
+<path d="M 900 1250 L 1190 1250 L 1190 260 L 1245 260" fill="none" stroke="#16a34a" stroke-width="3" marker-end="url(#arr-green)" />
+<rect x="1135" y="740" width="105" height="22" rx="4" fill="#ffffff" stroke="#86efac" stroke-width="1" />
+<text x="1140" y="756" font-size="12" font-weight="bold" fill="#15803d">Cleared Order</text>
+<path d="M 1115 750 L 1190 750" fill="none" stroke="#334155" stroke-width="3" />
+<rect x="1260.0" y="212.5" width="440" height="95" rx="10" fill="#ffffff" stroke="#94a3b8" stroke-width="2" filter="url(#shadow)" />
+<text x="1480" y="242.0" font-size="18" font-weight="bold" fill="#0f172a" text-anchor="middle">Live Kitchen Display Board</text>
+<text x="1480" y="266.0" font-size="14.5" fill="#475569" text-anchor="middle">Incoming order queued in real-time</text>
+<text x="1480" y="288.0" font-size="14.5" fill="#475569" text-anchor="middle">Displays dish specifics &amp; spice levels</text>
+<line x1="1480" y1="307" x2="1480" y2="367" stroke="#334155" stroke-width="3" marker-end="url(#arr)" />
+<polygon points="1480,367.5 1615.0,420 1480,472.5 1345.0,420" fill="#fffbeb" stroke="#d97706" stroke-width="2" filter="url(#shadow)" />
+<text x="1480" y="415.0" font-size="15" font-weight="bold" fill="#78350f" text-anchor="middle">Kitchen Capacity</text>
+<text x="1480" y="435.0" font-size="15" font-weight="bold" fill="#78350f" text-anchor="middle">&amp; Stock Available?</text>
+<path d="M 1345 420 L 1375 420 L 1375 547" fill="none" stroke="#dc2626" stroke-width="3" marker-end="url(#arr-red)" />
+<rect x="1296" y="430" width="24" height="22" rx="4" fill="#ffffff" stroke="#cbd5e1" stroke-width="1" />
+<text x="1300" y="446" font-size="13" font-weight="bold" fill="#dc2626">No</text>
+<path d="M 1615 420 L 1590 420 L 1590 547" fill="none" stroke="#16a34a" stroke-width="3" marker-end="url(#arr-green)" />
+<rect x="1601" y="430" width="32" height="22" rx="4" fill="#ffffff" stroke="#cbd5e1" stroke-width="1" />
+<text x="1605" y="446" font-size="13" font-weight="bold" fill="#16a34a">Yes</text>
+<rect x="1270.0" y="547.5" width="210" height="85" rx="10" fill="#fef2f2" stroke="#ef4444" stroke-width="2" filter="url(#shadow)" />
+<text x="1375" y="572.0" font-size="18" font-weight="bold" fill="#0f172a" text-anchor="middle">Order REJECTED</text>
+<text x="1375" y="596.0" font-size="14.5" fill="#475569" text-anchor="middle">Reason recorded</text>
+<text x="1375" y="618.0" font-size="14.5" fill="#475569" text-anchor="middle">Auto-refund issued</text>
+<rect x="1275.0" y="716.0" width="200" height="48" rx="24.0" fill="#fef2f2" stroke="#dc2626" stroke-width="2" filter="url(#shadow)" />
+<text x="1375" y="746" font-size="16" font-weight="bold" fill="#0f172a" text-anchor="middle">Cancelled</text>
+<line x1="1375" y1="632" x2="1375" y2="716" stroke="#334155" stroke-width="3" marker-end="url(#arr)" />
+<rect x="1485.0" y="547.5" width="210" height="85" rx="10" fill="#ecfdf5" stroke="#10b981" stroke-width="2" filter="url(#shadow)" />
+<text x="1590" y="572.0" font-size="18" font-weight="bold" fill="#0f172a" text-anchor="middle">PREPARING MEAL</text>
+<text x="1590" y="596.0" font-size="14.5" fill="#475569" text-anchor="middle">Chefs cook dish</text>
+<text x="1590" y="618.0" font-size="14.5" fill="#475569" text-anchor="middle">Tamper-proof seal</text>
+<line x1="1590" y1="632" x2="1590" y2="722" stroke="#334155" stroke-width="3" marker-end="url(#arr)" />
+<polygon points="1590,722.5 1710.0,770 1590,817.5 1470.0,770" fill="#fffbeb" stroke="#d97706" stroke-width="2" filter="url(#shadow)" />
+<text x="1590" y="765.0" font-size="15" font-weight="bold" fill="#78350f" text-anchor="middle">Fulfilment</text>
+<text x="1590" y="785.0" font-size="15" font-weight="bold" fill="#78350f" text-anchor="middle">Channel?</text>
+<path d="M 1470 770 L 1375 770 L 1375 905" fill="none" stroke="#334155" stroke-width="3" marker-end="url(#arr)" />
+<rect x="1411" y="780" width="72" height="22" rx="4" fill="#ffffff" stroke="#cbd5e1" stroke-width="1" />
+<text x="1415" y="796" font-size="13" font-weight="bold" fill="#334155">Delivery</text>
+<line x1="1590" y1="817" x2="1595" y2="905" stroke="#334155" stroke-width="3" marker-end="url(#arr)" />
+<rect x="1600.5" y="849.0" width="72" height="22" rx="4" fill="#ffffff" stroke="#cbd5e1" stroke-width="1" />
+<text x="1604.5" y="865.0" font-size="13" font-weight="bold" fill="#334155" text-anchor="start">Takeaway</text>
+<rect x="1270.0" y="905.0" width="210" height="90" rx="10" fill="#ffffff" stroke="#94a3b8" stroke-width="2" filter="url(#shadow)" />
+<text x="1375" y="932.0" font-size="18" font-weight="bold" fill="#0f172a" text-anchor="middle">OUT_FOR_DELIVERY</text>
+<text x="1375" y="956.0" font-size="14.5" fill="#475569" text-anchor="middle">Courier dispatched</text>
+<text x="1375" y="978.0" font-size="14.5" fill="#475569" text-anchor="middle">to Sunyani locality</text>
+<rect x="1490.0" y="905.0" width="210" height="90" rx="10" fill="#ffffff" stroke="#94a3b8" stroke-width="2" filter="url(#shadow)" />
+<text x="1595" y="932.0" font-size="18" font-weight="bold" fill="#0f172a" text-anchor="middle">READY_COLLECTION</text>
+<text x="1595" y="956.0" font-size="14.5" fill="#475569" text-anchor="middle">Staged at counter</text>
+<text x="1595" y="978.0" font-size="14.5" fill="#475569" text-anchor="middle">Customer notified</text>
+<path d="M 1375 995 L 1375 1055 L 1380 1087" fill="none" stroke="#334155" stroke-width="3" marker-end="url(#arr)" />
+<path d="M 1595 995 L 1595 1055 L 1580 1087" fill="none" stroke="#334155" stroke-width="3" marker-end="url(#arr)" />
+<rect x="1260.0" y="1087.5" width="440" height="85" rx="10" fill="#ffffff" stroke="#94a3b8" stroke-width="2" filter="url(#shadow)" />
+<text x="1480" y="1123.0" font-size="18" font-weight="bold" fill="#0f172a" text-anchor="middle">Customer Handover &amp; Verification</text>
+<text x="1480" y="1147.0" font-size="14.5" fill="#475569" text-anchor="middle">Customer receives hot meal in Sunyani</text>
+<line x1="1480" y1="1172" x2="1480" y2="1242" stroke="#334155" stroke-width="3" marker-end="url(#arr)" />
+<rect x="1290.0" y="1242.0" width="380" height="56" rx="28.0" fill="#ecfdf5" stroke="#16a34a" stroke-width="2" filter="url(#shadow)" />
+<text x="1480" y="1276" font-size="16" font-weight="bold" fill="#0f172a" text-anchor="middle">COMPLETED (Ledger Settled)</text>
+<rect x="60" y="1800" width="1680" height="480" rx="14" fill="#ffffff" stroke="#cbd5e1" stroke-width="2" />
+<text x="90" y="1836" font-size="20" font-weight="bold" fill="#0f172a">COMPUTATIONAL &amp; ARCHITECTURAL HIGHLIGHTS (ACADEMIC SPECIFICATION)</text>
+<rect x="90" y="1860" width="490" height="32" rx="6" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1" />
+<text x="100" y="1882" font-size="15" font-weight="bold" fill="#1e3a8a">Zero Floating-Point Financial Precision:</text>
+<text x="95" y="1914" font-size="14" fill="#475569">All prices, delivery fees, and subtotals computed strictly as integer pesewas (1 GHS = 100 pesewas) to eliminate accumulated rounding drift.</text>
+<rect x="90" y="1940" width="490" height="32" rx="6" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1" />
+<text x="100" y="1962" font-size="15" font-weight="bold" fill="#1e3a8a">Server-Authoritative Pricing Model:</text>
+<text x="95" y="1994" font-size="14" fill="#475569">Client-submitted monetary amounts are strictly discarded at checkout. The server re-evaluates all values from PostgreSQL database snapshots.</text>
+<rect x="90" y="2020" width="490" height="32" rx="6" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1" />
+<text x="100" y="2042" font-size="15" font-weight="bold" fill="#1e3a8a">Cryptographically Verified Webhooks:</text>
+<text x="95" y="2074" font-size="14" fill="#475569">Paystack payment signals verified using HMAC SHA512 signatures with timing-safe string comparison, preventing payment spoofing.</text>
+<rect x="90" y="2100" width="490" height="32" rx="6" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1" />
+<text x="100" y="2122" font-size="15" font-weight="bold" fill="#1e3a8a">Sunyani Locality Delivery Matrix:</text>
+<text x="95" y="2154" font-size="14" fill="#475569">Pre-computed delivery tariffs for Sunyani Central, Fiapre (UENR/CUG), Berlin Top, Penkwase, Abesim, New Dormaa, and Airport Residential.</text>
+<rect x="90" y="2180" width="490" height="32" rx="6" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1" />
+<text x="100" y="2202" font-size="15" font-weight="bold" fill="#1e3a8a">Strict Fulfilment State Machine:</text>
+<text x="95" y="2234" font-size="14" fill="#475569">Rigid state transitions (PENDING_CONFIRMATION -> CONFIRMED -> PREPARING -> OUT_FOR_DELIVERY -> COMPLETED) preventing illegal jumps.</text>
+<text x="900.0" y="2325" font-size="15" font-style="italic" fill="#64748b" text-anchor="middle">* Catholic University of Ghana, Faculty of Computing, Engineering &amp; Mathematical Sciences (CEMS)</text>
+</svg>

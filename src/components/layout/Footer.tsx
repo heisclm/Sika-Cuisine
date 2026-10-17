@@ -34,7 +34,7 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/orders/track" className="hover:text-white transition-colors">
+                <Link href="/orders" className="hover:text-white transition-colors">
                   Track Delivery
                 </Link>
               </li>
@@ -49,8 +49,8 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/admin" className="text-gray-500 hover:text-gray-300 transition-colors">
-                  Staff Portal
+                <Link href="/admin/login" className="text-gray-500 hover:text-gray-300 transition-colors">
+                  Staff Terminal
                 </Link>
               </li>
             </ul>
@@ -114,8 +114,16 @@ export function Footer() {
         </div>
 
         <div className="border-t border-border-subtle/80 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-gray-500">
-          <div>
-            &copy; {new Date().getFullYear()} Sika Cuisine Restaurant. All rights reserved. Built for Sunyani, Ghana.
+          <div className="flex flex-wrap items-center gap-2">
+            <span>&copy; {new Date().getFullYear()} Sika Cuisine Restaurant. Built for Sunyani, Ghana.</span>
+            <span>&bull;</span>
+            <Link href="/terms" className="hover:text-gray-300 transition-colors">
+              Terms of Service
+            </Link>
+            <span>&bull;</span>
+            <Link href="/privacy" className="hover:text-gray-300 transition-colors">
+              Privacy Policy
+            </Link>
           </div>
           <div className="flex items-center gap-3">
             <span>Secured by Paystack:</span>

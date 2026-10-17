@@ -3,9 +3,9 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Lock, Mail, ArrowRight, ShieldCheck, AlertCircle, Loader2 } from "lucide-react";
+import { Lock, Mail, ArrowRight, AlertCircle, Loader2, UserPlus, Compass } from "lucide-react";
 
-export default function LoginPage() {
+export default function CustomerLoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -19,11 +19,7 @@ export default function LoginPage() {
 
     setTimeout(() => {
       setLoading(false);
-      if (email.includes("admin") || email.includes("staff")) {
-        router.push("/admin");
-      } else {
-        router.push("/menu");
-      }
+      router.push("/menu");
     }, 600);
   };
 
@@ -36,11 +32,11 @@ export default function LoginPage() {
               Sika Cuisine<span className="text-brand-red ml-0.5">.</span>
             </span>
           </Link>
-          <h2 className="mt-4 font-serif text-xl font-bold text-white">
-            Welcome Back
+          <h2 className="mt-4 font-serif text-2xl font-bold text-white">
+            Welcome Back, Diner
           </h2>
           <p className="mt-1 text-xs text-gray-400">
-            Sign in to track orders, access your order history, or manage kitchen operations.
+            Sign in to track orders, reorder your favorite Sunyani dishes, and access saved delivery addresses.
           </p>
         </div>
 
@@ -63,16 +59,24 @@ export default function LoginPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="name@example.com"
+                placeholder="kwame@example.com"
                 className="w-full rounded-xl bg-surface-200 border border-border-subtle pl-10 pr-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-brand-red"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5">
-              Password
-            </label>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400">
+                Password
+              </label>
+              <Link
+                href="/forgot-password"
+                className="text-xs text-brand-red hover:underline font-medium"
+              >
+                Forgot password?
+              </Link>
+            </div>
             <div className="relative">
               <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
               <input
@@ -95,27 +99,43 @@ export default function LoginPage() {
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
               <>
-                <span>Sign In</span>
+                <span>Sign In to Account</span>
                 <ArrowRight className="h-4 w-4" />
               </>
             )}
           </button>
         </form>
 
-        <div className="rounded-2xl bg-surface-200 p-4 border border-border-subtle/70 text-xs text-gray-400 space-y-1.5">
-          <p className="font-semibold text-white flex items-center gap-1.5">
-            <ShieldCheck className="h-4 w-4 text-brand-red" />
-            Demo Accounts for Sunyani:
+        <div className="pt-2 text-center space-y-4">
+          <p className="text-xs text-gray-400">
+            Don&apos;t have an account yet?{" "}
+            <Link
+              href="/register"
+              className="font-semibold text-brand-red hover:underline inline-flex items-center gap-1"
+            >
+              <UserPlus className="h-3 w-3 inline" />
+              <span>Create an Account</span>
+            </Link>
           </p>
-          <p>
-            <strong className="text-gray-300">Staff Portal:</strong> staff@sikacuisine.com
-          </p>
-          <p>
-            <strong className="text-gray-300">Admin Portal:</strong> admin@sikacuisine.com
-          </p>
-          <p>
-            <strong className="text-gray-300">Customer:</strong> customer@sikacuisine.com
-          </p>
+
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-border-subtle/80" />
+            </div>
+            <div className="relative flex justify-center text-xs">
+              <span className="bg-surface-300 px-3 text-gray-500 uppercase tracking-widest text-[10px]">
+                or
+              </span>
+            </div>
+          </div>
+
+          <Link
+            href="/orders"
+            className="inline-flex items-center justify-center gap-2 text-xs font-semibold text-gray-300 hover:text-white bg-surface-200/80 hover:bg-surface-100 border border-border-subtle px-4 py-2.5 rounded-full w-full transition-colors"
+          >
+            <Compass className="h-3.5 w-3.5 text-brand-red" />
+            <span>Track Existing Order as Guest</span>
+          </Link>
         </div>
       </div>
     </div>
