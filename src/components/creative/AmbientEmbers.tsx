@@ -17,9 +17,15 @@ interface Ember {
 export function AmbientEmbers({
   className = "",
   count = 28,
+  minSize = 0.8,
+  maxSize = 3.0,
+  opacity = 0.5,
 }: {
   className?: string;
   count?: number;
+  minSize?: number;
+  maxSize?: number;
+  opacity?: number;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -49,16 +55,17 @@ export function AmbientEmbers({
       "217, 119, 6",  // Amber Embers
     ];
 
+    const opacityScale = opacity / 0.5;
     const embers: Ember[] = Array.from({ length: count }, () => {
       const color = colors[Math.floor(Math.random() * colors.length)];
       return {
         x: Math.random() * canvas.width,
         y: canvas.height + Math.random() * 40,
-        size: Math.random() * 2.2 + 0.8,
+        size: Math.random() * (maxSize - minSize) + minSize,
         speedY: Math.random() * 0.45 + 0.25,
         speedX: (Math.random() - 0.5) * 0.35,
-        opacity: Math.random() * 0.6 + 0.1,
-        maxOpacity: Math.random() * 0.5 + 0.3,
+        opacity: (Math.random() * 0.6 + 0.1) * opacityScale,
+        maxOpacity: (Math.random() * 0.5 + 0.3) * opacityScale,
         fadeSpeed: Math.random() * 0.003 + 0.001,
         color,
       };
@@ -103,7 +110,7 @@ export function AmbientEmbers({
       observer.disconnect();
       cancelAnimationFrame(animationFrameId);
     };
-  }, [count]);
+  }, [count, minSize, maxSize, opacity]);
 
   return (
     <canvas

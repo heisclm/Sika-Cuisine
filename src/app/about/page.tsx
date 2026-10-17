@@ -1,13 +1,20 @@
 import React from "react";
 import Link from "next/link";
-import { ShieldCheck, Heart, Utensils, MapPin, ArrowRight, Flame } from "lucide-react";
+import { ShieldCheck, Heart, MapPin, ArrowRight, Flame } from "lucide-react";
+import { AmbientEmbers } from "@/components/creative/AmbientEmbers";
+import { BespokeSeal } from "@/components/creative/BespokeSeal";
+import { TiltCard } from "@/components/creative/TiltCard";
 
 export default function AboutPage() {
   return (
     <div className="min-h-screen bg-background pb-24 text-gray-200">
       <div className="border-b border-border-subtle bg-surface-300 py-16 sm:py-24 text-center relative overflow-hidden">
+        <AmbientEmbers count={14} minSize={1} maxSize={2.5} opacity={0.35} />
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] bg-brand-red/5 blur-[120px] pointer-events-none -z-10" />
-        <div className="mx-auto max-w-3xl px-4">
+        <div className="mx-auto max-w-3xl px-4 relative z-10">
+          <div className="flex justify-center mb-6">
+            <BespokeSeal size={76} />
+          </div>
           <div className="inline-flex items-center gap-2.5 mb-3">
             <span className="h-px w-8 bg-brand-red/60" />
             <span className="text-[11px] font-semibold uppercase tracking-[0.25em] text-brand-red">
@@ -26,35 +33,41 @@ export default function AboutPage() {
 
       <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 pt-16 space-y-16">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div className="rounded-3xl bg-surface-300/90 border border-border-subtle p-8 text-center space-y-3.5 hover:border-brand-red/40 transition-colors shadow-card">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-red/10 text-brand-red mx-auto">
-              <Flame className="h-7 w-7" />
+          <TiltCard maxAngle={6} scale={1.02} glare={false} className="rounded-3xl">
+            <div className="h-full rounded-3xl bg-surface-300/90 border border-border-subtle p-8 text-center space-y-3.5 hover:border-brand-red/40 transition-colors shadow-card">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-red/10 text-brand-red mx-auto">
+                <Flame className="h-7 w-7" />
+              </div>
+              <h3 className="font-serif text-xl font-bold text-white">Charcoal Grill & Woodsmoke</h3>
+              <p className="text-xs text-gray-400 leading-relaxed font-light">
+                From our signature charcoal-grilled whole tilapia with chilli to succulent spiced chicken packages, our dishes are kissed with natural embers and woodsmoke aromatics.
+              </p>
             </div>
-            <h3 className="font-serif text-xl font-bold text-white">Charcoal Grill & Woodsmoke</h3>
-            <p className="text-xs text-gray-400 leading-relaxed">
-              From our signature charcoal-grilled whole tilapia with chilli to succulent spiced chicken packages, our dishes are kissed with natural embers and woodsmoke aromatics.
-            </p>
-          </div>
+          </TiltCard>
 
-          <div className="rounded-3xl bg-surface-300/90 border border-border-subtle p-8 text-center space-y-3.5 hover:border-brand-red/40 transition-colors shadow-card">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-950/60 text-emerald-400 mx-auto">
-              <ShieldCheck className="h-7 w-7" />
+          <TiltCard maxAngle={6} scale={1.02} glare={false} className="rounded-3xl">
+            <div className="h-full rounded-3xl bg-surface-300/90 border border-border-subtle p-8 text-center space-y-3.5 hover:border-brand-red/40 transition-colors shadow-card">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-950/60 text-emerald-400 mx-auto">
+                <ShieldCheck className="h-7 w-7" />
+              </div>
+              <h3 className="font-serif text-xl font-bold text-white">Uncompromising Hygiene</h3>
+              <p className="text-xs text-gray-400 leading-relaxed font-light">
+                Every cut of beef, fresh tilapia, farm chicken, and local vegetable is inspected daily. We uphold rigorous food safety and immaculate kitchen standards across every station.
+              </p>
             </div>
-            <h3 className="font-serif text-xl font-bold text-white">Uncompromising Hygiene</h3>
-            <p className="text-xs text-gray-400 leading-relaxed">
-              Every cut of beef, fresh tilapia, farm chicken, and local vegetable is inspected daily. We uphold rigorous food safety and immaculate kitchen standards across every station.
-            </p>
-          </div>
+          </TiltCard>
 
-          <div className="rounded-3xl bg-surface-300/90 border border-border-subtle p-8 text-center space-y-3.5 hover:border-brand-red/40 transition-colors shadow-card">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-gold/10 text-brand-gold mx-auto">
-              <Heart className="h-7 w-7" />
+          <TiltCard maxAngle={6} scale={1.02} glare={false} className="rounded-3xl">
+            <div className="h-full rounded-3xl bg-surface-300/90 border border-border-subtle p-8 text-center space-y-3.5 hover:border-brand-red/40 transition-colors shadow-card">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-gold/10 text-brand-gold mx-auto">
+                <Heart className="h-7 w-7" />
+              </div>
+              <h3 className="font-serif text-xl font-bold text-white">Local Sunyani Pride</h3>
+              <p className="text-xs text-gray-400 leading-relaxed font-light">
+                We proudly celebrate Sunyani&apos;s culinary identity. Our couriers provide fast direct dispatch from Fiapre and UENR Campus to Berlin Top, Kotokrom, and Sunyani Central.
+              </p>
             </div>
-            <h3 className="font-serif text-xl font-bold text-white">Local Sunyani Pride</h3>
-            <p className="text-xs text-gray-400 leading-relaxed">
-              We proudly celebrate Sunyani&apos;s culinary identity. Our couriers provide fast direct dispatch from Fiapre and UENR Campus to Berlin Top, Kotokrom, and Sunyani Central.
-            </p>
-          </div>
+          </TiltCard>
         </div>
 
         <div className="rounded-3xl bg-surface-300/90 border border-border-subtle p-8 sm:p-12 grid grid-cols-1 md:grid-cols-2 gap-10 items-center shadow-card">

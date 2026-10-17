@@ -6,6 +6,9 @@ import { MenuItem } from "@/types/menu";
 import { formatPesewasToGhs } from "@/lib/currency";
 import { useCart } from "@/context/CartContext";
 import { DishDetailModal } from "@/components/menu/DishDetailModal";
+import { TiltCard } from "@/components/creative/TiltCard";
+import { MagneticButton } from "@/components/creative/MagneticButton";
+import { AmbientEmbers } from "@/components/creative/AmbientEmbers";
 
 export const SIKA_MENU_ITEMS: MenuItem[] = [
   {
@@ -719,7 +722,8 @@ export default function MenuPage() {
 
   return (
     <div className="min-h-screen bg-background pb-24">
-      <div className="relative border-b border-border-subtle bg-surface-300 py-14 sm:py-20">
+      <div className="relative border-b border-border-subtle bg-surface-300 py-14 sm:py-20 overflow-hidden">
+        <AmbientEmbers count={12} minSize={1} maxSize={2.5} opacity={0.35} />
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center relative z-10">
           <div className="inline-flex items-center gap-2.5 mb-3">
             <span className="h-px w-6 bg-brand-red/60" />
@@ -777,59 +781,68 @@ export default function MenuPage() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 pt-6">
             {filteredDishes.map((dish) => (
-              <div
+              <TiltCard
                 key={dish.id}
-                ref={(el) => {
-                  cardRefs.current[dish.id] = el;
-                }}
-                onClick={() => handleCardClick(dish)}
-                className="group relative cursor-pointer rounded-3xl bg-surface-200/90 border border-border-subtle p-5 pt-16 transition-all duration-300 hover:-translate-y-2 hover:border-brand-red/40 hover:shadow-card flex flex-col justify-between"
+                maxAngle={7}
+                scale={1.02}
+                glare={true}
+                className="rounded-3xl"
               >
-                <div className="absolute -top-12 left-1/2 -translate-x-1/2 h-28 w-28 rounded-full overflow-hidden border-2 border-surface-50 shadow-plate group-hover:scale-105 transition-transform duration-300">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={dish.imageUrl}
-                    alt={dish.name}
-                    className="h-full w-full object-cover"
-                  />
-                </div>
-
-                <div className="mt-4 text-center">
-                  <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">
-                    {dish.categoryName}
-                  </span>
-                  <h3 className="font-serif text-lg font-bold text-white mt-1 group-hover:text-brand-red transition-colors line-clamp-1">
-                    {dish.name}
-                  </h3>
-                  <p className="text-xs text-gray-400 mt-2 line-clamp-2 leading-relaxed">
-                    {dish.description}
-                  </p>
-
-                  {dish.spiceLevel && dish.spiceLevel > 0 ? (
-                    <div className="mt-2 flex items-center justify-center gap-1 text-[11px] text-brand-red">
-                      <Flame className="h-3 w-3" />
-                      <span>Spice {dish.spiceLevel}/3</span>
-                    </div>
-                  ) : null}
-                </div>
-
-                <div className="mt-6 pt-4 border-t border-border-subtle/60 flex items-center justify-between">
-                  <div>
-                    <span className="text-xs text-gray-400 block -mb-0.5">Price</span>
-                    <span className="text-base font-bold text-brand-red">
-                      {formatPesewasToGhs(dish.basePricePesewas)}
-                    </span>
+                <div
+                  ref={(el) => {
+                    cardRefs.current[dish.id] = el;
+                  }}
+                  onClick={() => handleCardClick(dish)}
+                  className="group relative h-full cursor-pointer rounded-3xl bg-surface-200/90 border border-border-subtle p-5 pt-16 transition-all duration-300 hover:border-brand-red/40 hover:shadow-card flex flex-col justify-between"
+                >
+                  <div className="absolute -top-12 left-1/2 -translate-x-1/2 h-28 w-28 rounded-full overflow-hidden border-2 border-surface-50 shadow-plate group-hover:scale-105 transition-transform duration-300">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={dish.imageUrl}
+                      alt={dish.name}
+                      className="h-full w-full object-cover"
+                    />
                   </div>
 
-                  <button
-                    onClick={(e) => handleQuickAdd(dish, e)}
-                    className="flex h-11 w-11 items-center justify-center rounded-full bg-brand-red text-white shadow-glow hover:bg-brand-red-hover hover:scale-110 active:scale-95 transition-all duration-200"
-                    aria-label={`Order ${dish.name}`}
-                  >
-                    <ShoppingBag className="h-5 w-5" />
-                  </button>
+                  <div className="mt-4 text-center">
+                    <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">
+                      {dish.categoryName}
+                    </span>
+                    <h3 className="font-serif text-lg font-bold text-white mt-1 group-hover:text-brand-red transition-colors line-clamp-1">
+                      {dish.name}
+                    </h3>
+                    <p className="text-xs text-gray-400 mt-2 line-clamp-2 leading-relaxed font-light">
+                      {dish.description}
+                    </p>
+
+                    {dish.spiceLevel && dish.spiceLevel > 0 ? (
+                      <div className="mt-2 flex items-center justify-center gap-1 text-[11px] text-brand-red">
+                        <Flame className="h-3 w-3" />
+                        <span>Spice {dish.spiceLevel}/3</span>
+                      </div>
+                    ) : null}
+                  </div>
+
+                  <div className="mt-6 pt-4 border-t border-border-subtle/60 flex items-center justify-between">
+                    <div>
+                      <span className="text-xs text-gray-400 block -mb-0.5">Authoritative Price</span>
+                      <span className="text-base font-bold text-brand-red font-mono">
+                        {formatPesewasToGhs(dish.basePricePesewas)}
+                      </span>
+                    </div>
+
+                    <MagneticButton strength={0.25}>
+                      <button
+                        onClick={(e) => handleQuickAdd(dish, e)}
+                        className="flex h-11 w-11 items-center justify-center rounded-full bg-brand-red text-white shadow-glow hover:bg-brand-red-hover hover:scale-105 active:scale-95 transition-all duration-200"
+                        aria-label={`Order ${dish.name}`}
+                      >
+                        <ShoppingBag className="h-5 w-5" />
+                      </button>
+                    </MagneticButton>
+                  </div>
                 </div>
-              </div>
+              </TiltCard>
             ))}
           </div>
         )}

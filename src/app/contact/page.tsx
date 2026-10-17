@@ -2,6 +2,9 @@
 
 import React, { useState } from "react";
 import { MapPin, Phone, Mail, Clock, Send, CheckCircle2 } from "lucide-react";
+import { AmbientEmbers } from "@/components/creative/AmbientEmbers";
+import { TiltCard } from "@/components/creative/TiltCard";
+import { MagneticButton } from "@/components/creative/MagneticButton";
 
 export default function ContactPage() {
   const [submitted, setSubmitted] = useState(false);
@@ -13,11 +16,16 @@ export default function ContactPage() {
 
   return (
     <div className="min-h-screen bg-background pb-24">
-      <div className="border-b border-border-subtle bg-surface-300 py-16 sm:py-20 text-center">
-        <div className="mx-auto max-w-3xl px-4">
-          <span className="text-xs font-bold uppercase tracking-widest text-brand-red mb-2 block">
-            We Are Here In Sunyani
-          </span>
+      <div className="border-b border-border-subtle bg-surface-300 py-16 sm:py-20 text-center relative overflow-hidden">
+        <AmbientEmbers count={12} minSize={1} maxSize={2.5} opacity={0.35} />
+        <div className="mx-auto max-w-3xl px-4 relative z-10">
+          <div className="inline-flex items-center gap-2.5 mb-3">
+            <span className="h-px w-6 bg-brand-red/60" />
+            <span className="text-[11px] font-semibold uppercase tracking-[0.25em] text-brand-red">
+              Sunyani Central &bull; Bono Region
+            </span>
+            <span className="h-px w-6 bg-brand-red/60" />
+          </div>
           <h1 className="font-serif text-4xl sm:text-5xl font-black text-white">
             Connect With Sika Cuisine
           </h1>
@@ -30,59 +38,61 @@ export default function ContactPage() {
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 pt-12">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
           <div className="lg:col-span-5 space-y-6">
-            <div className="rounded-3xl bg-surface-300 border border-border-subtle p-6 space-y-6">
-              <h2 className="font-serif text-xl font-bold text-white border-b border-border-subtle pb-3">
-                Sunyani Kitchen Details
-              </h2>
+            <TiltCard maxAngle={6} scale={1.01} glare={true} className="rounded-3xl">
+              <div className="h-full rounded-3xl bg-surface-300 border border-border-subtle p-6 space-y-6 shadow-card">
+                <h2 className="font-serif text-xl font-bold text-white border-b border-border-subtle pb-3">
+                  Sunyani Kitchen Details
+                </h2>
 
-              <div className="space-y-5 text-sm">
-                <div className="flex items-start gap-3.5">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-red/10 text-brand-red flex-shrink-0">
-                    <MapPin className="h-5 w-5" />
+                <div className="space-y-5 text-sm">
+                  <div className="flex items-start gap-3.5">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-red/10 text-brand-red flex-shrink-0">
+                      <MapPin className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-white">Physical Address</h4>
+                      <p className="text-gray-400 text-xs mt-0.5">
+                        Commercial Road, Sunyani Central, Bono Region, Ghana
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <h4 className="font-semibold text-white">Physical Address</h4>
-                    <p className="text-gray-400 text-xs mt-0.5">
-                      Commercial Road, Sunyani Central, Bono Region, Ghana
-                    </p>
-                  </div>
-                </div>
 
-                <div className="flex items-start gap-3.5">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-red/10 text-brand-red flex-shrink-0">
-                    <Phone className="h-5 w-5" />
+                  <div className="flex items-start gap-3.5">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-red/10 text-brand-red flex-shrink-0">
+                      <Phone className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-white">Call / WhatsApp</h4>
+                      <p className="text-gray-300 text-xs mt-0.5 font-medium">0533376760 / 0554406681</p>
+                      <p className="text-gray-400 text-[11px] mt-0.5">Social: @sikacuisine.restaurant</p>
+                    </div>
                   </div>
-                  <div>
-                    <h4 className="font-semibold text-white">Call / WhatsApp</h4>
-                    <p className="text-gray-300 text-xs mt-0.5 font-medium">0533376760 / 0554406681</p>
-                    <p className="text-gray-400 text-[11px] mt-0.5">Social: @sikacuisine.restaurant</p>
-                  </div>
-                </div>
 
-                <div className="flex items-start gap-3.5">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-red/10 text-brand-red flex-shrink-0">
-                    <Mail className="h-5 w-5" />
+                  <div className="flex items-start gap-3.5">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-red/10 text-brand-red flex-shrink-0">
+                      <Mail className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-white">Direct Email</h4>
+                      <p className="text-gray-400 text-xs mt-0.5">orders@sikacuisine.com</p>
+                    </div>
                   </div>
-                  <div>
-                    <h4 className="font-semibold text-white">Direct Email</h4>
-                    <p className="text-gray-400 text-xs mt-0.5">orders@sikacuisine.com</p>
-                  </div>
-                </div>
 
-                <div className="flex items-start gap-3.5">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-red/10 text-brand-red flex-shrink-0">
-                    <Clock className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-white">Operating Hours</h4>
-                    <p className="text-gray-400 text-xs mt-0.5">
-                      Mon — Sat: 10:00 AM – 10:00 PM<br />
-                      Sunday: 12:00 PM – 9:00 PM
-                    </p>
+                  <div className="flex items-start gap-3.5">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-red/10 text-brand-red flex-shrink-0">
+                      <Clock className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-white">Operating Hours</h4>
+                      <p className="text-gray-400 text-xs mt-0.5">
+                        Mon — Sat: 10:00 AM – 10:00 PM<br />
+                        Sunday: 12:00 PM – 9:00 PM
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
+            </TiltCard>
           </div>
 
           <div className="lg:col-span-7">
@@ -154,13 +164,15 @@ export default function ContactPage() {
                     />
                   </div>
 
-                  <button
-                    type="submit"
-                    className="btn-red-gradient inline-flex items-center gap-2 px-8 py-3.5 rounded-full text-sm font-semibold text-white shadow-glow"
-                  >
-                    <Send className="h-4 w-4" />
-                    <span>Send Inquiry</span>
-                  </button>
+                  <MagneticButton strength={0.2}>
+                    <button
+                      type="submit"
+                      className="btn-red-gradient inline-flex items-center gap-2 px-8 py-3.5 rounded-full text-sm font-semibold text-white shadow-glow"
+                    >
+                      <Send className="h-4 w-4" />
+                      <span>Send Inquiry</span>
+                    </button>
+                  </MagneticButton>
                 </form>
               )}
             </div>
