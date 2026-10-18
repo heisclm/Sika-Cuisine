@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ShoppingBag, MapPin, Menu, X, User } from "lucide-react";
 import { useCart } from "@/context/CartContext";
+import { MobileMenu } from "./MobileMenu";
 
 export function Navbar() {
   const pathname = usePathname();
@@ -103,34 +104,12 @@ export function Navbar() {
         </div>
       </div>
 
-      {mobileMenuOpen && (
-        <div className="md:hidden border-b border-border-subtle bg-surface-300 px-4 pt-3 pb-6 space-y-3">
-          {navLinks.map((link) => (
-            <Link
-              key={link.name}
-              href={link.href}
-              onClick={() => setMobileMenuOpen(false)}
-              className={`block px-3 py-2 rounded-xl text-base font-medium ${
-                isActive(link.href)
-                  ? "bg-brand-red/10 text-brand-red font-semibold"
-                  : "text-gray-300 hover:bg-surface-100 hover:text-white"
-              }`}
-            >
-              {link.name}
-            </Link>
-          ))}
-          <div className="pt-2">
-            <Link
-              href="/login"
-              onClick={() => setMobileMenuOpen(false)}
-              className="btn-red-gradient flex w-full items-center justify-center gap-2 py-3 rounded-full text-sm font-semibold text-white"
-            >
-              <User className="h-4 w-4" />
-              Sign In / Account
-            </Link>
-          </div>
-        </div>
-      )}
+      {/* Cassie Evans & Locomotive Full-Screen Cinematic Mobile Menu */}
+      <MobileMenu
+        isOpen={mobileMenuOpen}
+        onClose={() => setMobileMenuOpen(false)}
+        pathname={pathname}
+      />
     </header>
   );
 }
