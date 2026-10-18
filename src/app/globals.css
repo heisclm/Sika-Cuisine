@@ -48,6 +48,35 @@ body {
   background: #323542;
 }
 
+/* Locomotive mobile menu slide-up animations */
+@keyframes menu-slide-in {
+  0% {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-menu-slide {
+  animation: menu-slide-in 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes menu-fade-overlay {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.animate-menu-overlay {
+  animation: menu-fade-overlay 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
 /* Atmospheric ambient radial glow for culinary showcase */
 .ambient-glow {
   background: radial-gradient(circle at 50% 30%, rgba(225, 29, 72, 0.14) 0%, rgba(9, 10, 13, 0) 70%);

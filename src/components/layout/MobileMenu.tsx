@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import {
   X,
@@ -57,30 +58,25 @@ const MENU_ITEMS = [
 ];
 
 export function MobileMenu({ isOpen, onClose, pathname }: MobileMenuProps) {
-  // Lock body scroll when mobile menu is active
+  const [mounted, setMounted] = useState(false);
+
   useEffect(() => {
-    if (isOpen) {
-      const scrollY = window.scrollY;
-      document.body.style.position = "fixed";
-      document.body.style.top = `-${scrollY}px`;
-      document.body.style.width = "100%";
-      document.body.style.overflow = "hidden";
-    } else {
-      const scrollY = document.body.style.top;
-      document.body.style.position = "";
-      document.body.style.top = "";
-      document.body.style.width = "";
-      document.body.style.overflow = "";
-      if (scrollY) {
-        window.scrollTo(0, parseInt(scrollY || "0") * -1);
-      }
-    }
+    setMounted(true);
+  }, []);
+
+  // Lock body scroll cleanly when mobile menu is active
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const originalHtmlOverflow = document.documentElement.style.overflow;
+    const originalBodyOverflow = document.body.style.overflow;
+
+    document.documentElement.style.overflow = "hidden";
+    document.body.style.overflow = "hidden";
 
     return () => {
-      document.body.style.position = "";
-      document.body.style.top = "";
-      document.body.style.width = "";
-      document.body.style.overflow = "";
+      document.documentElement.style.overflow = originalHtmlOverflow;
+      document.body.style.overflow = originalBodyOverflow;
     };
   }, [isOpen]);
 
@@ -95,29 +91,31 @@ export function MobileMenu({ isOpen, onClose, pathname }: MobileMenuProps) {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, onClose]);
 
-  if (!isOpen) return null;
+  // If not mounted on client or menu is closed, render nothing
+  if (!mounted || !isOpen) return null;
 
   const isActive = (href: string) => {
     if (href === "/" && pathname !== "/") return false;
     return pathname === href || (href !== "/" && pathname.startsWith(href));
   };
 
-  return (
+  // Render via createPortal directly into document.body to escape header containing block
+  return createPortal(
     <div
       role="dialog"
       aria-modal="true"
       aria-label="Navigation Menu"
-      className="fixed inset-0 z-50 flex flex-col justify-between bg-[#07080a]/98 backdrop-blur-2xl text-white overflow-y-auto animate-mobile-menu-fade"
+      className="fixed inset-0 z-[99999] w-full h-[100dvh] bg-[#07080a] text-white flex flex-col justify-between overflow-y-auto overscroll-contain animate-menu-overlay"
     >
-      {/* Cassie Evans subtle ambient steam vapor in top background */}
-      <SteamAroma className="top-4 left-1/2 -translate-x-1/2 opacity-25" />
+      {/* Cassie Evans subtle rising steam vapor in background */}
+      <SteamAroma className="top-4 left-1/2 -translate-x-1/2 opacity-20 pointer-events-none" />
 
       {/* Atmospheric luxury glows */}
       <div className="absolute top-0 right-0 w-[350px] h-[350px] bg-brand-red/[0.08] blur-[120px] pointer-events-none -z-10" />
       <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-brand-gold/[0.05] blur-[100px] pointer-events-none -z-10" />
 
       {/* TOP HEADER BAR */}
-      <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-white/[0.08]">
+      <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-white/[0.08] bg-[#07080a] sticky top-0 z-10">
         <Link href="/" onClick={onClose} className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-[#2a0e13] via-[#1a080b] to-[#0c0406] border border-brand-red/40 font-serif font-black text-lg shadow-[0_4px_16px_rgba(225,29,72,0.25)]">
             <span className="tracking-tight text-white">S</span>
@@ -128,50 +126,48 @@ export function MobileMenu({ isOpen, onClose, pathname }: MobileMenuProps) {
               Sika Cuisine<span className="text-brand-red ml-0.5">.</span>
             </span>
             <span className="text-[9px] tracking-[0.2em] uppercase font-semibold text-gray-400 mt-1 flex items-center gap-1 font-mono">
-              <MapPin className="h-2.5 w-2.5 text-brand-red" /> 07°20&apos;N, 02°20&apos;W
+              <MapPin className="h-2.5 w-2.5 text-brand-red" /> Sunyani &bull; 07°20&apos;N, 02°20&apos;W
             </span>
           </div>
         </Link>
 
         <button
           onClick={onClose}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface-100 hover:bg-surface-50 border border-white/10 text-xs font-semibold text-gray-300 hover:text-white transition-all active:scale-95"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface-100 hover:bg-surface-50 border border-white/10 text-xs font-semibold text-gray-300 hover:text-white transition-all active:scale-95 shadow-md"
           aria-label="Close menu"
         >
-          <span className="text-[11px] uppercase tracking-wider">Close</span>
-          <X className="h-4 w-4 text-brand-red" />
+          <span className="text-[11px] uppercase tracking-wider font-bold">Close</span>
+          <X className="h-4 w-4 text-brand-red stroke-[2.5]" />
         </button>
       </div>
 
       {/* EDITORIAL NAVIGATION LINKS (Locomotive typography + Cassie Evans flourish) */}
-      <div className="flex-1 px-6 py-8 flex flex-col justify-center max-w-md mx-auto w-full space-y-6">
-        <div className="text-[10px] font-mono uppercase tracking-[0.3em] text-brand-red/80 flex items-center gap-2">
-          <span className="h-px w-4 bg-brand-red/60" />
+      <div className="flex-1 px-6 py-6 flex flex-col justify-center max-w-md mx-auto w-full space-y-5">
+        <div className="text-[10px] font-mono uppercase tracking-[0.25em] text-brand-red flex items-center gap-2">
+          <span className="h-px w-5 bg-brand-red/60" />
           <span>Curated Gastronomy Experience</span>
         </div>
 
-        <nav className="space-y-4">
+        <nav className="space-y-3">
           {MENU_ITEMS.map((item, idx) => {
             const active = isActive(item.href);
 
             return (
               <div
                 key={item.name}
-                className="group relative"
+                className="group relative animate-menu-slide"
                 style={{
-                  animation: `menuSlideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) ${idx * 0.06}s forwards`,
-                  opacity: 0,
-                  transform: "translateY(16px)",
+                  animationDelay: `${idx * 0.05}s`,
                 }}
               >
                 <Link
                   href={item.href}
                   onClick={onClose}
-                  className="block py-1 transition-all duration-200"
+                  className="block py-1.5 transition-all duration-200"
                 >
                   <div className="flex items-baseline justify-between">
                     <div className="flex items-baseline gap-3">
-                      <span className="font-mono text-xs text-brand-red/70 font-semibold tracking-wider">
+                      <span className="font-mono text-xs text-brand-red font-semibold tracking-wider">
                         {item.index}
                       </span>
                       <span
@@ -200,7 +196,7 @@ export function MobileMenu({ isOpen, onClose, pathname }: MobileMenuProps) {
 
                   {/* Cassie Evans organic stroke flourish for active link */}
                   {active && (
-                    <div className="pl-7 mt-1.5">
+                    <div className="pl-7 mt-1">
                       <SvgFlourish width={160} height={12} color="#e11d48" />
                     </div>
                   )}
@@ -211,7 +207,7 @@ export function MobileMenu({ isOpen, onClose, pathname }: MobileMenuProps) {
         </nav>
 
         {/* PRIMARY AUTH ACTION BUTTON */}
-        <div className="pt-3">
+        <div className="pt-2">
           <Link
             href="/login"
             onClick={onClose}
@@ -224,7 +220,7 @@ export function MobileMenu({ isOpen, onClose, pathname }: MobileMenuProps) {
       </div>
 
       {/* LOCOMOTIVE FOOTER UTILITY STRIP */}
-      <div className="px-5 pt-4 pb-6 border-t border-white/[0.08] bg-[#0c0d12]/90 space-y-4">
+      <div className="px-5 pt-4 pb-6 border-t border-white/[0.08] bg-[#0c0d12]/95 space-y-3.5">
         {/* Quick-dial Sunyani dispatch hotline & WhatsApp */}
         <div className="grid grid-cols-2 gap-2 text-xs">
           <a
@@ -250,7 +246,7 @@ export function MobileMenu({ isOpen, onClose, pathname }: MobileMenuProps) {
         <div className="flex items-center justify-between text-[11px] text-gray-400 pt-1">
           <div className="flex items-center gap-1.5">
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="text-gray-300">Kitchen Open &bull; Sunyani Central</span>
+            <span className="text-gray-300 font-medium">Kitchen Open &bull; Sunyani Central</span>
           </div>
 
           <div className="flex items-center gap-3">
@@ -272,30 +268,7 @@ export function MobileMenu({ isOpen, onClose, pathname }: MobileMenuProps) {
           </div>
         </div>
       </div>
-
-      <style jsx>{`
-        @keyframes menuSlideUp {
-          from {
-            opacity: 0;
-            transform: translateY(20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        .animate-mobile-menu-fade {
-          animation: menuFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
-        @keyframes menuFadeIn {
-          from {
-            opacity: 0;
-          }
-          to {
-            opacity: 1;
-          }
-        }
-      `}</style>
-    </div>
+    </div>,
+    document.body
   );
 }
