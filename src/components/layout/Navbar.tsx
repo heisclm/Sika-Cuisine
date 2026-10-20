@@ -34,9 +34,11 @@ export function Navbar() {
     { name: "Contact", href: "/contact" },
   ];
 
-  const isActive = (path: string) => {
-    if (path === "/" && pathname !== "/") return false;
-    return pathname.startsWith(path);
+  const isRouteActive = (href: string) => {
+    if (href === "/") {
+      return pathname === "/";
+    }
+    return pathname === href || pathname.startsWith(`${href}/`);
   };
 
   return (
@@ -58,19 +60,25 @@ export function Navbar() {
 
         {/* Desktop Navigation Links - reserved for lg+ viewports to prevent tablet collision */}
         <nav className="hidden lg:flex items-center gap-6 xl:gap-8">
-          {navLinks.map((link) => (
-            <Link
-              key={link.name}
-              href={link.href}
-              className={`text-sm font-medium transition-all duration-200 hover:text-white whitespace-nowrap relative py-1 ${
-                isActive(link.href)
-                  ? "text-white font-semibold after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-full after:bg-brand-red after:rounded-full"
-                  : "text-gray-300 hover:-translate-y-0.5"
-              }`}
-            >
-              {link.name}
-            </Link>
-          ))}
+          {navLinks.map((link) => {
+            const active = isRouteActive(link.href);
+            return (
+              <Link
+                key={link.name}
+                href={link.href}
+                className={`text-sm font-medium transition-all duration-200 whitespace-nowrap relative py-1.5 ${
+                  active
+                    ? "text-white font-semibold"
+                    : "text-gray-300 hover:text-white hover:-translate-y-0.5"
+                }`}
+              >
+                <span>{link.name}</span>
+                {active && (
+                  <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-brand-red rounded-full shadow-[0_0_8px_rgba(229,9,20,0.7)] animate-scale-in" />
+                )}
+              </Link>
+            );
+          })}
         </nav>
 
         {/* Header Right Actions */}

@@ -9,8 +9,7 @@ import {
   Phone,
   MessageCircle,
   User,
-  ArrowRight,
-  ShieldCheck,
+  ChevronRight,
 } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
 
@@ -20,38 +19,21 @@ interface MobileMenuProps {
   pathname: string;
 }
 
-const MENU_ITEMS = [
-  {
-    index: "01",
-    name: "Home",
-    href: "/",
-    desc: "Sunyani Bono Gastronomy & Direct Dispatch",
-  },
-  {
-    index: "02",
-    name: "Menu",
-    href: "/menu",
-    desc: "36 Authentic Delicacies & Charcoal Specialties",
-  },
-  {
-    index: "03",
-    name: "Track Order",
-    href: "/orders",
-    desc: "Track Courier Route Across Sunyani",
-  },
-  {
-    index: "04",
-    name: "About Us",
-    href: "/about",
-    desc: "Culinary Heritage & Woodsmoke Craft",
-  },
-  {
-    index: "05",
-    name: "Contact",
-    href: "/contact",
-    desc: "Commercial Road Sunyani & Reservations",
-  },
+// Exactly matching desktop navigation 100%
+const NAV_LINKS = [
+  { name: "Home", href: "/" },
+  { name: "Menu", href: "/menu" },
+  { name: "Track Order", href: "/orders" },
+  { name: "About Us", href: "/about" },
+  { name: "Contact", href: "/contact" },
 ];
+
+function isRouteActive(href: string, pathname: string): boolean {
+  if (href === "/") {
+    return pathname === "/";
+  }
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
 
 export function MobileMenu({ isOpen, onClose, pathname }: MobileMenuProps) {
   const [mounted, setMounted] = useState(false);
@@ -90,23 +72,18 @@ export function MobileMenu({ isOpen, onClose, pathname }: MobileMenuProps) {
   // If not mounted on client or menu is closed, render nothing
   if (!mounted || !isOpen) return null;
 
-  const isActive = (href: string) => {
-    if (href === "/" && pathname !== "/") return false;
-    return pathname === href || (href !== "/" && pathname.startsWith(href));
-  };
-
   return createPortal(
     <div
       role="dialog"
       aria-modal="true"
       aria-label="Navigation Menu"
-      className="fixed inset-0 z-[99999] w-full h-[100dvh] bg-[#141518] text-white flex flex-col justify-between overflow-y-auto overscroll-contain animate-menu-overlay"
+      className="fixed inset-0 z-[99999] w-full h-[100dvh] bg-[#0c0d10]/92 backdrop-blur-2xl text-white flex flex-col justify-between overflow-y-auto overscroll-contain animate-menu-overlay select-none"
     >
-      {/* Studio Matte Overhead Vignette (Zero Shiny Red Glare) */}
-      <div className="absolute top-0 left-0 right-0 h-[450px] pointer-events-none -z-10 bg-[radial-gradient(ellipse_90%_60%_at_50%_0%,#24262b_0%,#141518_75%)]" />
+      {/* Ambient Matte Top Glow */}
+      <div className="absolute top-0 left-0 right-0 h-[380px] pointer-events-none -z-10 bg-[radial-gradient(ellipse_90%_50%_at_50%_0%,#1f2128_0%,transparent_80%)]" />
 
-      {/* TOP HEADER BAR */}
-      <div className="flex items-center justify-between px-5 sm:px-8 pt-4 pb-4 border-b border-white/[0.06] bg-[#141518]/95 backdrop-blur-md sticky top-0 z-20">
+      {/* TOP HEADER BAR (Apple Frosted Glass Header) */}
+      <div className="flex items-center justify-between px-5 sm:px-8 h-18 sm:h-20 border-b border-white/[0.08] bg-[#0c0d10]/90 backdrop-blur-xl sticky top-0 z-20">
         <Link href="/" onClick={onClose} className="flex items-center gap-2.5 shrink-0">
           <Logo size={40} className="shadow-sm" />
           <div className="select-none">
@@ -119,81 +96,79 @@ export function MobileMenu({ isOpen, onClose, pathname }: MobileMenuProps) {
           </div>
         </Link>
 
-        {/* Clean Pill Close Button */}
+        {/* Apple-Style Minimalist Circular Close Button */}
         <button
           onClick={onClose}
-          className="flex items-center gap-2 px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-full bg-[#1c1d22] hover:bg-[#25272e] border border-white/10 text-xs font-semibold text-gray-200 hover:text-white transition-all active:scale-95 shadow-sm"
+          className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 hover:bg-white/20 active:scale-95 transition-all text-white border border-white/10 shadow-sm"
           aria-label="Close menu"
         >
-          <span className="text-[11px] uppercase tracking-wider font-bold">Close</span>
-          <div className="flex h-5 w-5 items-center justify-center rounded-full bg-brand-red/20 text-brand-red">
-            <X className="h-3.5 w-3.5 stroke-[2.5]" />
-          </div>
+          <X className="h-5 w-5" />
         </button>
       </div>
 
-      {/* EDITORIAL NAVIGATION LINKS */}
-      <div className="flex-1 px-6 sm:px-8 py-8 flex flex-col justify-center max-w-lg mx-auto w-full space-y-6">
-        <div className="text-[10px] font-mono uppercase tracking-[0.25em] text-brand-red flex items-center gap-2">
-          <span className="h-px w-5 bg-brand-red/60" />
-          <span>Curated Sunyani Gastronomy</span>
-        </div>
-
-        <nav className="space-y-2">
-          {MENU_ITEMS.map((item, idx) => {
-            const active = isActive(item.href);
+      {/* NAVIGATION LINKS (100% Matching Desktop with Apple Touch) */}
+      <div className="flex-1 px-6 sm:px-8 py-8 flex flex-col justify-center max-w-lg mx-auto w-full">
+        <nav className="divide-y divide-white/[0.08] border-y border-white/[0.08]">
+          {NAV_LINKS.map((link, idx) => {
+            const active = isRouteActive(link.href, pathname);
 
             return (
               <div
-                key={item.name}
-                className="group relative animate-menu-slide"
+                key={link.name}
+                className="animate-menu-slide"
                 style={{
                   animationDelay: `${idx * 0.04}s`,
                 }}
               >
                 <Link
-                  href={item.href}
+                  href={link.href}
                   onClick={onClose}
-                  className={`block py-2.5 px-3 rounded-2xl transition-all duration-200 ${
-                    active
-                      ? "bg-[#1c1d22] border-l-4 border-brand-red text-white"
-                      : "hover:bg-[#1a1b20] text-gray-300 hover:text-white"
+                  className={`flex items-center justify-between py-4 sm:py-5 px-1 sm:px-2 transition-all duration-200 group active:opacity-75 ${
+                    active ? "text-white" : "text-gray-400 hover:text-white"
                   }`}
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <span className="font-mono text-xs text-brand-red font-semibold">
-                        {item.index}
-                      </span>
-                      <span
-                        className={`font-serif text-2xl sm:text-3xl font-bold tracking-tight ${
-                          active ? "text-white" : "text-gray-200 group-hover:text-white"
-                        }`}
-                      >
-                        {item.name}
-                      </span>
-                    </div>
+                  <div className="flex items-center gap-3">
+                    {/* Active State Glowing Red Dot (Apple/Studio touch) */}
+                    <span
+                      className={`h-2 w-2 rounded-full transition-all duration-300 ${
+                        active
+                          ? "bg-brand-red shadow-[0_0_10px_rgba(229,9,20,0.95)] scale-100"
+                          : "bg-transparent scale-0"
+                      }`}
+                    />
+                    <span
+                      className={`text-2xl sm:text-3xl tracking-tight transition-transform duration-200 group-hover:translate-x-1 ${
+                        active
+                          ? "font-bold text-white"
+                          : "font-normal text-gray-300 group-hover:text-white"
+                      }`}
+                    >
+                      {link.name}
+                    </span>
+                  </div>
 
-                    <ArrowRight
-                      className={`h-4 w-4 transition-transform duration-200 ${
+                  <div className="flex items-center gap-2">
+                    {active && (
+                      <span className="text-[10px] font-mono uppercase tracking-wider font-semibold text-brand-red bg-brand-red/10 border border-brand-red/30 px-2 py-0.5 rounded-full">
+                        Active
+                      </span>
+                    )}
+                    <ChevronRight
+                      className={`h-5 w-5 transition-transform duration-200 ${
                         active
                           ? "text-brand-red translate-x-0"
-                          : "text-gray-500 opacity-0 group-hover:opacity-100 group-hover:translate-x-0 group-hover:text-white"
+                          : "text-gray-600 opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 group-hover:text-white"
                       }`}
                     />
                   </div>
-
-                  <p className="text-xs text-gray-400 font-light mt-1 pl-7">
-                    {item.desc}
-                  </p>
                 </Link>
               </div>
             );
           })}
         </nav>
 
-        {/* PRIMARY AUTH ACTION BUTTON */}
-        <div className="pt-2">
+        {/* Primary Auth Action Button (Matching Desktop Sign In) */}
+        <div className="pt-8">
           <Link
             href="/login"
             onClick={onClose}
@@ -205,13 +180,12 @@ export function MobileMenu({ isOpen, onClose, pathname }: MobileMenuProps) {
         </div>
       </div>
 
-      {/* FOOTER UTILITY STRIP */}
-      <div className="px-5 pt-4 pb-6 border-t border-white/[0.06] bg-[#111215] space-y-3">
-        {/* Quick-dial Sunyani dispatch hotline & WhatsApp */}
+      {/* APPLE-STYLE FROSTED BOTTOM UTILITY BAR */}
+      <div className="px-6 sm:px-8 py-5 border-t border-white/[0.08] bg-[#0c0d10]/95 space-y-3 max-w-lg mx-auto w-full">
         <div className="grid grid-cols-2 gap-2 text-xs">
           <a
             href="tel:+233533376760"
-            className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-[#1a1b20] hover:bg-[#22242a] border border-white/5 text-gray-200 hover:text-white font-mono text-[11px] transition-colors"
+            className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-2xl bg-white/[0.05] hover:bg-white/[0.09] border border-white/[0.08] text-gray-200 hover:text-white font-mono text-[11px] transition-all"
           >
             <Phone className="h-3.5 w-3.5 text-brand-red" />
             <span>0533376760</span>
@@ -221,7 +195,7 @@ export function MobileMenu({ isOpen, onClose, pathname }: MobileMenuProps) {
             href="https://wa.me/233533376760?text=Hello%20Sika%20Cuisine,%20I%20want%20to%20order%20food"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-emerald-950/60 hover:bg-emerald-900/60 border border-emerald-800/60 text-emerald-300 font-semibold text-[11px] transition-colors"
+            className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-2xl bg-emerald-950/40 hover:bg-emerald-900/40 border border-emerald-800/40 text-emerald-300 font-semibold text-[11px] transition-all"
           >
             <MessageCircle className="h-3.5 w-3.5 text-emerald-400" />
             <span>WhatsApp Kitchen</span>
@@ -235,7 +209,7 @@ export function MobileMenu({ isOpen, onClose, pathname }: MobileMenuProps) {
             <span className="text-gray-300 font-medium">Kitchen Ready for Orders</span>
           </div>
 
-          <span className="text-gray-400 font-mono text-[10px]">
+          <span className="text-gray-500 font-mono text-[10px]">
             Commercial Rd, Sunyani
           </span>
         </div>
