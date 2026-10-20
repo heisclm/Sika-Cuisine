@@ -828,70 +828,77 @@ export default function MenuPage() {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 pt-6">
-            {filteredDishes.map((dish) => (
-              <TiltCard
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-6 sm:gap-x-8 gap-y-16 sm:gap-y-20 pt-16 sm:pt-20">
+            {filteredDishes.map((dish, idx) => (
+              <div
                 key={dish.id}
-                maxAngle={7}
-                scale={1.02}
-                glare={true}
-                className="rounded-3xl"
+                className="animate-dish-fade-up"
+                style={{ animationDelay: `${Math.min(idx % 12, 8) * 0.04}s` }}
               >
-                <div
-                  ref={(el) => {
-                    cardRefs.current[dish.id] = el;
-                  }}
-                  onClick={() => handleCardClick(dish)}
-                  className="group relative h-full cursor-pointer rounded-3xl bg-surface-200/90 border border-border-subtle p-5 pt-16 transition-all duration-300 hover:border-brand-red/40 hover:shadow-card flex flex-col justify-between"
+                <TiltCard
+                  maxAngle={7}
+                  scale={1.02}
+                  glare={true}
+                  className="rounded-3xl h-full"
                 >
-                  <div className="absolute -top-12 left-1/2 -translate-x-1/2 h-28 w-28 rounded-full overflow-hidden border-2 border-surface-50 shadow-plate group-hover:scale-105 transition-transform duration-300">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={dish.imageUrl}
-                      alt={dish.name}
-                      className="h-full w-full object-cover"
-                    />
-                  </div>
-
-                  <div className="mt-4 text-center">
-                    <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">
-                      {dish.categoryName}
-                    </span>
-                    <h3 className="font-serif text-lg font-bold text-white mt-1 group-hover:text-brand-red transition-colors line-clamp-1">
-                      {dish.name}
-                    </h3>
-                    <p className="text-xs text-gray-400 mt-2 line-clamp-2 leading-relaxed font-light">
-                      {dish.description}
-                    </p>
-
-                    {dish.spiceLevel && dish.spiceLevel > 0 ? (
-                      <div className="mt-2 flex items-center justify-center gap-1 text-[11px] text-brand-red">
-                        <Flame className="h-3 w-3" />
-                        <span>Spice {dish.spiceLevel}/3</span>
-                      </div>
-                    ) : null}
-                  </div>
-
-                  <div className="mt-6 pt-4 border-t border-border-subtle/60 flex items-center justify-between">
-                    <div>
-                      <span className="text-xs text-gray-400 block -mb-0.5">Authoritative Price</span>
-                      <span className="text-base font-bold text-brand-red font-mono">
-                        {formatPesewasToGhs(dish.basePricePesewas)}
-                      </span>
+                  <div
+                    ref={(el) => {
+                      cardRefs.current[dish.id] = el;
+                    }}
+                    onClick={() => handleCardClick(dish)}
+                    className="group relative h-full cursor-pointer rounded-3xl bg-surface-200/90 border border-border-subtle p-5 pt-16 transition-all duration-300 hover:border-brand-red/40 hover:shadow-card flex flex-col justify-between"
+                  >
+                    <div className="absolute -top-12 left-1/2 -translate-x-1/2 h-28 w-28 rounded-full overflow-hidden border-2 border-surface-50 shadow-plate group-hover:scale-105 group-hover:rotate-[2deg] transition-transform duration-500 ease-out">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={dish.imageUrl}
+                        alt={dish.name}
+                        className="h-full w-full object-cover"
+                      />
                     </div>
 
-                    <MagneticButton strength={0.25}>
-                      <button
-                        onClick={(e) => handleQuickAdd(dish, e)}
-                        className="flex h-11 w-11 items-center justify-center rounded-full bg-brand-red text-white shadow-[0_4px_14px_rgba(229,9,20,0.35)] hover:bg-brand-red-hover hover:scale-105 active:scale-95 transition-all duration-200"
-                        aria-label={`Add ${dish.name} to order tray`}
-                      >
-                        <RestaurantClocheIcon className="h-5 w-5" />
-                      </button>
-                    </MagneticButton>
+                    <div className="mt-4 text-center">
+                      <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">
+                        {dish.categoryName}
+                      </span>
+                      <h3 className="font-serif text-lg font-bold text-white mt-1 group-hover:text-brand-red transition-colors line-clamp-1">
+                        {dish.name}
+                      </h3>
+                      <p className="text-xs text-gray-400 mt-2 line-clamp-2 leading-relaxed font-light">
+                        {dish.description}
+                      </p>
+
+                      {dish.spiceLevel && dish.spiceLevel > 0 ? (
+                        <div className="mt-2 flex items-center justify-center gap-1 text-[11px] text-brand-red">
+                          <Flame className="h-3 w-3" />
+                          <span>Spice {dish.spiceLevel}/3</span>
+                        </div>
+                      ) : null}
+                    </div>
+
+                    <div className="mt-6 pt-4 border-t border-border-subtle/60 flex items-center justify-between">
+                      <div>
+                        <span className="text-xs text-gray-400 block -mb-0.5">Authoritative Price</span>
+                        <span className="text-base font-bold text-brand-red font-mono">
+                          {formatPesewasToGhs(dish.basePricePesewas)}
+                        </span>
+                      </div>
+
+                      <MagneticButton strength={0.25}>
+                        <button
+                          onClick={(e) => handleQuickAdd(dish, e)}
+                          className="group/btn flex h-11 w-11 items-center justify-center rounded-full bg-brand-red text-white shadow-[0_4px_14px_rgba(229,9,20,0.35)] hover:bg-brand-red-hover hover:scale-105 active:scale-95 transition-all duration-200"
+                          aria-label={`Add ${dish.name} to order tray`}
+                        >
+                          <div className="group-hover/btn:-translate-y-0.5 group-hover/btn:rotate-[-4deg] transition-transform duration-200 ease-out">
+                            <RestaurantClocheIcon className="h-5 w-5" />
+                          </div>
+                        </button>
+                      </MagneticButton>
+                    </div>
                   </div>
-                </div>
-              </TiltCard>
+                </TiltCard>
+              </div>
             ))}
           </div>
         )}

@@ -292,7 +292,7 @@ export default function HomePage() {
               className="w-64 sm:w-72 flex-shrink-0 relative rounded-[28px] bg-[#1a1b20] border border-white/[0.06] p-5 pt-20 flex flex-col justify-between shadow-[0_15px_35px_rgba(0,0,0,0.6)] hover:border-brand-red/40 transition-all duration-300 group"
             >
               {/* Overlapping Top Plate */}
-              <div className="absolute -top-14 left-1/2 -translate-x-1/2 h-32 w-32 rounded-full overflow-hidden border-[4px] border-[#222429] shadow-[0_16px_32px_rgba(0,0,0,0.9)] group-hover:scale-105 transition-transform duration-300 bg-[#16171a]">
+              <div className="absolute -top-14 left-1/2 -translate-x-1/2 h-32 w-32 rounded-full overflow-hidden border-[4px] border-[#222429] shadow-[0_16px_32px_rgba(0,0,0,0.9)] group-hover:scale-105 group-hover:rotate-[2deg] transition-transform duration-500 ease-out bg-[#16171a]">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={dish.imageUrl}
@@ -333,10 +333,12 @@ export default function HomePage() {
                 <MagneticButton strength={0.25}>
                   <button
                     onClick={(e) => handleQuickAdd(dish, e)}
-                    className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-red text-white shadow-[0_4px_14px_rgba(229,9,20,0.4)] hover:bg-brand-red-hover hover:scale-105 active:scale-95 transition-all duration-200"
+                    className="group/btn flex h-10 w-10 items-center justify-center rounded-full bg-brand-red text-white shadow-[0_4px_14px_rgba(229,9,20,0.4)] hover:bg-brand-red-hover hover:scale-105 active:scale-95 transition-all duration-200"
                     aria-label={`Add ${dish.name} to order tray`}
                   >
-                    <RestaurantClocheIcon className="h-4 w-4" />
+                    <div className="group-hover/btn:-translate-y-0.5 group-hover/btn:rotate-[-4deg] transition-transform duration-200 ease-out">
+                      <RestaurantClocheIcon className="h-4 w-4" />
+                    </div>
                   </button>
                 </MagneticButton>
               </div>

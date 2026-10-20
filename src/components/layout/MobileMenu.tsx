@@ -106,14 +106,14 @@ export function MobileMenu({ isOpen, onClose, pathname }: MobileMenuProps) {
       <div className="absolute top-0 left-0 right-0 h-[450px] pointer-events-none -z-10 bg-[radial-gradient(ellipse_90%_60%_at_50%_0%,#24262b_0%,#141518_75%)]" />
 
       {/* TOP HEADER BAR */}
-      <div className="flex items-center justify-between px-5 pt-4 pb-4 border-b border-white/[0.06] bg-[#141518]/95 backdrop-blur-md sticky top-0 z-20">
-        <Link href="/" onClick={onClose} className="flex items-center gap-2.5">
+      <div className="flex items-center justify-between px-5 sm:px-8 pt-4 pb-4 border-b border-white/[0.06] bg-[#141518]/95 backdrop-blur-md sticky top-0 z-20">
+        <Link href="/" onClick={onClose} className="flex items-center gap-2.5 shrink-0">
           <Logo size={40} className="shadow-sm" />
-          <div>
-            <span className="font-serif text-xl font-black tracking-tight text-white block leading-none">
+          <div className="select-none">
+            <span className="font-serif text-xl sm:text-2xl font-black tracking-tight text-white block leading-none whitespace-nowrap">
               Sika Cuisine<span className="text-brand-red ml-0.5">.</span>
             </span>
-            <span className="text-[9px] tracking-[0.18em] uppercase font-semibold text-gray-400 mt-1 flex items-center gap-1 font-mono">
+            <span className="text-[9px] sm:text-[10px] tracking-[0.18em] uppercase font-semibold text-gray-400 mt-1 flex items-center gap-1 font-mono whitespace-nowrap">
               <MapPin className="h-2.5 w-2.5 text-brand-red flex-shrink-0" /> Sunyani Central
             </span>
           </div>
@@ -122,7 +122,7 @@ export function MobileMenu({ isOpen, onClose, pathname }: MobileMenuProps) {
         {/* Clean Pill Close Button */}
         <button
           onClick={onClose}
-          className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#1c1d22] hover:bg-[#25272e] border border-white/10 text-xs font-semibold text-gray-200 hover:text-white transition-all active:scale-95 shadow-sm"
+          className="flex items-center gap-2 px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-full bg-[#1c1d22] hover:bg-[#25272e] border border-white/10 text-xs font-semibold text-gray-200 hover:text-white transition-all active:scale-95 shadow-sm"
           aria-label="Close menu"
         >
           <span className="text-[11px] uppercase tracking-wider font-bold">Close</span>
@@ -133,7 +133,7 @@ export function MobileMenu({ isOpen, onClose, pathname }: MobileMenuProps) {
       </div>
 
       {/* EDITORIAL NAVIGATION LINKS */}
-      <div className="flex-1 px-6 py-6 flex flex-col justify-center max-w-md mx-auto w-full space-y-6">
+      <div className="flex-1 px-6 sm:px-8 py-8 flex flex-col justify-center max-w-lg mx-auto w-full space-y-6">
         <div className="text-[10px] font-mono uppercase tracking-[0.25em] text-brand-red flex items-center gap-2">
           <span className="h-px w-5 bg-brand-red/60" />
           <span>Curated Sunyani Gastronomy</span>

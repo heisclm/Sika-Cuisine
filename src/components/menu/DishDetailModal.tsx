@@ -1,11 +1,12 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { X, Plus, Minus, Flame, Sparkles } from "lucide-react";
+import { X, Plus, Minus, Flame } from "lucide-react";
 import { MenuItem, MenuItemOption, SelectedOptionSnapshot } from "@/types/menu";
 import { formatPesewasToGhs, calculateLineTotalPesewas } from "@/lib/currency";
 import { useCart } from "@/context/CartContext";
 import { useToast } from "@/context/ToastContext";
+import { RestaurantClocheIcon } from "@/components/icons/RestaurantClocheIcon";
 
 interface DishDetailModalProps {
   dish: MenuItem | null;
@@ -249,9 +250,14 @@ export function DishDetailModal({
 
           <button
             onClick={handleAddToCart}
-            className="btn-red-gradient flex-1 flex items-center justify-between px-5 sm:px-6 py-3.5 rounded-full text-sm sm:text-base font-semibold text-white shadow-glow"
+            className="group/btn btn-red-gradient flex-1 flex items-center justify-between px-5 sm:px-6 py-3.5 rounded-full text-sm sm:text-base font-semibold text-white shadow-glow active:scale-95 transition-all"
           >
-            <span>Add to Plate</span>
+            <div className="flex items-center gap-2">
+              <div className="group-hover/btn:-translate-y-0.5 group-hover/btn:rotate-[-4deg] transition-transform duration-200 ease-out">
+                <RestaurantClocheIcon className="h-4 w-4" />
+              </div>
+              <span>Add to Plate</span>
+            </div>
             <span className="font-mono">{formatPesewasToGhs(lineTotalPesewas)}</span>
           </button>
         </div>

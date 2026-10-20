@@ -40,32 +40,32 @@ export function Navbar() {
   };
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-white/[0.06] bg-[#141518]/90 backdrop-blur-xl">
+    <header className="sticky top-0 z-40 w-full border-b border-white/[0.06] bg-[#141518]/95 backdrop-blur-xl">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8 h-18 sm:h-20">
         
         {/* Brand Identity */}
-        <Link href="/" className="flex items-center gap-2.5 sm:gap-3 group">
-          <Logo size={42} className="shadow-[0_4px_12px_rgba(0,0,0,0.5)] group-hover:scale-105 transition-all duration-300" />
-          <div className="flex flex-col">
-            <span className="font-serif text-xl sm:text-2xl font-black tracking-tight text-white flex items-center leading-none">
+        <Link href="/" className="flex items-center gap-2.5 sm:gap-3 group shrink-0">
+          <Logo size={42} className="shadow-[0_4px_12px_rgba(0,0,0,0.5)] group-hover:scale-105 group-hover:rotate-[-2deg] transition-all duration-300" />
+          <div className="flex flex-col select-none">
+            <span className="font-serif text-xl sm:text-2xl font-black tracking-tight text-white flex items-center leading-none whitespace-nowrap">
               Sika Cuisine<span className="text-brand-red ml-0.5">.</span>
             </span>
-            <span className="text-[9px] sm:text-[10px] tracking-[0.18em] sm:tracking-[0.2em] uppercase font-semibold text-gray-400 mt-1 flex items-center gap-1 font-mono">
+            <span className="text-[9px] sm:text-[10px] tracking-[0.18em] sm:tracking-[0.2em] uppercase font-semibold text-gray-400 mt-1 flex items-center gap-1 font-mono whitespace-nowrap">
               <MapPin className="h-2.5 w-2.5 text-brand-red flex-shrink-0" /> Sunyani, Ghana
             </span>
           </div>
         </Link>
 
-        {/* Desktop Navigation Links */}
-        <nav className="hidden md:flex items-center gap-8">
+        {/* Desktop Navigation Links - reserved for lg+ viewports to prevent tablet collision */}
+        <nav className="hidden lg:flex items-center gap-6 xl:gap-8">
           {navLinks.map((link) => (
             <Link
               key={link.name}
               href={link.href}
-              className={`text-sm font-medium transition-colors hover:text-white ${
+              className={`text-sm font-medium transition-all duration-200 hover:text-white whitespace-nowrap relative py-1 ${
                 isActive(link.href)
-                  ? "text-white font-semibold after:block after:h-0.5 after:w-full after:bg-brand-red after:mt-1 after:rounded-full"
-                  : "text-gray-300"
+                  ? "text-white font-semibold after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-full after:bg-brand-red after:rounded-full"
+                  : "text-gray-300 hover:-translate-y-0.5"
               }`}
             >
               {link.name}
@@ -74,35 +74,37 @@ export function Navbar() {
         </nav>
 
         {/* Header Right Actions */}
-        <div className="flex items-center gap-2.5 sm:gap-3.5">
-          {/* Dining Order Tray Button */}
+        <div className="flex items-center gap-2 sm:gap-3.5 shrink-0">
+          {/* Dining Order Tray Button with Cassie Evans cloche micro-interaction */}
           <button
             id="header-cart-button"
             onClick={() => setIsCartOpen(true)}
-            className="relative flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-full bg-[#1c1d22] border border-white/10 text-white hover:border-brand-red/50 hover:bg-[#25272e] transition-all duration-200 shadow-sm"
+            className="group relative flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-full bg-[#1c1d22] border border-white/10 text-white hover:border-brand-red/50 hover:bg-[#25272e] active:scale-95 transition-all duration-200 shadow-sm"
             aria-label="View order tray"
           >
-            <RestaurantClocheIcon className="h-4 w-4 sm:h-5 sm:w-5" />
+            <div className="group-hover:-translate-y-0.5 group-hover:rotate-[-3deg] transition-transform duration-300 ease-out">
+              <RestaurantClocheIcon className="h-4 w-4 sm:h-5 sm:w-5" />
+            </div>
             {totalCount > 0 && (
-              <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-brand-red text-[11px] font-bold text-white shadow-md">
+              <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-brand-red text-[11px] font-bold text-white shadow-md animate-scale-in">
                 {totalCount}
               </span>
             )}
           </button>
 
-          {/* Desktop Sign In Pill Button */}
+          {/* Desktop/Tablet Sign In Pill Button */}
           <Link
             href="/login"
-            className="hidden sm:inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-xs sm:text-sm font-semibold text-white bg-brand-red hover:bg-brand-red-hover active:scale-95 transition-all shadow-[0_4px_14px_rgba(229,9,20,0.35)]"
+            className="hidden sm:inline-flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm font-semibold text-white bg-brand-red hover:bg-brand-red-hover active:scale-95 transition-all shadow-[0_4px_14px_rgba(229,9,20,0.35)] shrink-0 whitespace-nowrap"
           >
             <User className="h-3.5 w-3.5" />
             <span>Sign In</span>
           </Link>
 
-          {/* Mobile Menu Toggle Button */}
+          {/* Mobile & Tablet Circular Menu Toggle Button */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-full bg-[#1c1d22] border border-white/10 text-gray-200 hover:text-white hover:bg-[#25272e] active:scale-95 transition-all"
+            className="lg:hidden flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-full bg-[#1c1d22] border border-white/10 text-gray-200 hover:text-white hover:bg-[#25272e] active:scale-95 transition-all shadow-sm"
             aria-label="Toggle navigation menu"
             aria-expanded={mobileMenuOpen}
           >
