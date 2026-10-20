@@ -77,13 +77,13 @@ export function MobileMenu({ isOpen, onClose, pathname }: MobileMenuProps) {
       role="dialog"
       aria-modal="true"
       aria-label="Navigation Menu"
-      className="fixed inset-0 z-[99999] w-full h-[100dvh] bg-[#0c0d10]/92 backdrop-blur-2xl text-white flex flex-col justify-between overflow-y-auto overscroll-contain animate-menu-overlay select-none"
+      className="fixed inset-0 z-[99999] w-full h-[100dvh] bg-[#141518] text-white flex flex-col justify-between overflow-y-auto overscroll-contain animate-menu-overlay select-none"
     >
-      {/* Ambient Matte Top Glow */}
-      <div className="absolute top-0 left-0 right-0 h-[380px] pointer-events-none -z-10 bg-[radial-gradient(ellipse_90%_50%_at_50%_0%,#1f2128_0%,transparent_80%)]" />
+      {/* Studio Matte Overhead Vignette Matching System Background */}
+      <div className="absolute top-0 left-0 right-0 h-[450px] pointer-events-none -z-10 bg-[radial-gradient(ellipse_110%_80%_at_50%_18%,#24262a_0%,#17181b_45%,#141518_100%)]" />
 
-      {/* TOP HEADER BAR (Apple Frosted Glass Header) */}
-      <div className="flex items-center justify-between px-5 sm:px-8 h-18 sm:h-20 border-b border-white/[0.08] bg-[#0c0d10]/90 backdrop-blur-xl sticky top-0 z-20">
+      {/* TOP HEADER BAR (Matching System Navbar Exactly) */}
+      <div className="flex items-center justify-between px-5 sm:px-8 h-18 sm:h-20 border-b border-white/[0.06] bg-[#141518] sticky top-0 z-20">
         <Link href="/" onClick={onClose} className="flex items-center gap-2.5 shrink-0">
           <Logo size={40} className="shadow-sm" />
           <div className="select-none">
@@ -108,7 +108,7 @@ export function MobileMenu({ isOpen, onClose, pathname }: MobileMenuProps) {
 
       {/* NAVIGATION LINKS (100% Matching Desktop with Apple Touch) */}
       <div className="flex-1 px-6 sm:px-8 py-8 flex flex-col justify-center max-w-lg mx-auto w-full">
-        <nav className="divide-y divide-white/[0.08] border-y border-white/[0.08]">
+        <nav className="divide-y divide-white/[0.06] border-y border-white/[0.06]">
           {NAV_LINKS.map((link, idx) => {
             const active = isRouteActive(link.href, pathname);
 
@@ -180,8 +180,8 @@ export function MobileMenu({ isOpen, onClose, pathname }: MobileMenuProps) {
         </div>
       </div>
 
-      {/* APPLE-STYLE FROSTED BOTTOM UTILITY BAR */}
-      <div className="px-6 sm:px-8 py-5 border-t border-white/[0.08] bg-[#0c0d10]/95 space-y-3 max-w-lg mx-auto w-full">
+      {/* BOTTOM UTILITY BAR (Matching System Theme) */}
+      <div className="px-6 sm:px-8 py-5 border-t border-white/[0.06] bg-[#141518] space-y-3 max-w-lg mx-auto w-full">
         <div className="grid grid-cols-2 gap-2 text-xs">
           <a
             href="tel:+233533376760"

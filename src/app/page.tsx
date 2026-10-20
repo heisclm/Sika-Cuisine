@@ -153,8 +153,103 @@ export default function HomePage() {
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-[650px] studio-vignette pointer-events-none -z-10" />
 
       {/* Hero Section */}
-      <section className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-12 sm:pt-20 pb-20 sm:pb-28">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
+      <section className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-6 sm:pt-16 pb-16 sm:pb-28">
+        
+        {/* MOBILE HERO LAYOUT (< lg viewports) - Food plate prominently featured above CTAs */}
+        <div className="lg:hidden flex flex-col items-center text-center space-y-5 pt-2 pb-6">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-surface-100 border border-white/5 text-[10px] font-semibold uppercase tracking-[0.2em] text-brand-red">
+            <span className="h-1.5 w-1.5 rounded-full bg-brand-red animate-pulse" />
+            <span>Sunyani Bono Gastronomy</span>
+          </div>
+
+          <h1 className="font-serif text-[2.65rem] sm:text-5xl font-normal tracking-tight text-white leading-[1.08]">
+            it&apos;s not just Food, <br />
+            It&apos;s an Experience.
+          </h1>
+
+          {/* Prominent Signature Food Plate with Floating Garnishes */}
+          <div className="relative py-2 w-full flex justify-center">
+            <div className="relative group animate-plate-float max-w-[270px] sm:max-w-[320px] w-full aspect-square">
+              {/* Organic Floating Basil Leaves and Ripe Tomato Slice */}
+              <FloatingGarnishes />
+
+              {/* Clean Ceramic Plate with Studio Shadow */}
+              <div className="w-full h-full rounded-full overflow-hidden border-[6px] border-[#222429] shadow-[0_30px_70px_rgba(0,0,0,0.95)] relative bg-[#17181c]">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/images/dishes/hero-signature-plate.jpg"
+                  alt="Sika Cuisine Signature Delicacy"
+                  className="h-full w-full object-cover transform group-hover:scale-105 transition-transform duration-700 ease-out"
+                />
+              </div>
+            </div>
+          </div>
+
+          <p className="max-w-md text-xs sm:text-sm text-gray-300 leading-relaxed font-light px-2">
+            Sunyani&apos;s premier destination for authentic, slow-simmered Ghanaian gastronomy and vibrant lounge dining. Savor charcoal-grilled tilapia, smoky jollof, and pounded fufu delivered piping hot across Sunyani.
+          </p>
+
+          {/* Action Buttons side-by-side */}
+          <div className="flex items-center justify-center gap-3 w-full max-w-xs pt-1">
+            <Link
+              href="/menu"
+              className="flex-1 inline-flex items-center justify-center px-6 py-3.5 rounded-full text-xs sm:text-sm font-semibold text-white bg-brand-red hover:bg-brand-red-hover active:scale-95 transition-all shadow-[0_8px_24px_rgba(229,9,20,0.35)]"
+            >
+              View Menu
+            </Link>
+
+            <Link
+              href="/contact"
+              className="flex-1 inline-flex items-center justify-center px-6 py-3.5 rounded-full text-xs sm:text-sm font-semibold text-[#141518] bg-white hover:bg-gray-100 active:scale-95 transition-all shadow-md"
+            >
+              Book A Table
+            </Link>
+          </div>
+
+          {/* Reviews Row */}
+          <div className="pt-2 flex items-center justify-center gap-4">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold text-white tracking-wide">Reviews</span>
+              <div className="flex -space-x-2 overflow-hidden">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  className="inline-block h-8 w-8 rounded-full ring-2 ring-[#141518] object-cover"
+                  src="/images/avatars/reviewer-1.jpg"
+                  alt="Customer Reviewer"
+                />
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  className="inline-block h-8 w-8 rounded-full ring-2 ring-[#141518] object-cover"
+                  src="/images/avatars/reviewer-2.jpg"
+                  alt="Customer Reviewer"
+                />
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  className="inline-block h-8 w-8 rounded-full ring-2 ring-[#141518] object-cover"
+                  src="/images/avatars/reviewer-3.jpg"
+                  alt="Customer Reviewer"
+                />
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#22242b] border border-white/10 text-[10px] font-bold text-white">
+                  +45
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-0.5">
+                {[...Array(5)].map((_, i) => (
+                  <Star key={i} className="h-3.5 w-3.5 fill-brand-gold text-brand-gold" />
+                ))}
+              </div>
+              <span className="text-xs text-gray-200 font-semibold">
+                5.0 <span className="text-gray-400 font-normal">(2.5k)</span>
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* DESKTOP HERO LAYOUT (hidden lg:grid) - Matching Master Reference Layout */}
+        <div className="hidden lg:grid lg:grid-cols-12 gap-12 lg:gap-8 items-center">
           
           {/* Left Column: Editorial Typography & Actions */}
           <div className="lg:col-span-7 space-y-8 text-left">
