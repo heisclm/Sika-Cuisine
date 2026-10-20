@@ -2,7 +2,7 @@
 
 import React, { useRef } from "react";
 import Link from "next/link";
-import { ArrowRight, Star, ShoppingBag, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowRight, Star, ChevronLeft, ChevronRight } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import { useToast } from "@/context/ToastContext";
 import { formatPesewasToGhs } from "@/lib/currency";
@@ -11,6 +11,7 @@ import { TiltCard } from "@/components/creative/TiltCard";
 import { MagneticButton } from "@/components/creative/MagneticButton";
 import { FloatingGarnishes } from "@/components/creative/FloatingGarnishes";
 import { KineticMarquee } from "@/components/creative/KineticMarquee";
+import { RestaurantClocheIcon } from "@/components/icons/RestaurantClocheIcon";
 
 const FEATURED_DISHES: MenuItem[] = [
   {
@@ -21,7 +22,7 @@ const FEATURED_DISHES: MenuItem[] = [
     slug: "special-combo-mixture",
     description: "Chef's ultimate platter: seasoned meats, kelewele, wings, sausages & savory rice.",
     basePricePesewas: 8000,
-    imageUrl: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80",
+    imageUrl: "/images/dishes/special-combo.jpg",
     isAvailable: true,
     isFeatured: true,
     spiceLevel: 2,
@@ -36,7 +37,7 @@ const FEATURED_DISHES: MenuItem[] = [
     slug: "seafood-tilapia-banku",
     description: "Whole succulent charcoal-grilled tilapia paired with steaming hot corn dumplings.",
     basePricePesewas: 8000,
-    imageUrl: "https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=800&q=80",
+    imageUrl: "/images/dishes/tilapia-banku.jpg",
     isAvailable: true,
     isFeatured: true,
     spiceLevel: 3,
@@ -51,7 +52,7 @@ const FEATURED_DISHES: MenuItem[] = [
     slug: "pkg-grilled-chicken-jollof-rice",
     description: "Charcoal-grilled spiced quarter chicken alongside slow-simmered smoky Ghanaian jollof.",
     basePricePesewas: 4000,
-    imageUrl: "https://images.unsplash.com/photo-1604382354936-07c5d9983bd3?auto=format&fit=crop&w=800&q=80",
+    imageUrl: "/images/dishes/grilled-chicken-jollof.jpg",
     isAvailable: true,
     isFeatured: true,
     spiceLevel: 2,
@@ -66,7 +67,7 @@ const FEATURED_DISHES: MenuItem[] = [
     slug: "fruit-pineapple-fried-rice",
     description: "Wok-tossed fragrant jasmine rice infused with caramelized Sunyani pineapples.",
     basePricePesewas: 9000,
-    imageUrl: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=800&q=80",
+    imageUrl: "/images/dishes/pineapple-rice.jpg",
     isAvailable: true,
     isFeatured: true,
     spiceLevel: 1,
@@ -81,7 +82,7 @@ const FEATURED_DISHES: MenuItem[] = [
     slug: "fufu-goat-light-soup",
     description: "Soft pounded cassava & plantain dumplings immersed in deeply spiced goat meat broth.",
     basePricePesewas: 7000,
-    imageUrl: "https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=800&q=80",
+    imageUrl: "/images/dishes/fufu-goat-soup.jpg",
     isAvailable: true,
     isFeatured: true,
     spiceLevel: 2,
@@ -96,7 +97,7 @@ const FEATURED_DISHES: MenuItem[] = [
     slug: "pizza-bbq-chicken",
     description: "Crispy crust layered with shredded smoky BBQ chicken, sweet peppers, and melted mozzarella.",
     basePricePesewas: 11000,
-    imageUrl: "https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=800&q=80",
+    imageUrl: "/images/dishes/artisan-pizza.jpg",
     isAvailable: true,
     isFeatured: true,
     spiceLevel: 1,
@@ -191,19 +192,19 @@ export default function HomePage() {
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     className="inline-block h-10 w-10 rounded-full ring-2 ring-[#141518] object-cover"
-                    src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80"
+                    src="/images/avatars/reviewer-1.jpg"
                     alt="Customer Reviewer"
                   />
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     className="inline-block h-10 w-10 rounded-full ring-2 ring-[#141518] object-cover"
-                    src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80"
+                    src="/images/avatars/reviewer-2.jpg"
                     alt="Customer Reviewer"
                   />
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     className="inline-block h-10 w-10 rounded-full ring-2 ring-[#141518] object-cover"
-                    src="https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=150&q=80"
+                    src="/images/avatars/reviewer-3.jpg"
                     alt="Customer Reviewer"
                   />
                   <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#22242b] border border-white/10 text-xs font-bold text-white">
@@ -235,7 +236,7 @@ export default function HomePage() {
               <div className="w-full h-full rounded-full overflow-hidden border-[6px] sm:border-[8px] border-[#222429] shadow-[0_40px_90px_rgba(0,0,0,0.95)] relative bg-[#17181c]">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src="https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=1000&q=80"
+                  src="/images/dishes/hero-signature-plate.jpg"
                   alt="Sika Cuisine Signature Delicacy"
                   className="h-full w-full object-cover transform group-hover:scale-105 transition-transform duration-700 ease-out"
                 />
@@ -333,9 +334,9 @@ export default function HomePage() {
                   <button
                     onClick={(e) => handleQuickAdd(dish, e)}
                     className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-red text-white shadow-[0_4px_14px_rgba(229,9,20,0.4)] hover:bg-brand-red-hover hover:scale-105 active:scale-95 transition-all duration-200"
-                    aria-label={`Add ${dish.name} to cart`}
+                    aria-label={`Add ${dish.name} to order tray`}
                   >
-                    <ShoppingBag className="h-4 w-4" />
+                    <RestaurantClocheIcon className="h-4 w-4" />
                   </button>
                 </MagneticButton>
               </div>

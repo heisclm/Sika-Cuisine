@@ -2,10 +2,11 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { X, Trash2, Plus, Minus, ShoppingBag, ArrowRight, MapPin, Clock, ShieldCheck } from "lucide-react";
+import { X, Trash2, Plus, Minus, ArrowRight, MapPin, Clock, ShieldCheck } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import { formatPesewasToGhs } from "@/lib/currency";
 import { SUNYANI_DELIVERY_ZONES, getZoneFeePesewas } from "@/lib/delivery-zones";
+import { RestaurantClocheIcon } from "@/components/icons/RestaurantClocheIcon";
 
 export function CartDrawer() {
   const {
@@ -61,11 +62,11 @@ export function CartDrawer() {
         <div className="flex items-center justify-between pb-4 border-b border-border-subtle">
           <div className="flex items-center gap-2">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-red/15 text-brand-red border border-brand-red/30">
-              <ShoppingBag className="h-5 w-5" />
+              <RestaurantClocheIcon className="h-5 w-5" />
             </div>
             <div>
               <h2 className="text-lg sm:text-xl font-serif font-bold text-white tracking-wide">
-                Your Culinary Feast
+                Your Dining Order Tray
               </h2>
               <span className="text-[11px] font-semibold text-gray-400">
                 {totalCount} {totalCount === 1 ? "delicacy" : "delicacies"} selected
@@ -84,10 +85,10 @@ export function CartDrawer() {
         {items.length === 0 ? (
           <div className="flex flex-1 flex-col items-center justify-center text-center p-6">
             <div className="flex h-20 w-20 items-center justify-center rounded-full bg-surface-100 text-gray-500 mb-4 border border-border-subtle">
-              <ShoppingBag className="h-9 w-9 stroke-1 text-gray-400" />
+              <RestaurantClocheIcon className="h-9 w-9 text-gray-400" />
             </div>
             <p className="text-lg font-serif font-medium text-white mb-1">
-              Your plate is empty
+              Your dining tray is empty
             </p>
             <p className="text-xs sm:text-sm text-gray-400 max-w-xs mb-6 font-light">
               Explore authentic charcoal-grilled tilapia, slow-simmered jollof, soups, and pizza in Sunyani.

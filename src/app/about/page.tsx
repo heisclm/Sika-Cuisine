@@ -102,7 +102,7 @@ export default function AboutPage() {
           <div className="relative rounded-2xl overflow-hidden border border-border-subtle h-80 sm:h-96 shadow-2xl">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80"
+              src="/images/restaurant/lounge-interior.jpg"
               alt="Sika Cuisine Kitchen Atmosphere"
               className="h-full w-full object-cover"
             />

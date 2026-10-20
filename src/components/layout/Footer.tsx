@@ -6,18 +6,12 @@ import {
   MapPin,
   Phone,
   ShieldCheck,
-  CheckCircle2,
   MessageCircle,
   Banknote,
-  Sparkles,
-  ChefHat,
-  Send,
   Navigation,
 } from "lucide-react";
 
 export function Footer() {
-  const [email, setEmail] = useState("");
-  const [subscribed, setSubscribed] = useState(false);
   const [isKitchenOpen, setIsKitchenOpen] = useState(true);
 
   // Calculate live kitchen operating status according to Sunyani, Ghana time (GMT / UTC+0)
@@ -41,73 +35,15 @@ export function Footer() {
     return () => clearInterval(interval);
   }, []);
 
-  const handleSubscribe = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (email.trim()) {
-      setSubscribed(true);
-      setEmail("");
-    }
-  };
-
   return (
-    <footer className="w-full border-t border-white/[0.06] bg-[#111215] text-gray-400 pt-14 sm:pt-20 pb-16 sm:pb-12 relative overflow-hidden select-none">
+    <footer className="w-full border-t border-white/[0.06] bg-[#111215] text-gray-400 pt-16 pb-12 relative overflow-hidden select-none">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         
-        {/* TOP VIP DINING CLUB / NEWSLETTER STRIP */}
-        <div className="mb-14 pb-12 border-b border-white/[0.06] grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-          <div className="lg:col-span-7 space-y-2.5 text-center lg:text-left">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-red/10 border border-brand-red/25 text-brand-red text-xs font-semibold">
-              <Sparkles className="h-3.5 w-3.5" />
-              <span>Sika Cuisine Dining Club &bull; Sunyani Privileges</span>
-            </div>
-            <h3 className="font-serif text-2xl sm:text-3xl font-bold text-white tracking-tight">
-              Savor Exclusive Chef Specials & Delivery Perks
-            </h3>
-            <p className="text-xs sm:text-sm text-gray-400 font-light max-w-xl mx-auto lg:mx-0 leading-relaxed">
-              Join Sunyani&apos;s culinary circle. Receive secret weekend tasting menus, doorstep dispatch vouchers, and seasonal Bono harvest announcements.
-            </p>
-          </div>
-
-          <div className="lg:col-span-5">
-            {subscribed ? (
-              <div className="rounded-2xl bg-emerald-950/40 border border-emerald-800/60 p-4 text-center sm:text-left flex items-center gap-3">
-                <CheckCircle2 className="h-6 w-6 text-emerald-400 flex-shrink-0" />
-                <div>
-                  <p className="font-serif text-sm font-bold text-white">
-                    Welcome to the Sika Dining Club!
-                  </p>
-                  <p className="text-xs text-emerald-300/90 mt-0.5">
-                    Your exclusive welcome delivery voucher has been dispatched to your inbox.
-                  </p>
-                </div>
-              </div>
-            ) : (
-              <form onSubmit={handleSubscribe} className="relative flex flex-col sm:flex-row gap-2.5">
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Enter email for delivery perks..."
-                  className="w-full rounded-full bg-[#1a1b20] border border-white/10 px-5 py-3.5 text-xs sm:text-sm text-white placeholder-gray-500 focus:outline-none focus:border-brand-red transition-colors"
-                />
-                <button
-                  type="submit"
-                  className="inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-full text-xs sm:text-sm font-semibold text-white bg-brand-red hover:bg-brand-red-hover active:scale-95 transition-all shadow-[0_4px_16px_rgba(229,9,20,0.35)] whitespace-nowrap"
-                >
-                  <span>Join Club</span>
-                  <Send className="h-3.5 w-3.5" />
-                </button>
-              </form>
-            )}
-          </div>
-        </div>
-
         {/* MAIN NAVIGATION GRID */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-10 lg:gap-8 mb-14">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-10 lg:gap-8 mb-12">
           
           {/* Brand Identity Column */}
-          <div className="sm:col-span-2 lg:col-span-4 space-y-4">
+          <div className="sm:col-span-2 lg:col-span-5 space-y-4">
             <Link href="/" className="inline-flex items-center gap-3 group">
               <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#1c1d22] border border-white/10 font-serif font-black text-xl shadow-sm group-hover:scale-105 group-hover:border-brand-red/40 transition-all duration-300">
                 <span className="tracking-tight text-white">S</span>
@@ -117,80 +53,64 @@ export function Footer() {
                 <span className="font-serif text-2xl font-black tracking-tight text-white flex items-center leading-none">
                   Sika Cuisine<span className="text-brand-red ml-0.5">.</span>
                 </span>
-                <span className="text-[10px] tracking-[0.2em] uppercase font-semibold text-gray-400 mt-1 flex items-center gap-1">
+                <span className="text-[10px] tracking-[0.2em] uppercase font-semibold text-gray-400 mt-1 flex items-center gap-1 font-mono">
                   <MapPin className="h-2.5 w-2.5 text-brand-red" /> Sunyani Central, Ghana
                 </span>
               </div>
             </Link>
 
-            <p className="text-xs sm:text-sm leading-relaxed text-gray-400 font-light pr-2">
-              Sunyani&apos;s premier destination for authentic, slow-simmered Ghanaian gastronomy and vibrant lounge dining. Charcoal-grilled whole tilapia with banku, fragrant smoky jollof, light soups with pounded fufu, pineapple fruit rice, and stone-baked pizzas delivered hot across Sunyani.
+            <p className="text-xs sm:text-sm leading-relaxed text-gray-400 font-light max-w-md pr-2">
+              Authentic slow-simmered Ghanaian gastronomy and vibrant lounge dining. Whole charcoal-grilled tilapia with banku, rich smoky jollof, traditional swallows with light soup, and stone-baked pizzas delivered fresh across Sunyani.
             </p>
 
-            <div className="pt-1 flex flex-wrap items-center gap-2 text-xs">
+            <div className="pt-1 flex items-center gap-2 text-xs">
               <div className="flex items-center gap-1.5 text-emerald-400 bg-emerald-950/30 border border-emerald-800/40 px-3 py-1.5 rounded-full">
                 <ShieldCheck className="h-3.5 w-3.5" />
-                <span className="font-medium text-[11px]">Certified Food Hygiene & Safety</span>
-              </div>
-              <div className="flex items-center gap-1.5 text-amber-400 bg-amber-950/30 border border-amber-800/40 px-3 py-1.5 rounded-full">
-                <ChefHat className="h-3.5 w-3.5" />
-                <span className="font-medium text-[11px]">Prepared Fresh to Order</span>
+                <span className="font-medium text-[11px]">Prepared Fresh to Order &bull; Sunyani</span>
               </div>
             </div>
           </div>
 
-          {/* Column 2: Authentic Gastronomy */}
+          {/* Column 2: Culinary Highlights */}
           <div className="lg:col-span-3 space-y-3">
             <h4 className="text-xs font-bold text-white uppercase tracking-[0.2em] font-serif border-l-2 border-brand-red pl-2.5">
-              Gastronomy & Menu
+              Explore Our Menu
             </h4>
             <ul className="space-y-2.5 text-xs sm:text-sm">
               <li>
-                <Link href="/menu" className="hover:text-white transition-colors flex items-center justify-between group">
-                  <span className="text-gray-300 group-hover:text-white">Charcoal-Grilled Tilapia</span>
-                  <span className="font-mono text-[11px] text-brand-red font-semibold">GH₵80</span>
+                <Link href="/menu" className="text-gray-300 hover:text-white transition-colors">
+                  Charcoal-Grilled Tilapia & Banku
                 </Link>
               </li>
               <li>
-                <Link href="/menu" className="hover:text-white transition-colors flex items-center justify-between group">
-                  <span className="text-gray-300 group-hover:text-white">Smoky Jollof & Grilled Chicken</span>
-                  <span className="font-mono text-[11px] text-brand-red font-semibold">GH₵40</span>
+                <Link href="/menu" className="text-gray-300 hover:text-white transition-colors">
+                  Smoky Jollof & Grilled Chicken
                 </Link>
               </li>
               <li>
-                <Link href="/menu" className="hover:text-white transition-colors flex items-center justify-between group">
-                  <span className="text-gray-300 group-hover:text-white">Pounded Fufu with Light Soup</span>
-                  <span className="font-mono text-[11px] text-brand-red font-semibold">GH₵50</span>
+                <Link href="/menu" className="text-gray-300 hover:text-white transition-colors">
+                  Pounded Fufu & Goat Light Soup
                 </Link>
               </li>
               <li>
-                <Link href="/menu" className="hover:text-white transition-colors flex items-center justify-between group">
-                  <span className="text-gray-300 group-hover:text-white">Tuo Zaafi (TZ) with Ayoyo</span>
-                  <span className="font-mono text-[11px] text-brand-red font-semibold">GH₵50</span>
+                <Link href="/menu" className="text-gray-300 hover:text-white transition-colors">
+                  Sunyani Pineapple Fruit Rice
                 </Link>
               </li>
               <li>
-                <Link href="/menu" className="hover:text-white transition-colors flex items-center justify-between group">
-                  <span className="text-gray-300 group-hover:text-white">Sunyani Pineapple Fruit Rice</span>
-                  <span className="font-mono text-[11px] text-brand-red font-semibold">GH₵90</span>
+                <Link href="/menu" className="text-gray-300 hover:text-white transition-colors">
+                  SIKA Special Combo (De Mixture)
                 </Link>
               </li>
               <li>
-                <Link href="/menu" className="hover:text-white transition-colors flex items-center justify-between group">
-                  <span className="text-gray-300 group-hover:text-white">SIKA Special Combo (De Mixture)</span>
-                  <span className="font-mono text-[11px] text-brand-red font-semibold">GH₵80</span>
-                </Link>
-              </li>
-              <li>
-                <Link href="/menu" className="hover:text-white transition-colors flex items-center justify-between group">
-                  <span className="text-gray-300 group-hover:text-white">Stone-Baked Artisan Pizza</span>
-                  <span className="font-mono text-[11px] text-brand-red font-semibold">From GH₵110</span>
+                <Link href="/menu" className="text-gray-300 hover:text-white transition-colors">
+                  Artisan Stone-Baked Pizza
                 </Link>
               </li>
             </ul>
           </div>
 
-          {/* Column 3: Guest Experience & Logistics */}
+          {/* Column 3: Guest Service */}
           <div className="lg:col-span-2 space-y-3">
             <h4 className="text-xs font-bold text-white uppercase tracking-[0.2em] font-serif border-l-2 border-brand-red pl-2.5">
               Guest Service
@@ -199,52 +119,38 @@ export function Footer() {
               <li>
                 <Link href="/orders" className="text-gray-300 hover:text-white transition-colors flex items-center gap-1.5">
                   <Navigation className="h-3.5 w-3.5 text-brand-red flex-shrink-0" />
-                  <span>Live Order Tracker</span>
+                  <span>Track Active Order</span>
                 </Link>
               </li>
               <li>
                 <Link href="/about" className="text-gray-300 hover:text-white transition-colors">
-                  Our Bono Culinary Story
+                  Our Culinary Story
                 </Link>
               </li>
               <li>
                 <Link href="/contact" className="text-gray-300 hover:text-white transition-colors">
-                  Contact & Table Inquiries
+                  Table Reservations & Inquiries
                 </Link>
               </li>
               <li>
                 <Link href="/terms" className="text-gray-400 hover:text-white transition-colors">
-                  Delivery Terms & Zones
+                  Delivery Zones & Terms
                 </Link>
               </li>
               <li>
                 <Link href="/privacy" className="text-gray-400 hover:text-white transition-colors">
-                  Customer Privacy Policy
-                </Link>
-              </li>
-              <li className="pt-2 border-t border-white/5 space-y-1.5">
-                <Link
-                  href="/admin/login"
-                  className="text-gray-400 hover:text-brand-red transition-colors text-xs flex items-center gap-1"
-                >
-                  <span>&bull; Staff Kitchen Terminal</span>
-                </Link>
-                <Link
-                  href="/rider/login"
-                  className="text-gray-400 hover:text-emerald-400 transition-colors text-xs flex items-center gap-1"
-                >
-                  <span>&bull; Rider Dispatch Portal</span>
+                  Privacy Policy
                 </Link>
               </li>
             </ul>
           </div>
 
-          {/* Column 4: Kitchen Hours & Live Sunyani Dispatch */}
-          <div className="sm:col-span-2 lg:col-span-3 space-y-4">
+          {/* Column 4: Hours & Sunyani Dispatch */}
+          <div className="sm:col-span-2 lg:col-span-2 space-y-4">
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <h4 className="text-xs font-bold text-white uppercase tracking-[0.2em] font-serif border-l-2 border-brand-red pl-2.5">
-                  Operating Hours
+                  Hours
                 </h4>
                 {/* Dynamic Live Kitchen Status Pill */}
                 <div
@@ -259,32 +165,30 @@ export function Footer() {
                       isKitchenOpen ? "bg-emerald-400 animate-pulse" : "bg-gray-500"
                     }`}
                   />
-                  <span>{isKitchenOpen ? "Kitchen Open" : "Closed"}</span>
+                  <span>{isKitchenOpen ? "Open" : "Closed"}</span>
                 </div>
               </div>
 
-              <div className="space-y-2 text-xs">
-                <div className="rounded-xl bg-[#1a1b20] p-2.5 border border-white/5 space-y-1">
-                  <div className="flex justify-between font-semibold text-white">
-                    <span>Monday — Saturday</span>
-                    <span className="font-mono text-gray-300">10:00 AM — 10:00 PM</span>
-                  </div>
-                  <div className="flex justify-between font-semibold text-white pt-1 border-t border-white/5">
-                    <span>Sunday</span>
-                    <span className="font-mono text-gray-300">12:00 PM — 9:00 PM</span>
-                  </div>
+              <div className="rounded-xl bg-[#1a1b20] p-2.5 border border-white/5 space-y-1 text-xs">
+                <div className="flex justify-between font-semibold text-white">
+                  <span>Mon — Sat</span>
+                  <span className="font-mono text-gray-300">10am — 10pm</span>
+                </div>
+                <div className="flex justify-between font-semibold text-white pt-1 border-t border-white/5">
+                  <span>Sunday</span>
+                  <span className="font-mono text-gray-300">12pm — 9pm</span>
                 </div>
               </div>
             </div>
 
             <div className="space-y-2 text-xs">
               <span className="text-gray-400 font-semibold uppercase tracking-wider text-[10px] block">
-                Direct Dispatch Hotline
+                Direct Kitchen Hotline
               </span>
-              <div className="flex flex-col sm:flex-row gap-2">
+              <div className="flex flex-col gap-2">
                 <a
                   href="tel:+233533376760"
-                  className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-[#1a1b20] hover:bg-[#25272e] text-white font-mono text-xs border border-white/10 transition-colors"
+                  className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-[#1a1b20] hover:bg-[#25272e] text-white font-mono text-xs border border-white/10 transition-colors"
                 >
                   <Phone className="h-3.5 w-3.5 text-brand-red" />
                   <span>0533376760</span>
@@ -293,43 +197,37 @@ export function Footer() {
                   href="https://wa.me/233533376760?text=Hello%20Sika%20Cuisine,%20I%20would%20like%20to%20order%20food"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-950/60 hover:bg-emerald-900/60 text-emerald-300 font-semibold text-xs border border-emerald-800/60 transition-colors"
+                  className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-950/60 hover:bg-emerald-900/60 text-emerald-300 font-semibold text-xs border border-emerald-800/60 transition-colors"
                 >
                   <MessageCircle className="h-3.5 w-3.5 text-emerald-400" />
-                  <span>WhatsApp</span>
+                  <span>WhatsApp Kitchen</span>
                 </a>
               </div>
             </div>
 
-            <div className="text-[11px] text-gray-400 space-y-1 pt-1">
+            <div className="text-[11px] text-gray-400 pt-1">
               <div className="flex items-start gap-1.5">
                 <MapPin className="h-3.5 w-3.5 text-brand-red mt-0.5 flex-shrink-0" />
-                <span>Commercial Road, Sunyani Central (Opposite Total Station), Bono Region, Ghana</span>
+                <span>Commercial Rd, Sunyani Central (Opposite Total)</span>
               </div>
             </div>
           </div>
         </div>
 
-        {/* AUTHENTIC PAYMENT METHODS & SECURITY STRIP */}
-        <div className="pt-8 pb-8 border-t border-white/[0.06] space-y-5">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-            <div>
-              <span className="text-xs font-bold uppercase tracking-wider text-white font-serif block">
-                Verified Ghana Payment Infrastructure
-              </span>
-              <span className="text-[11px] text-gray-400 font-light">
-                Encrypted via Paystack with instant mobile money push prompts (MTN MoMo, Telecel Cash, AT Money).
-              </span>
-            </div>
-
+        {/* AUTHENTIC PAYMENT METHODS STRIP */}
+        <div className="pt-6 pb-6 border-t border-white/[0.06] space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+            <span className="text-xs font-bold uppercase tracking-wider text-white font-serif block">
+              Payment Methods Accepted
+            </span>
             <div className="flex items-center gap-2 text-[11px] text-gray-400">
               <ShieldCheck className="h-4 w-4 text-emerald-400 flex-shrink-0" />
-              <span>256-Bit SSL Bank Grade Encryption</span>
+              <span>Encrypted via Paystack with instant Mobile Money prompt</span>
             </div>
           </div>
 
-          {/* Responsive Brand Payment Logo Badges Grid */}
-          <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
+          {/* Payment Badges */}
+          <div className="flex flex-wrap items-center gap-2">
             {/* Paystack Official Logo Badge */}
             <div
               className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#081524] border border-[#00C3F7]/30 shadow-sm"
@@ -410,14 +308,14 @@ export function Footer() {
           <div className="flex flex-wrap items-center justify-center md:justify-start gap-x-3 gap-y-1 text-center md:text-left">
             <span>&copy; {new Date().getFullYear()} Sika Cuisine Restaurant. All rights reserved.</span>
             <span className="hidden sm:inline">&bull;</span>
-            <span>Sunyani Central, Bono Region, Ghana</span>
+            <span>Commercial Road, Sunyani Central, Bono Region, Ghana</span>
             <span className="hidden sm:inline">&bull;</span>
             <Link href="/terms" className="hover:text-gray-300 transition-colors underline-offset-2 hover:underline">
-              Terms of Service
+              Terms
             </Link>
             <span>&bull;</span>
             <Link href="/privacy" className="hover:text-gray-300 transition-colors underline-offset-2 hover:underline">
-              Privacy Policy
+              Privacy
             </Link>
           </div>
 

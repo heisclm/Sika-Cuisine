@@ -4,7 +4,6 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
-  ShoppingBag,
   MapPin,
   CreditCard,
   Truck,
@@ -14,6 +13,7 @@ import {
   Loader2,
   ArrowLeft,
 } from "lucide-react";
+import { RestaurantClocheIcon } from "@/components/icons/RestaurantClocheIcon";
 import { useCart } from "@/context/CartContext";
 import { formatPesewasToGhs } from "@/lib/currency";
 import { SUNYANI_DELIVERY_ZONES, getZoneFeePesewas } from "@/lib/delivery-zones";
@@ -117,10 +117,10 @@ export default function CheckoutPage() {
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <div className="max-w-md w-full rounded-3xl bg-surface-300 border border-border-subtle p-8 text-center">
           <div className="flex h-16 w-16 items-center justify-center rounded-full bg-surface-100 text-gray-400 mx-auto mb-4">
-            <ShoppingBag className="h-8 w-8 stroke-1 text-brand-red" />
+            <RestaurantClocheIcon className="h-8 w-8 text-brand-red" />
           </div>
           <h1 className="font-serif text-2xl font-bold text-white mb-2">
-            Your Cart is Empty
+            Your Dining Tray is Empty
           </h1>
           <p className="text-sm text-gray-400 mb-6">
             You cannot proceed to checkout without adding dishes to your order.

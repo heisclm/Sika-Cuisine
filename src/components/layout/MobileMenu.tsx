@@ -230,30 +230,16 @@ export function MobileMenu({ isOpen, onClose, pathname }: MobileMenuProps) {
           </a>
         </div>
 
-        {/* Terminal portals & address info */}
+        {/* Sunyani Location & Status */}
         <div className="flex items-center justify-between text-[11px] text-gray-400 pt-1">
           <div className="flex items-center gap-1.5">
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="text-gray-300 font-medium">Kitchen Open &bull; Sunyani Central</span>
+            <span className="text-gray-300 font-medium">Kitchen Ready for Orders</span>
           </div>
 
-          <div className="flex items-center gap-3">
-            <Link
-              href="/admin/login"
-              onClick={onClose}
-              className="hover:text-brand-red transition-colors font-mono"
-            >
-              Staff
-            </Link>
-            <span className="text-gray-600">&bull;</span>
-            <Link
-              href="/rider/login"
-              onClick={onClose}
-              className="hover:text-emerald-400 transition-colors font-mono"
-            >
-              Rider
-            </Link>
-          </div>
+          <span className="text-gray-400 font-mono text-[10px]">
+            Commercial Rd, Sunyani
+          </span>
         </div>
       </div>
     </div>,

@@ -6,7 +6,6 @@ import {
   ChefHat,
   Bike,
   PackageCheck,
-  ShoppingBag,
   MapPin,
   CreditCard,
   ArrowRight,
@@ -16,6 +15,7 @@ import {
   FileText,
   Compass,
 } from "lucide-react";
+import { RestaurantClocheIcon } from "@/components/icons/RestaurantClocheIcon";
 import { formatPesewasToGhs } from "@/lib/currency";
 import { FulfilmentStatus } from "@/types/order";
 
@@ -354,7 +354,7 @@ export default async function OrderDetailPage({ params, searchParams }: PageProp
             href="/menu"
             className="btn-red-gradient inline-flex items-center gap-2 px-6 py-3 rounded-full text-xs font-semibold text-white shadow-glow"
           >
-            <ShoppingBag className="h-4 w-4" />
+            <RestaurantClocheIcon className="h-4 w-4" />
             <span>Order More Delicacies</span>
           </Link>
 

@@ -3,8 +3,9 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ShoppingBag, MapPin, Menu, X, User } from "lucide-react";
+import { MapPin, Menu, X, User } from "lucide-react";
 import { useCart } from "@/context/CartContext";
+import { RestaurantClocheIcon } from "@/components/icons/RestaurantClocheIcon";
 import { MobileMenu } from "./MobileMenu";
 
 export function Navbar() {
@@ -76,14 +77,14 @@ export function Navbar() {
 
         {/* Header Right Actions */}
         <div className="flex items-center gap-2.5 sm:gap-3.5">
-          {/* Cart Trigger Button */}
+          {/* Dining Order Tray Button */}
           <button
             id="header-cart-button"
             onClick={() => setIsCartOpen(true)}
             className="relative flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-full bg-[#1c1d22] border border-white/10 text-white hover:border-brand-red/50 hover:bg-[#25272e] transition-all duration-200 shadow-sm"
-            aria-label="Open cart"
+            aria-label="View order tray"
           >
-            <ShoppingBag className="h-4 w-4 sm:h-5 sm:w-5" />
+            <RestaurantClocheIcon className="h-4 w-4 sm:h-5 sm:w-5" />
             {totalCount > 0 && (
               <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-brand-red text-[11px] font-bold text-white shadow-md">
                 {totalCount}

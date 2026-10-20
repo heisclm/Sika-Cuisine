@@ -2,7 +2,8 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { User, Phone, Mail, MapPin, ShoppingBag, ShieldCheck, Clock, ArrowRight, LogOut, Plus } from "lucide-react";
+import { User, Phone, Mail, MapPin, ShieldCheck, Clock, ArrowRight, LogOut, Plus } from "lucide-react";
+import { RestaurantClocheIcon } from "@/components/icons/RestaurantClocheIcon";
 import { SUNYANI_DELIVERY_ZONES } from "@/lib/delivery-zones";
 
 export default function CustomerAccountPage() {
@@ -51,7 +52,7 @@ export default function CustomerAccountPage() {
             className="rounded-3xl bg-surface-300 border border-border-subtle p-6 hover:border-brand-red/40 transition-all space-y-2 group"
           >
             <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-red/15 text-brand-red group-hover:scale-105 transition-transform">
-              <ShoppingBag className="h-5 w-5" />
+              <RestaurantClocheIcon className="h-5 w-5" />
             </div>
             <h3 className="font-serif text-lg font-bold text-white">My Food Orders</h3>
             <p className="text-xs text-gray-400">
