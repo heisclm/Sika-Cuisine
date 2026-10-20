@@ -10,6 +10,7 @@ import {
   Banknote,
   Navigation,
 } from "lucide-react";
+import { Logo } from "@/components/brand/Logo";
 
 export function Footer() {
   const [isKitchenOpen, setIsKitchenOpen] = useState(true);
@@ -45,10 +46,7 @@ export function Footer() {
           {/* Brand Identity Column */}
           <div className="sm:col-span-2 lg:col-span-5 space-y-4">
             <Link href="/" className="inline-flex items-center gap-3 group">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#1c1d22] border border-white/10 font-serif font-black text-xl shadow-sm group-hover:scale-105 group-hover:border-brand-red/40 transition-all duration-300">
-                <span className="tracking-tight text-white">S</span>
-                <span className="text-[13px] text-brand-red font-sans font-bold -ml-0.5">C</span>
-              </div>
+              <Logo size={44} className="shadow-sm group-hover:scale-105 transition-all duration-300" />
               <div className="flex flex-col">
                 <span className="font-serif text-2xl font-black tracking-tight text-white flex items-center leading-none">
                   Sika Cuisine<span className="text-brand-red ml-0.5">.</span>

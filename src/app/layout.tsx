@@ -5,6 +5,7 @@ import { CartProvider } from "@/context/CartContext";
 import { ToastProvider } from "@/context/ToastContext";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
+import { ScrollToTop } from "@/components/layout/ScrollToTop";
 import { CartDrawer } from "@/components/cart/CartDrawer";
 import { FlyingCartAnimation } from "@/components/cart/FlyingCartAnimation";
 
@@ -62,6 +63,7 @@ export default function RootLayout({
       <body className="min-h-screen bg-background text-foreground antialiased selection:bg-brand-red selection:text-white flex flex-col justify-between">
         <ToastProvider>
           <CartProvider>
+            <ScrollToTop />
             <Navbar />
             <FlyingCartAnimation />
             <CartDrawer />

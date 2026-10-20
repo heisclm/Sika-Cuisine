@@ -12,6 +12,7 @@ import {
   ArrowRight,
   ShieldCheck,
 } from "lucide-react";
+import { Logo } from "@/components/brand/Logo";
 
 interface MobileMenuProps {
   isOpen: boolean;
@@ -28,25 +29,25 @@ const MENU_ITEMS = [
   },
   {
     index: "02",
-    name: "Restaurant Menu",
+    name: "Menu",
     href: "/menu",
     desc: "36 Authentic Delicacies & Charcoal Specialties",
   },
   {
     index: "03",
-    name: "Live Dispatch",
+    name: "Track Order",
     href: "/orders",
     desc: "Track Courier Route Across Sunyani",
   },
   {
     index: "04",
-    name: "Our Bono Story",
+    name: "About Us",
     href: "/about",
     desc: "Culinary Heritage & Woodsmoke Craft",
   },
   {
     index: "05",
-    name: "Contact & Lounge",
+    name: "Contact",
     href: "/contact",
     desc: "Commercial Road Sunyani & Reservations",
   },
@@ -107,10 +108,7 @@ export function MobileMenu({ isOpen, onClose, pathname }: MobileMenuProps) {
       {/* TOP HEADER BAR */}
       <div className="flex items-center justify-between px-5 pt-4 pb-4 border-b border-white/[0.06] bg-[#141518]/95 backdrop-blur-md sticky top-0 z-20">
         <Link href="/" onClick={onClose} className="flex items-center gap-2.5">
-          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#1c1d22] border border-white/10 font-serif font-black text-lg shadow-sm">
-            <span className="tracking-tight text-white">S</span>
-            <span className="text-[12px] text-brand-red font-sans font-bold -ml-0.5">C</span>
-          </div>
+          <Logo size={40} className="shadow-sm" />
           <div>
             <span className="font-serif text-xl font-black tracking-tight text-white block leading-none">
               Sika Cuisine<span className="text-brand-red ml-0.5">.</span>

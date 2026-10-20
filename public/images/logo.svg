@@ -1,0 +1,32 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="logoBg" cx="50%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#24262c" />
+      <stop offset="50%" stop-color="#18191e" />
+      <stop offset="100%" stop-color="#121316" />
+    </radialGradient>
+    <linearGradient id="goldRing" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f59e0b" />
+      <stop offset="50%" stop-color="#e50914" />
+      <stop offset="100%" stop-color="#f59e0b" />
+    </linearGradient>
+  </defs>
+
+  <!-- Outer Circle Frame -->
+  <circle cx="256" cy="256" r="240" fill="url(#logoBg)" stroke="#2b2d35" stroke-width="4" />
+  
+  <!-- Accent Rings -->
+  <circle cx="256" cy="256" r="222" stroke="#e50914" stroke-width="2.5" stroke-opacity="0.8" />
+  <circle cx="256" cy="256" r="212" stroke="#f59e0b" stroke-width="1.2" stroke-dasharray="6 4" stroke-opacity="0.7" />
+
+  <!-- Monogram SC -->
+  <text x="175" y="275" font-family="'Fraunces', 'Georgia', serif" font-size="160" font-weight="900" fill="#ffffff" letter-spacing="-6">S</text>
+  <text x="270" y="280" font-family="'Plus Jakarta Sans', system-ui, sans-serif" font-size="130" font-weight="900" fill="#e50914" letter-spacing="-4">C</text>
+
+  <!-- Small Gold Star -->
+  <polygon points="256,120 262,136 278,136 265,146 270,162 256,152 242,162 247,146 234,136 250,136" fill="#f59e0b" />
+
+  <!-- Labeling -->
+  <text x="256" y="340" font-family="'Fraunces', 'Georgia', serif" font-size="24" font-weight="800" fill="#ffffff" text-anchor="middle" letter-spacing="6">SIKA CUISINE</text>
+  <text x="256" y="372" font-family="'Plus Jakarta Sans', sans-serif" font-size="13" font-weight="700" fill="#f59e0b" text-anchor="middle" letter-spacing="4">SUNYANI, GHANA</text>
+</svg>

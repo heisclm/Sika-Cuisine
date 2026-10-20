@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useRef, useMemo } from "react";
-import { Search, Flame } from "lucide-react";
+import React, { useState, useRef, useMemo, useEffect } from "react";
+import { Search, Flame, ArrowUp } from "lucide-react";
 import { MenuItem } from "@/types/menu";
 import { formatPesewasToGhs } from "@/lib/currency";
 import { useCart } from "@/context/CartContext";
@@ -695,7 +695,16 @@ export default function MenuPage() {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [activeDishForModal, setActiveDishForModal] = useState<MenuItem | null>(null);
+  const [showBackToTop, setShowBackToTop] = useState(false);
   const cardRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowBackToTop(window.scrollY > 350);
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   const filteredDishes = useMemo(() => {
     return SIKA_MENU_ITEMS.filter((dish) => {
@@ -757,35 +766,59 @@ export default function MenuPage() {
       {/* Locomotive Kinetic Marquee */}
       <KineticMarquee className="border-b border-white/[0.06] bg-[#111215]/90 backdrop-blur-md" />
 
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-8">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-10">
-          <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto -mx-4 px-4 sm:mx-0 sm:px-0 pb-2 md:pb-0 scrollbar-none touch-pan-x">
-            {CATEGORIES.map((cat) => (
-              <button
-                key={cat.id}
-                onClick={() => setSelectedCategory(cat.id)}
-                className={`whitespace-nowrap rounded-full px-4 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-semibold transition-all touch-manipulation ${
-                  selectedCategory === cat.id
-                    ? "bg-brand-red text-white shadow-glow"
-                    : "bg-surface-200 text-gray-300 hover:bg-surface-100 hover:text-white border border-border-subtle"
-                }`}
-              >
-                {cat.name}
-              </button>
-            ))}
-          </div>
+      {/* Sticky Category Navigation & Quick Filter Bar */}
+      <div className="sticky top-18 sm:top-20 z-30 bg-[#141518]/95 backdrop-blur-xl py-3.5 border-b border-white/[0.06] shadow-md">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-3">
+            <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto pb-1 md:pb-0 scrollbar-none touch-pan-x">
+              {CATEGORIES.map((cat) => {
+                const count =
+                  cat.id === "all"
+                    ? SIKA_MENU_ITEMS.length
+                    : SIKA_MENU_ITEMS.filter((d) => d.categoryId === cat.id).length;
+                return (
+                  <button
+                    key={cat.id}
+                    onClick={() => {
+                      setSelectedCategory(cat.id);
+                      window.scrollTo({ top: 320, behavior: "smooth" });
+                    }}
+                    className={`whitespace-nowrap rounded-full px-4 sm:px-5 py-2 text-xs sm:text-sm font-semibold transition-all touch-manipulation flex items-center gap-2 ${
+                      selectedCategory === cat.id
+                        ? "bg-brand-red text-white shadow-[0_4px_14px_rgba(229,9,20,0.35)]"
+                        : "bg-[#1a1b20] text-gray-300 hover:bg-[#25272e] hover:text-white border border-white/5"
+                    }`}
+                  >
+                    <span>{cat.name}</span>
+                    <span
+                      className={`text-[10px] px-1.5 py-0.5 rounded-full font-mono ${
+                        selectedCategory === cat.id
+                          ? "bg-black/30 text-white"
+                          : "bg-white/5 text-gray-400"
+                      }`}
+                    >
+                      {count}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
 
-          <div className="relative w-full md:w-72">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search jollof, tilapia, pizza..."
-              className="w-full rounded-full bg-surface-200 border border-border-subtle pl-10 pr-4 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-brand-red"
-            />
+            <div className="relative w-full md:w-64 flex-shrink-0">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Filter delicacies..."
+                className="w-full rounded-full bg-[#1a1b20] border border-white/10 pl-10 pr-4 py-2 text-xs sm:text-sm text-white placeholder-gray-500 focus:outline-none focus:border-brand-red"
+              />
+            </div>
           </div>
         </div>
+      </div>
+
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-4">
 
         {filteredDishes.length === 0 ? (
           <div className="text-center py-20 rounded-3xl bg-surface-300 border border-border-subtle">
@@ -872,6 +905,18 @@ export default function MenuPage() {
           activeDishForModal ? cardRefs.current[activeDishForModal.id] : null
         }
       />
+
+      {/* Floating Quick Categories / Jump To Top Pill */}
+      {showBackToTop && (
+        <button
+          onClick={() => window.scrollTo({ top: 320, behavior: "smooth" })}
+          className="fixed bottom-6 right-6 z-40 flex items-center gap-2 px-4 py-2.5 rounded-full bg-[#1c1d22] hover:bg-brand-red text-white text-xs font-semibold border border-white/10 shadow-[0_10px_25px_rgba(0,0,0,0.8)] transition-all duration-300 active:scale-95"
+          aria-label="Back to categories"
+        >
+          <ArrowUp className="h-4 w-4" />
+          <span>Categories</span>
+        </button>
+      )}
     </div>
   );
 }

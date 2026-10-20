@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { MapPin, Menu, X, User } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import { RestaurantClocheIcon } from "@/components/icons/RestaurantClocheIcon";
+import { Logo } from "@/components/brand/Logo";
 import { MobileMenu } from "./MobileMenu";
 
 export function Navbar() {
@@ -44,10 +45,7 @@ export function Navbar() {
         
         {/* Brand Identity */}
         <Link href="/" className="flex items-center gap-2.5 sm:gap-3 group">
-          <div className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-2xl bg-[#1c1d22] border border-white/10 font-serif font-black text-lg sm:text-xl shadow-[0_4px_12px_rgba(0,0,0,0.5)] group-hover:scale-105 group-hover:border-brand-red/40 transition-all duration-300">
-            <span className="tracking-tight text-white">S</span>
-            <span className="text-[12px] sm:text-[13px] text-brand-red font-sans font-bold -ml-0.5">C</span>
-          </div>
+          <Logo size={42} className="shadow-[0_4px_12px_rgba(0,0,0,0.5)] group-hover:scale-105 transition-all duration-300" />
           <div className="flex flex-col">
             <span className="font-serif text-xl sm:text-2xl font-black tracking-tight text-white flex items-center leading-none">
               Sika Cuisine<span className="text-brand-red ml-0.5">.</span>

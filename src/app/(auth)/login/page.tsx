@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Lock, Mail, ArrowRight, AlertCircle, Loader2, UserPlus, Compass, Eye, EyeOff } from "lucide-react";
+import { Logo } from "@/components/brand/Logo";
 
 export default function CustomerLoginPage() {
   const router = useRouter();
@@ -28,7 +29,8 @@ export default function CustomerLoginPage() {
     <div className="min-h-screen bg-background flex items-center justify-center py-16 px-4 sm:px-6 lg:px-8">
       <div className="w-full max-w-md space-y-8 rounded-3xl bg-surface-300 border border-border-subtle p-8 sm:p-10 shadow-2xl">
         <div className="text-center">
-          <Link href="/" className="inline-block">
+          <Link href="/" className="inline-block group">
+            <Logo size={56} className="mx-auto mb-3 shadow-md group-hover:scale-105 transition-transform" />
             <span className="font-serif text-3xl font-black tracking-tight text-white flex items-center justify-center">
               Sika Cuisine<span className="text-brand-red ml-0.5">.</span>
             </span>
