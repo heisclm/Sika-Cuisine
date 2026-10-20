@@ -30,11 +30,11 @@ export default function RiderLoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#07080a] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+    <div className="min-h-screen bg-background flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden text-gray-200">
       <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-emerald-500 via-brand-gold to-emerald-500" />
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[550px] h-[350px] bg-emerald-500/5 blur-[120px] pointer-events-none -z-10" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[450px] studio-vignette pointer-events-none -z-10" />
 
-      <div className="w-full max-w-md space-y-6 rounded-3xl bg-surface-300/90 border border-border-subtle p-7 sm:p-9 shadow-2xl backdrop-blur-xl">
+      <div className="w-full max-w-md space-y-6 rounded-3xl bg-[#1a1b20] border border-white/10 p-7 sm:p-9 shadow-2xl">
         <div className="text-center">
           <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-950/60 text-emerald-400 border border-emerald-800/50 mb-3 shadow-glow">
             <Bike className="h-7 w-7" />

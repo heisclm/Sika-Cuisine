@@ -5,10 +5,7 @@ import Link from "next/link";
 import {
   MapPin,
   Phone,
-  Mail,
-  Clock,
   ShieldCheck,
-  ArrowRight,
   CheckCircle2,
   MessageCircle,
   Banknote,
@@ -17,7 +14,6 @@ import {
   Send,
   Navigation,
 } from "lucide-react";
-import { SvgFlourish } from "@/components/creative/SvgFlourish";
 
 export function Footer() {
   const [email, setEmail] = useState("");
@@ -54,29 +50,27 @@ export function Footer() {
   };
 
   return (
-    <footer className="w-full border-t border-border-subtle/80 bg-[#07080a] text-gray-400 pt-14 sm:pt-20 pb-16 sm:pb-12 relative overflow-hidden select-none">
-      {/* Subtle ambient luxury backdrop glow */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[350px] bg-brand-red/[0.03] blur-[140px] pointer-events-none -z-10" />
-
+    <footer className="w-full border-t border-white/[0.06] bg-[#111215] text-gray-400 pt-14 sm:pt-20 pb-16 sm:pb-12 relative overflow-hidden select-none">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        
         {/* TOP VIP DINING CLUB / NEWSLETTER STRIP */}
-        <div className="mb-14 pb-12 border-b border-white/[0.07] grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-          <div className="lg:col-span-7 space-y-2 text-center lg:text-left">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-red/10 border border-brand-red/30 text-brand-red text-xs font-semibold">
+        <div className="mb-14 pb-12 border-b border-white/[0.06] grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+          <div className="lg:col-span-7 space-y-2.5 text-center lg:text-left">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-red/10 border border-brand-red/25 text-brand-red text-xs font-semibold">
               <Sparkles className="h-3.5 w-3.5" />
               <span>Sika Cuisine Dining Club &bull; Sunyani Privileges</span>
             </div>
             <h3 className="font-serif text-2xl sm:text-3xl font-bold text-white tracking-tight">
               Savor Exclusive Chef Specials & Delivery Perks
             </h3>
-            <p className="text-xs sm:text-sm text-gray-400 font-light max-w-xl mx-auto lg:mx-0">
+            <p className="text-xs sm:text-sm text-gray-400 font-light max-w-xl mx-auto lg:mx-0 leading-relaxed">
               Join Sunyani&apos;s culinary circle. Receive secret weekend tasting menus, doorstep dispatch vouchers, and seasonal Bono harvest announcements.
             </p>
           </div>
 
           <div className="lg:col-span-5">
             {subscribed ? (
-              <div className="rounded-2xl bg-emerald-950/50 border border-emerald-800/80 p-4 text-center sm:text-left flex items-center gap-3">
+              <div className="rounded-2xl bg-emerald-950/40 border border-emerald-800/60 p-4 text-center sm:text-left flex items-center gap-3">
                 <CheckCircle2 className="h-6 w-6 text-emerald-400 flex-shrink-0" />
                 <div>
                   <p className="font-serif text-sm font-bold text-white">
@@ -94,12 +88,12 @@ export function Footer() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Enter your email for delivery perks..."
-                  className="w-full rounded-2xl bg-surface-200/90 border border-white/10 px-4 py-3.5 text-xs sm:text-sm text-white placeholder-gray-500 focus:outline-none focus:border-brand-red transition-colors"
+                  placeholder="Enter email for delivery perks..."
+                  className="w-full rounded-full bg-[#1a1b20] border border-white/10 px-5 py-3.5 text-xs sm:text-sm text-white placeholder-gray-500 focus:outline-none focus:border-brand-red transition-colors"
                 />
                 <button
                   type="submit"
-                  className="btn-red-gradient inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl text-xs sm:text-sm font-semibold text-white shadow-glow whitespace-nowrap transition-transform active:scale-95"
+                  className="inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-full text-xs sm:text-sm font-semibold text-white bg-brand-red hover:bg-brand-red-hover active:scale-95 transition-all shadow-[0_4px_16px_rgba(229,9,20,0.35)] whitespace-nowrap"
                 >
                   <span>Join Club</span>
                   <Send className="h-3.5 w-3.5" />
@@ -111,10 +105,11 @@ export function Footer() {
 
         {/* MAIN NAVIGATION GRID */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-10 lg:gap-8 mb-14">
+          
           {/* Brand Identity Column */}
           <div className="sm:col-span-2 lg:col-span-4 space-y-4">
             <Link href="/" className="inline-flex items-center gap-3 group">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-[#2a0e13] via-[#1a080b] to-[#0c0406] border border-brand-red/40 font-serif font-black text-xl shadow-[0_4px_16px_rgba(225,29,72,0.25)] group-hover:scale-105 transition-all duration-300">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#1c1d22] border border-white/10 font-serif font-black text-xl shadow-sm group-hover:scale-105 group-hover:border-brand-red/40 transition-all duration-300">
                 <span className="tracking-tight text-white">S</span>
                 <span className="text-[13px] text-brand-red font-sans font-bold -ml-0.5">C</span>
               </div>
@@ -133,11 +128,11 @@ export function Footer() {
             </p>
 
             <div className="pt-1 flex flex-wrap items-center gap-2 text-xs">
-              <div className="flex items-center gap-1.5 text-emerald-400 bg-emerald-950/40 border border-emerald-800/40 px-3 py-1.5 rounded-full">
+              <div className="flex items-center gap-1.5 text-emerald-400 bg-emerald-950/30 border border-emerald-800/40 px-3 py-1.5 rounded-full">
                 <ShieldCheck className="h-3.5 w-3.5" />
                 <span className="font-medium text-[11px]">Certified Food Hygiene & Safety</span>
               </div>
-              <div className="flex items-center gap-1.5 text-amber-400 bg-amber-950/40 border border-amber-800/40 px-3 py-1.5 rounded-full">
+              <div className="flex items-center gap-1.5 text-amber-400 bg-amber-950/30 border border-amber-800/40 px-3 py-1.5 rounded-full">
                 <ChefHat className="h-3.5 w-3.5" />
                 <span className="font-medium text-[11px]">Prepared Fresh to Order</span>
               </div>
@@ -230,13 +225,13 @@ export function Footer() {
               <li className="pt-2 border-t border-white/5 space-y-1.5">
                 <Link
                   href="/admin/login"
-                  className="text-gray-500 hover:text-brand-red transition-colors text-xs flex items-center gap-1"
+                  className="text-gray-400 hover:text-brand-red transition-colors text-xs flex items-center gap-1"
                 >
                   <span>&bull; Staff Kitchen Terminal</span>
                 </Link>
                 <Link
                   href="/rider/login"
-                  className="text-gray-500 hover:text-emerald-400 transition-colors text-xs flex items-center gap-1"
+                  className="text-gray-400 hover:text-emerald-400 transition-colors text-xs flex items-center gap-1"
                 >
                   <span>&bull; Rider Dispatch Portal</span>
                 </Link>
@@ -256,7 +251,7 @@ export function Footer() {
                   className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold border ${
                     isKitchenOpen
                       ? "bg-emerald-950/60 border-emerald-700/60 text-emerald-400"
-                      : "bg-surface-200 border-border-subtle text-gray-400"
+                      : "bg-[#1c1d22] border-white/10 text-gray-400"
                   }`}
                 >
                   <span
@@ -269,7 +264,7 @@ export function Footer() {
               </div>
 
               <div className="space-y-2 text-xs">
-                <div className="rounded-xl bg-surface-200/70 p-2.5 border border-white/5 space-y-1">
+                <div className="rounded-xl bg-[#1a1b20] p-2.5 border border-white/5 space-y-1">
                   <div className="flex justify-between font-semibold text-white">
                     <span>Monday — Saturday</span>
                     <span className="font-mono text-gray-300">10:00 AM — 10:00 PM</span>
@@ -289,7 +284,7 @@ export function Footer() {
               <div className="flex flex-col sm:flex-row gap-2">
                 <a
                   href="tel:+233533376760"
-                  className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-surface-200 hover:bg-surface-100 text-white font-mono text-xs border border-white/10 transition-colors"
+                  className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-[#1a1b20] hover:bg-[#25272e] text-white font-mono text-xs border border-white/10 transition-colors"
                 >
                   <Phone className="h-3.5 w-3.5 text-brand-red" />
                   <span>0533376760</span>
@@ -315,15 +310,15 @@ export function Footer() {
           </div>
         </div>
 
-        {/* AUTHENTIC PAYMENT METHODS & REPUTATION STRIP */}
-        <div className="pt-8 pb-8 border-t border-white/[0.08] space-y-5">
+        {/* AUTHENTIC PAYMENT METHODS & SECURITY STRIP */}
+        <div className="pt-8 pb-8 border-t border-white/[0.06] space-y-5">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
             <div>
               <span className="text-xs font-bold uppercase tracking-wider text-white font-serif block">
                 Verified Ghana Payment Infrastructure
               </span>
               <span className="text-[11px] text-gray-400 font-light">
-                All transactions encrypted via Paystack with instant mobile money push STK prompts.
+                Encrypted via Paystack with instant mobile money push prompts (MTN MoMo, Telecel Cash, AT Money).
               </span>
             </div>
 

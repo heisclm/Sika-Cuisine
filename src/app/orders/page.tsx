@@ -126,9 +126,9 @@ export default function OrdersHubPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-24">
-      <div className="border-b border-border-subtle bg-surface-300 py-14 sm:py-20 text-center relative overflow-hidden">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[300px] bg-brand-red/5 blur-[100px] pointer-events-none -z-10" />
+    <div className="min-h-screen bg-background pb-24 text-gray-200">
+      <div className="border-b border-white/[0.06] bg-[#16171b] py-14 sm:py-20 text-center relative overflow-hidden">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-5xl h-[300px] studio-vignette pointer-events-none -z-10" />
         <div className="mx-auto max-w-4xl px-4">
           <div className="inline-flex items-center gap-2.5 mb-3">
             <span className="h-px w-6 bg-brand-red/60" />
@@ -137,10 +137,10 @@ export default function OrdersHubPage() {
             </span>
             <span className="h-px w-6 bg-brand-red/60" />
           </div>
-          <h1 className="font-serif text-3xl sm:text-5xl font-black text-white">
+          <h1 className="font-serif text-3xl sm:text-5xl font-bold text-white tracking-tight">
             Track Delivery & Orders
           </h1>
-          <p className="mt-3 text-sm sm:text-base text-gray-300 max-w-xl mx-auto font-light">
+          <p className="mt-3 text-sm sm:text-base text-gray-400 max-w-xl mx-auto font-light leading-relaxed">
             Check the live preparation status of your culinary feast or view your order history across Sunyani.
           </p>
         </div>

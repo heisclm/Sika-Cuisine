@@ -39,11 +39,11 @@ export default function StaffLoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0c] flex items-center justify-center py-16 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+    <div className="min-h-screen bg-background flex items-center justify-center py-16 px-4 sm:px-6 lg:px-8 relative overflow-hidden text-gray-200">
       <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-brand-red via-brand-gold to-brand-red" />
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] bg-brand-red/5 blur-[120px] pointer-events-none -z-10" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[500px] studio-vignette pointer-events-none -z-10" />
 
-      <div className="w-full max-w-md space-y-8 rounded-3xl bg-surface-300/90 border border-border-subtle p-8 sm:p-10 shadow-2xl backdrop-blur-xl">
+      <div className="w-full max-w-md space-y-8 rounded-3xl bg-[#1a1b20] border border-white/10 p-8 sm:p-10 shadow-2xl">
         <div className="text-center">
           <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-red/15 text-brand-red border border-brand-red/30 mb-4 shadow-glow">
             <ChefHat className="h-7 w-7" />

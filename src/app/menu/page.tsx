@@ -9,8 +9,6 @@ import { useToast } from "@/context/ToastContext";
 import { DishDetailModal } from "@/components/menu/DishDetailModal";
 import { TiltCard } from "@/components/creative/TiltCard";
 import { MagneticButton } from "@/components/creative/MagneticButton";
-import { AmbientEmbers } from "@/components/creative/AmbientEmbers";
-import { SvgFlourish } from "@/components/creative/SvgFlourish";
 import { KineticMarquee } from "@/components/creative/KineticMarquee";
 
 export const SIKA_MENU_ITEMS: MenuItem[] = [
@@ -733,9 +731,9 @@ export default function MenuPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-24">
-      <div className="relative border-b border-border-subtle bg-surface-300 py-14 sm:py-20 overflow-hidden">
-        <AmbientEmbers count={12} minSize={1} maxSize={2.5} opacity={0.35} />
+    <div className="min-h-screen bg-background pb-24 text-gray-200">
+      <div className="relative border-b border-white/[0.06] bg-[#16171b] py-14 sm:py-20 overflow-hidden">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-5xl h-[300px] studio-vignette pointer-events-none -z-10" />
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center relative z-10">
           <div className="inline-flex items-center gap-2.5 mb-3">
             <span className="h-px w-6 bg-brand-red/60" />
@@ -744,22 +742,19 @@ export default function MenuPage() {
             </span>
             <span className="h-px w-6 bg-brand-red/60" />
           </div>
-          <div className="relative inline-block">
-            <h1 className="font-serif text-3xl sm:text-5xl font-black text-white">
+          <div>
+            <h1 className="font-serif text-3xl sm:text-5xl lg:text-6xl font-bold text-white tracking-tight">
               Official Restaurant Menu
             </h1>
-            <div className="flex justify-center mt-2">
-              <SvgFlourish width={220} height={18} color="#e11d48" />
-            </div>
           </div>
-          <p className="mt-3 text-sm sm:text-base text-gray-300 max-w-xl mx-auto font-light">
+          <p className="mt-3 text-sm sm:text-base text-gray-400 max-w-xl mx-auto font-light leading-relaxed">
             Every delicacy prepared fresh to order in Sunyani. Select your favorite packages, local dishes, seafood, or specials.
           </p>
         </div>
       </div>
 
       {/* Locomotive Kinetic Marquee */}
-      <KineticMarquee className="border-b border-border-subtle/80 bg-[#0c0d12]/80 backdrop-blur-md" />
+      <KineticMarquee className="border-b border-white/[0.06] bg-[#111215]/90 backdrop-blur-md" />
 
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-8">
         <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-10">

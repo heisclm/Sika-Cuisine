@@ -10,13 +10,8 @@ import {
   MessageCircle,
   User,
   ArrowRight,
-  Clock,
-  Sparkles,
-  ChefHat,
-  Bike,
+  ShieldCheck,
 } from "lucide-react";
-import { SvgFlourish } from "@/components/creative/SvgFlourish";
-import { SteamAroma } from "@/components/creative/SteamAroma";
 
 interface MobileMenuProps {
   isOpen: boolean;
@@ -35,7 +30,7 @@ const MENU_ITEMS = [
     index: "02",
     name: "Restaurant Menu",
     href: "/menu",
-    desc: "36 Delicacies & Charcoal Specialties",
+    desc: "36 Authentic Delicacies & Charcoal Specialties",
   },
   {
     index: "03",
@@ -99,25 +94,20 @@ export function MobileMenu({ isOpen, onClose, pathname }: MobileMenuProps) {
     return pathname === href || (href !== "/" && pathname.startsWith(href));
   };
 
-  // Render via createPortal directly into document.body to escape header containing block
   return createPortal(
     <div
       role="dialog"
       aria-modal="true"
       aria-label="Navigation Menu"
-      className="fixed inset-0 z-[99999] w-full h-[100dvh] bg-[#07080a] text-white flex flex-col justify-between overflow-y-auto overscroll-contain animate-menu-overlay"
+      className="fixed inset-0 z-[99999] w-full h-[100dvh] bg-[#141518] text-white flex flex-col justify-between overflow-y-auto overscroll-contain animate-menu-overlay"
     >
-      {/* Cassie Evans subtle rising steam vapor in background */}
-      <SteamAroma className="top-4 left-1/2 -translate-x-1/2 opacity-20 pointer-events-none" />
-
-      {/* Atmospheric luxury glows */}
-      <div className="absolute top-0 right-0 w-[350px] h-[350px] bg-brand-red/[0.08] blur-[120px] pointer-events-none -z-10" />
-      <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-brand-gold/[0.05] blur-[100px] pointer-events-none -z-10" />
+      {/* Studio Matte Overhead Vignette (Zero Shiny Red Glare) */}
+      <div className="absolute top-0 left-0 right-0 h-[450px] pointer-events-none -z-10 bg-[radial-gradient(ellipse_90%_60%_at_50%_0%,#24262b_0%,#141518_75%)]" />
 
       {/* TOP HEADER BAR */}
-      <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-white/[0.08] bg-[#07080a] sticky top-0 z-10">
-        <Link href="/" onClick={onClose} className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-[#2a0e13] via-[#1a080b] to-[#0c0406] border border-brand-red/40 font-serif font-black text-lg shadow-[0_4px_16px_rgba(225,29,72,0.25)]">
+      <div className="flex items-center justify-between px-5 pt-4 pb-4 border-b border-white/[0.06] bg-[#141518]/95 backdrop-blur-md sticky top-0 z-20">
+        <Link href="/" onClick={onClose} className="flex items-center gap-2.5">
+          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#1c1d22] border border-white/10 font-serif font-black text-lg shadow-sm">
             <span className="tracking-tight text-white">S</span>
             <span className="text-[12px] text-brand-red font-sans font-bold -ml-0.5">C</span>
           </div>
@@ -125,30 +115,33 @@ export function MobileMenu({ isOpen, onClose, pathname }: MobileMenuProps) {
             <span className="font-serif text-xl font-black tracking-tight text-white block leading-none">
               Sika Cuisine<span className="text-brand-red ml-0.5">.</span>
             </span>
-            <span className="text-[9px] tracking-[0.2em] uppercase font-semibold text-gray-400 mt-1 flex items-center gap-1 font-mono">
-              <MapPin className="h-2.5 w-2.5 text-brand-red" /> Sunyani &bull; 07°20&apos;N, 02°20&apos;W
+            <span className="text-[9px] tracking-[0.18em] uppercase font-semibold text-gray-400 mt-1 flex items-center gap-1 font-mono">
+              <MapPin className="h-2.5 w-2.5 text-brand-red flex-shrink-0" /> Sunyani Central
             </span>
           </div>
         </Link>
 
+        {/* Clean Pill Close Button */}
         <button
           onClick={onClose}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface-100 hover:bg-surface-50 border border-white/10 text-xs font-semibold text-gray-300 hover:text-white transition-all active:scale-95 shadow-md"
+          className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#1c1d22] hover:bg-[#25272e] border border-white/10 text-xs font-semibold text-gray-200 hover:text-white transition-all active:scale-95 shadow-sm"
           aria-label="Close menu"
         >
           <span className="text-[11px] uppercase tracking-wider font-bold">Close</span>
-          <X className="h-4 w-4 text-brand-red stroke-[2.5]" />
+          <div className="flex h-5 w-5 items-center justify-center rounded-full bg-brand-red/20 text-brand-red">
+            <X className="h-3.5 w-3.5 stroke-[2.5]" />
+          </div>
         </button>
       </div>
 
-      {/* EDITORIAL NAVIGATION LINKS (Locomotive typography + Cassie Evans flourish) */}
-      <div className="flex-1 px-6 py-6 flex flex-col justify-center max-w-md mx-auto w-full space-y-5">
+      {/* EDITORIAL NAVIGATION LINKS */}
+      <div className="flex-1 px-6 py-6 flex flex-col justify-center max-w-md mx-auto w-full space-y-6">
         <div className="text-[10px] font-mono uppercase tracking-[0.25em] text-brand-red flex items-center gap-2">
           <span className="h-px w-5 bg-brand-red/60" />
-          <span>Curated Gastronomy Experience</span>
+          <span>Curated Sunyani Gastronomy</span>
         </div>
 
-        <nav className="space-y-3">
+        <nav className="space-y-2">
           {MENU_ITEMS.map((item, idx) => {
             const active = isActive(item.href);
 
@@ -157,24 +150,26 @@ export function MobileMenu({ isOpen, onClose, pathname }: MobileMenuProps) {
                 key={item.name}
                 className="group relative animate-menu-slide"
                 style={{
-                  animationDelay: `${idx * 0.05}s`,
+                  animationDelay: `${idx * 0.04}s`,
                 }}
               >
                 <Link
                   href={item.href}
                   onClick={onClose}
-                  className="block py-1.5 transition-all duration-200"
+                  className={`block py-2.5 px-3 rounded-2xl transition-all duration-200 ${
+                    active
+                      ? "bg-[#1c1d22] border-l-4 border-brand-red text-white"
+                      : "hover:bg-[#1a1b20] text-gray-300 hover:text-white"
+                  }`}
                 >
-                  <div className="flex items-baseline justify-between">
-                    <div className="flex items-baseline gap-3">
-                      <span className="font-mono text-xs text-brand-red font-semibold tracking-wider">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <span className="font-mono text-xs text-brand-red font-semibold">
                         {item.index}
                       </span>
                       <span
-                        className={`font-serif text-3xl sm:text-4xl font-bold tracking-tight transition-colors ${
-                          active
-                            ? "text-brand-red italic"
-                            : "text-white group-hover:text-brand-red"
+                        className={`font-serif text-2xl sm:text-3xl font-bold tracking-tight ${
+                          active ? "text-white" : "text-gray-200 group-hover:text-white"
                         }`}
                       >
                         {item.name}
@@ -182,10 +177,10 @@ export function MobileMenu({ isOpen, onClose, pathname }: MobileMenuProps) {
                     </div>
 
                     <ArrowRight
-                      className={`h-5 w-5 transition-transform duration-300 ${
+                      className={`h-4 w-4 transition-transform duration-200 ${
                         active
                           ? "text-brand-red translate-x-0"
-                          : "text-gray-600 -translate-x-2 opacity-0 group-hover:opacity-100 group-hover:translate-x-0 group-hover:text-white"
+                          : "text-gray-500 opacity-0 group-hover:opacity-100 group-hover:translate-x-0 group-hover:text-white"
                       }`}
                     />
                   </div>
@@ -193,13 +188,6 @@ export function MobileMenu({ isOpen, onClose, pathname }: MobileMenuProps) {
                   <p className="text-xs text-gray-400 font-light mt-1 pl-7">
                     {item.desc}
                   </p>
-
-                  {/* Cassie Evans organic stroke flourish for active link */}
-                  {active && (
-                    <div className="pl-7 mt-1">
-                      <SvgFlourish width={160} height={12} color="#e11d48" />
-                    </div>
-                  )}
                 </Link>
               </div>
             );
@@ -211,7 +199,7 @@ export function MobileMenu({ isOpen, onClose, pathname }: MobileMenuProps) {
           <Link
             href="/login"
             onClick={onClose}
-            className="btn-red-gradient flex w-full items-center justify-center gap-2 py-3.5 rounded-2xl text-sm font-semibold text-white shadow-glow transition-all active:scale-95"
+            className="flex w-full items-center justify-center gap-2 py-3.5 rounded-full text-sm font-semibold text-white bg-brand-red hover:bg-brand-red-hover active:scale-95 transition-all shadow-[0_4px_16px_rgba(229,9,20,0.35)]"
           >
             <User className="h-4 w-4" />
             <span>Sign In to Sika Account</span>
@@ -219,13 +207,13 @@ export function MobileMenu({ isOpen, onClose, pathname }: MobileMenuProps) {
         </div>
       </div>
 
-      {/* LOCOMOTIVE FOOTER UTILITY STRIP */}
-      <div className="px-5 pt-4 pb-6 border-t border-white/[0.08] bg-[#0c0d12]/95 space-y-3.5">
+      {/* FOOTER UTILITY STRIP */}
+      <div className="px-5 pt-4 pb-6 border-t border-white/[0.06] bg-[#111215] space-y-3">
         {/* Quick-dial Sunyani dispatch hotline & WhatsApp */}
         <div className="grid grid-cols-2 gap-2 text-xs">
           <a
             href="tel:+233533376760"
-            className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-surface-200/90 border border-white/5 text-gray-200 hover:text-white font-mono text-[11px] transition-colors"
+            className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-[#1a1b20] hover:bg-[#22242a] border border-white/5 text-gray-200 hover:text-white font-mono text-[11px] transition-colors"
           >
             <Phone className="h-3.5 w-3.5 text-brand-red" />
             <span>0533376760</span>
@@ -235,7 +223,7 @@ export function MobileMenu({ isOpen, onClose, pathname }: MobileMenuProps) {
             href="https://wa.me/233533376760?text=Hello%20Sika%20Cuisine,%20I%20want%20to%20order%20food"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-emerald-950/60 border border-emerald-800/60 text-emerald-300 font-semibold text-[11px] shadow-sm transition-colors"
+            className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-emerald-950/60 hover:bg-emerald-900/60 border border-emerald-800/60 text-emerald-300 font-semibold text-[11px] transition-colors"
           >
             <MessageCircle className="h-3.5 w-3.5 text-emerald-400" />
             <span>WhatsApp Kitchen</span>
