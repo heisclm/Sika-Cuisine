@@ -10,14 +10,14 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        background: "#0a0a0d",
+        background: "#141518",
         surface: {
-          50: "#22222c",
-          100: "#1c1c24",
-          200: "#16161c",
-          300: "#121216",
-          400: "#0e0e12",
-          DEFAULT: "#121217",
+          50: "#27292f",
+          100: "#202227",
+          200: "#1a1b20",
+          300: "#151619",
+          400: "#101113",
+          DEFAULT: "#1a1b20",
         },
         brand: {
           red: {
@@ -31,9 +31,9 @@ const config: Config = {
           gold: "#f59e0b",
         },
         border: {
-          subtle: "#242430",
-          muted: "#1a1a24",
-          highlight: "#363646",
+          subtle: "#282a30",
+          muted: "#1f2025",
+          highlight: "#393c44",
         },
       },
       fontFamily: {
