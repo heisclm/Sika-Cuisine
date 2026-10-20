@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, Star, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowRight, Star, ChevronLeft, ChevronRight, ShoppingCart } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import { useToast } from "@/context/ToastContext";
 import { formatPesewasToGhs } from "@/lib/currency";
@@ -11,7 +11,7 @@ import { TiltCard } from "@/components/creative/TiltCard";
 import { MagneticButton } from "@/components/creative/MagneticButton";
 import { FloatingGarnishes } from "@/components/creative/FloatingGarnishes";
 import { KineticMarquee } from "@/components/creative/KineticMarquee";
-import { RestaurantClocheIcon } from "@/components/icons/RestaurantClocheIcon";
+import { DishDetailModal } from "@/components/menu/DishDetailModal";
 
 const FEATURED_DISHES: MenuItem[] = [
   {
@@ -120,6 +120,7 @@ export default function HomePage() {
   const { success } = useToast();
   const cardRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
   const carouselRef = useRef<HTMLDivElement | null>(null);
+  const [activeDishForModal, setActiveDishForModal] = useState<MenuItem | null>(null);
 
   const scrollCarousel = (direction: "left" | "right") => {
     if (carouselRef.current) {
@@ -130,16 +131,20 @@ export default function HomePage() {
 
   const handleQuickAdd = (dish: MenuItem, e: React.MouseEvent) => {
     e.stopPropagation();
-    const element = cardRefs.current[dish.id];
-    addItem(dish, [], 1, undefined, element);
-    success(
-      `Added ${dish.name} to plate`,
-      "Prepared fresh to order in Sunyani",
-      {
-        label: "View Plate",
-        onClick: () => setIsCartOpen(true),
-      }
-    );
+    if (dish.optionGroups && dish.optionGroups.some((g) => g.isRequired)) {
+      setActiveDishForModal(dish);
+    } else {
+      const element = cardRefs.current[dish.id];
+      addItem(dish, [], 1, undefined, element);
+      success(
+        `Added ${dish.name} to plate`,
+        "Prepared fresh to order in Sunyani",
+        {
+          label: "View Plate",
+          onClick: () => setIsCartOpen(true),
+        }
+      );
+    }
   };
 
   return (
@@ -259,8 +264,8 @@ export default function HomePage() {
             </h2>
           </div>
 
-          {/* Carousel Navigation Buttons: Left Dark Button, Right Red Button */}
-          <div className="flex items-center gap-3">
+          {/* Carousel Navigation Buttons for Mobile/Tablet */}
+          <div className="flex lg:hidden items-center gap-3">
             <button
               onClick={() => scrollCarousel("left")}
               className="flex h-11 w-11 items-center justify-center rounded-full bg-[#1e2025] border border-white/10 text-white hover:bg-[#282a32] active:scale-95 transition-all shadow-md"
@@ -278,72 +283,77 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Horizontal Carousel Track */}
-        <div
-          ref={carouselRef}
-          className="flex items-stretch gap-6 overflow-x-auto scrollbar-none scroll-smooth pt-16 pb-6 px-2 -mx-2 touch-pan-x"
-        >
-          {FEATURED_DISHES.map((dish) => (
-            <div
-              key={dish.id}
-              ref={(el) => {
-                cardRefs.current[dish.id] = el;
-              }}
-              className="w-64 sm:w-72 flex-shrink-0 relative rounded-[28px] bg-[#1a1b20] border border-white/[0.06] p-5 pt-20 flex flex-col justify-between shadow-[0_15px_35px_rgba(0,0,0,0.6)] hover:border-brand-red/40 transition-all duration-300 group"
-            >
-              {/* Overlapping Top Plate */}
-              <div className="absolute -top-14 left-1/2 -translate-x-1/2 h-32 w-32 rounded-full overflow-hidden border-[4px] border-[#222429] shadow-[0_16px_32px_rgba(0,0,0,0.9)] group-hover:scale-105 group-hover:rotate-[2deg] transition-transform duration-500 ease-out bg-[#16171a]">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={dish.imageUrl}
-                  alt={dish.name}
-                  className="h-full w-full object-cover"
-                />
-              </div>
+        {/* Carousel Container with Flanking Arrow Buttons matching the Reference Design */}
+        <div className="relative">
+          {/* Left Arrow Button (Floats on left of track) */}
+          <button
+            onClick={() => scrollCarousel("left")}
+            className="hidden lg:flex absolute -left-6 top-1/2 -translate-y-1/2 z-20 h-12 w-12 items-center justify-center rounded-full bg-[#22232b] hover:bg-[#2a2c36] border border-white/10 text-gray-200 hover:text-white active:scale-95 transition-all shadow-[0_10px_25px_rgba(0,0,0,0.8)]"
+            aria-label="Previous dishes"
+          >
+            <ChevronLeft className="h-5 w-5" />
+          </button>
 
-              {/* Dish Meta */}
-              <div className="text-center mt-2 flex-grow">
-                <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 block">
-                  {dish.categoryName}
-                </span>
-                <h3 className="font-serif text-lg font-bold text-white mt-1 group-hover:text-brand-red transition-colors line-clamp-1">
-                  {dish.name}
-                </h3>
-                <p className="text-xs text-gray-400 mt-2 line-clamp-2 leading-relaxed font-light">
-                  {dish.description}
-                </p>
-
-                {/* Star Rating */}
-                <div className="flex items-center justify-center gap-1 mt-3">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="h-3 w-3 fill-brand-gold text-brand-gold" />
-                  ))}
+          {/* Horizontal Carousel Track */}
+          <div
+            ref={carouselRef}
+            className="flex items-stretch gap-6 sm:gap-7 overflow-x-auto scrollbar-none scroll-smooth pt-24 sm:pt-28 pb-8 px-3 -mx-3 touch-pan-x"
+          >
+            {FEATURED_DISHES.map((dish) => (
+              <div
+                key={dish.id}
+                ref={(el) => {
+                  cardRefs.current[dish.id] = el;
+                }}
+                onClick={() => setActiveDishForModal(dish)}
+                className="w-[260px] sm:w-[280px] flex-shrink-0 relative rounded-[32px] bg-[#1c1d24] p-6 pt-28 sm:pt-32 flex flex-col justify-between shadow-[0_20px_45px_rgba(0,0,0,0.7)] hover:shadow-[0_28px_60px_rgba(0,0,0,0.9)] hover:-translate-y-2 transition-all duration-300 group cursor-pointer"
+              >
+                {/* Overlapping Top Plate */}
+                <div className="absolute -top-16 sm:-top-20 left-1/2 -translate-x-1/2 h-44 w-44 sm:h-48 sm:w-48 rounded-full overflow-hidden border-[6px] border-[#25262f] shadow-[0_20px_40px_rgba(0,0,0,0.95)] group-hover:scale-105 group-hover:rotate-[2deg] transition-transform duration-500 ease-out bg-[#16171a]">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={dish.imageUrl}
+                    alt={dish.name}
+                    className="h-full w-full object-cover"
+                  />
                 </div>
-              </div>
 
-              {/* Bottom Price and Cart Button */}
-              <div className="mt-6 pt-4 border-t border-border-subtle/50 flex items-center justify-between">
-                <div>
-                  <span className="text-[10px] text-gray-400 uppercase tracking-wider block font-medium">Price</span>
-                  <span className="text-base font-bold text-brand-red font-mono">
+                {/* Dish Meta: Clean, Left-Aligned Typography */}
+                <div className="text-left mt-2 flex-grow">
+                  <h3 className="text-lg sm:text-xl font-medium tracking-tight text-white group-hover:text-brand-red transition-colors line-clamp-1">
+                    {dish.name}
+                  </h3>
+                  <p className="text-xs sm:text-sm text-gray-400 mt-1 line-clamp-1 font-normal leading-relaxed">
+                    {dish.description}
+                  </p>
+                </div>
+
+                {/* Bottom Row: Price on left, Red circular button on right */}
+                <div className="mt-8 flex items-center justify-between">
+                  <span className="text-lg sm:text-xl font-bold text-brand-red font-mono">
                     {formatPesewasToGhs(dish.basePricePesewas)}
                   </span>
-                </div>
 
-                <MagneticButton strength={0.25}>
                   <button
                     onClick={(e) => handleQuickAdd(dish, e)}
-                    className="group/btn flex h-10 w-10 items-center justify-center rounded-full bg-brand-red text-white shadow-[0_4px_14px_rgba(229,9,20,0.4)] hover:bg-brand-red-hover hover:scale-105 active:scale-95 transition-all duration-200"
+                    className="flex h-11 w-11 items-center justify-center rounded-full bg-brand-red text-white shadow-[0_4px_16px_rgba(229,9,20,0.45)] hover:bg-brand-red-hover hover:scale-105 active:scale-95 transition-all duration-200"
                     aria-label={`Add ${dish.name} to order tray`}
                   >
-                    <div className="group-hover/btn:-translate-y-0.5 group-hover/btn:rotate-[-4deg] transition-transform duration-200 ease-out">
-                      <RestaurantClocheIcon className="h-4 w-4" />
-                    </div>
+                    <ShoppingCart className="h-4 w-4 sm:h-4.5 sm:w-4.5" />
                   </button>
-                </MagneticButton>
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
+
+          {/* Right Arrow Button (Floats on right of track in vibrant red) */}
+          <button
+            onClick={() => scrollCarousel("right")}
+            className="hidden lg:flex absolute -right-6 top-1/2 -translate-y-1/2 z-20 h-12 w-12 items-center justify-center rounded-full bg-brand-red hover:bg-brand-red-hover text-white active:scale-95 transition-all shadow-[0_4px_20px_rgba(229,9,20,0.5)]"
+            aria-label="Next dishes"
+          >
+            <ChevronRight className="h-5 w-5" />
+          </button>
         </div>
       </section>
 
@@ -436,6 +446,16 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* Dish Detail Customization Modal */}
+      <DishDetailModal
+        dish={activeDishForModal}
+        isOpen={!!activeDishForModal}
+        onClose={() => setActiveDishForModal(null)}
+        sourceElement={
+          activeDishForModal ? cardRefs.current[activeDishForModal.id] : null
+        }
+      />
     </div>
   );
 }
