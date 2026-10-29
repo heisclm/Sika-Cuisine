@@ -1,6 +1,23 @@
+/**
+ * @file apps/mobile/src/services/offline-order-cache.ts
+ * @description Local persistent cache for customer order history and offline tracking.
+ *
+ * OFFLINE RESILIENCE & INTEGRITY GUARANTEES:
+ * 1. Customer Scoping: Cache keys are partitioned by customer ID (@sika_orders_cache_${customerId})
+ *    to prevent cross-user data leaks on shared devices.
+ * 2. Minimal Footprint: Caches only necessary order summary fields (status, timeline, total, item list)
+ *    rather than heavy database models.
+ * 3. Temporal Integrity: Maintains lastSynchronizedAt timestamps. The UI displays an amber staleness banner
+ *    and NEVER simulates status updates while disconnected from the server.
+ * 4. Reconciliation: Automatically merges authoritative server data into the local cache on successful sync.
+ */
+
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { FulfilmentStatus, FulfilmentType } from "@sika/shared";
 
+/**
+ * Compact order representation stored in local device cache.
+ */
 export interface CachedOrderSummary {
   orderId: string;
   orderNumber: string;
@@ -16,15 +33,21 @@ export interface CachedOrderSummary {
     name: string;
     quantity: number;
   }>;
-  lastSynchronizedAt: string; // ISO 8601
+  lastSynchronizedAt: string; // ISO 8601 string
 }
 
+/**
+ * Constructs a customer-scoped AsyncStorage key to isolate user data.
+ */
 function getCacheKey(customerId: string): string {
   return `@sika_orders_cache_${customerId}`;
 }
 
 /**
- * Persists minimal order summaries to local device cache.
+ * Persists an array of order summaries to customer-scoped local cache.
+ *
+ * @param customerId - User ID of the authenticated customer or 'guest'
+ * @param orders - Array of order summaries to cache
  */
 export async function saveOrdersToCache(
   customerId: string,
@@ -39,7 +62,10 @@ export async function saveOrdersToCache(
 }
 
 /**
- * Retrieves cached orders for an authenticated customer.
+ * Retrieves cached orders for a specific customer.
+ *
+ * @param customerId - Customer identifier
+ * @returns Promise<CachedOrderSummary[]> - Cached orders or empty array if none found
  */
 export async function getOrdersFromCache(
   customerId: string
@@ -56,7 +82,10 @@ export async function getOrdersFromCache(
 }
 
 /**
- * Updates a single order's cached state without hallucinating or overriding the server.
+ * Updates or inserts a single order's cached state without overriding authoritative server history.
+ *
+ * @param customerId - Customer identifier
+ * @param order - Updated order summary
  */
 export async function updateCachedOrder(
   customerId: string,
@@ -77,7 +106,9 @@ export async function updateCachedOrder(
 }
 
 /**
- * Clears cached orders on customer logout.
+ * Clears customer-scoped order cache upon sign-out to prevent privacy leakage.
+ *
+ * @param customerId - Customer identifier
  */
 export async function clearOrdersCache(customerId: string): Promise<void> {
   try {

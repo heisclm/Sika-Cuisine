@@ -1,3 +1,13 @@
+/**
+ * @file apps/mobile/src/components/DishDetailModal.tsx
+ * @description Modal bottom sheet for dish customization, option group selection, and portion calculation.
+ *
+ * MODAL DESIGN & FINANCIAL INVARIANTS:
+ * 1. Dynamic Option Deltas: Computes running portion totals in integer pesewas as the user toggles option radios.
+ * 2. Pre-selection Default: Automatically pre-selects the first available option in each required group.
+ * 3. Step Control Boundaries: Bounds portion quantities between 1 and 20 to prevent erroneous large submissions.
+ */
+
 import React, { useState, useEffect, useMemo } from "react";
 import {
   Modal,

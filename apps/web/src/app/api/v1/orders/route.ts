@@ -1,3 +1,16 @@
+/**
+ * @file apps/web/src/app/api/v1/orders/route.ts
+ * @description Primary order placement route handler for web and mobile clients.
+ *
+ * CYBERSECURITY & TRANSACTION ARCHITECTURE:
+ * 1. Server-Authoritative Pricing: Completely discards client-submitted prices. Re-computes item subtotals,
+ *    option group deltas, and delivery fees directly from PostgreSQL catalog data in integer pesewas.
+ * 2. Atomic Persistence: Employs prisma.$transaction to guarantee order header, order items, delivery address,
+ *    and initial status history are created atomically or rolled back entirely upon error.
+ * 3. Payment Gateway Dispatch: When paymentMethod === 'PAYSTACK', initializes a secure Paystack transaction
+ *    and attaches the payment reference to the order record.
+ */
+
 import { NextRequest, NextResponse } from "next/server";
 import {
   createOrderSchema,

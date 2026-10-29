@@ -1,3 +1,15 @@
+/**
+ * @file apps/mobile/src/screens/OrderTrackingScreen.tsx
+ * @description Real-time order progress tracker with optimistic offline-cache hydration.
+ *
+ * RESILIENCE STRATEGY:
+ * 1. Optimistic Hydration: Immediately renders from customer-scoped local AsyncStorage to prevent layout flash.
+ * 2. Server Reconciliation: Dispatches background request to GET /api/v1/orders/track/[orderNumber].
+ * 3. Non-Blocking Offline Fallback: If network is interrupted, marks isOffline without wiping cached state.
+ * 4. Dual Workflow Visualizer: Delegates rendering to OrderStatusTimeline which dynamically adjusts
+ *    its progress graph based on fulfilmentType (Delivery vs. Collection).
+ */
+
 import React, { useState, useEffect, useCallback } from "react";
 import {
   View,

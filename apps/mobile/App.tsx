@@ -5,8 +5,8 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  StatusBar,
 } from "react-native";
+import { StatusBar } from "expo-status-bar";
 import { CartProvider, useCart } from "./src/context/CartContext";
 import { MenuScreen } from "./src/screens/MenuScreen";
 import { CartScreen } from "./src/screens/CartScreen";
@@ -14,8 +14,15 @@ import { CheckoutScreen } from "./src/screens/CheckoutScreen";
 import { OrderTrackingScreen } from "./src/screens/OrderTrackingScreen";
 import { ProfileScreen } from "./src/screens/ProfileScreen";
 
+/**
+ * Valid client screen tabs within the bottom navigation hierarchy.
+ */
 type ScreenTab = "menu" | "cart" | "checkout" | "tracking" | "profile";
 
+/**
+ * Primary viewport component rendered within the CartProvider context.
+ * Coordinates top brand banner, screen switches, and bottom tab navigation.
+ */
 function AppContent() {
   const [activeTab, setActiveTab] = useState<ScreenTab>("menu");
   const [activeOrderNumber, setActiveOrderNumber] = useState<string>("SIKA-2026-1042");
@@ -23,7 +30,7 @@ function AppContent() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="light-content" backgroundColor="#0d0e12" />
+      <StatusBar style="light" />
 
       {/* Top Application Header */}
       <View style={styles.header}>

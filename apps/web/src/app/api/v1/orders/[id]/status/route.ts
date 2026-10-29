@@ -1,3 +1,16 @@
+/**
+ * @file apps/web/src/app/api/v1/orders/[id]/status/route.ts
+ * @description State transition and audit logging route handler for staff kitchen and delivery workflows.
+ *
+ * GOVERNANCE & SECURITY DESIGN:
+ * 1. State Machine Enforcement: Executes isValidOrderTransition() from @sika/shared to block cross-workflow
+ *    or skipped states (e.g. attempting to mark a pickup order OUT_FOR_DELIVERY).
+ * 2. Role-Based Access Control (RBAC): Executes isRoleAuthorizedForTransition() to ensure kitchen staff, cashiers,
+ *    riders, and customers only perform their authorized actions.
+ * 3. Immutable Audit Logging: Atomically appends an entry to OrderStatusHistory preserving previous state,
+ *    target state, actor ID, and optional operational notes.
+ */
+
 import { NextRequest, NextResponse } from "next/server";
 import {
   updateOrderStatusSchema,

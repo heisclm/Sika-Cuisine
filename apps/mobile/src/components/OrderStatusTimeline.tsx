@@ -1,3 +1,14 @@
+/**
+ * @file apps/mobile/src/components/OrderStatusTimeline.tsx
+ * @description Graphical stepper timeline visualizing order progress across Delivery and Pickup lifecycles.
+ *
+ * STEPPER DESIGN:
+ * 1. Dual-Workflow Sequences: Maps out 6 steps for Delivery (ending in DELIVERED) vs 5 steps for Pickup (ending in COLLECTED).
+ * 2. Visual Progress Graph: Completed steps render with vibrant emerald checkmarks, active steps with glowing crimson rings,
+ *    and pending future steps in muted carbon tones.
+ * 3. Abort Handling: Renders explicit rejection or cancellation banners when an order enters an aborted terminal state.
+ */
+
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { FulfilmentStatus, FulfilmentType } from "@sika/shared";

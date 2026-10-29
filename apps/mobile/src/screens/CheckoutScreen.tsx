@@ -1,3 +1,14 @@
+/**
+ * @file apps/mobile/src/screens/CheckoutScreen.tsx
+ * @description Customer checkout screen enforcing Ghanaian contact validation, delivery tariffs, and offline resilience.
+ *
+ * WORKFLOW & BUSINESS RULES:
+ * 1. Fulfilment Branching: Dynamically swaps between Delivery (Zone 1-4 address form) and Pickup (Restaurant counter).
+ * 2. Strict Zero-Fee Pickup: Selecting 'COLLECTION' immediately zeroes the delivery fee and hides address inputs.
+ * 3. Payment Method Pairing: Prohibits Cash on Collection for delivery and Cash on Delivery for pickup.
+ * 4. Offline Order Queuing: If the server API is unreachable, persists the order in local cache to guarantee zero data loss.
+ */
+
 import React, { useState, useMemo } from "react";
 import {
   View,

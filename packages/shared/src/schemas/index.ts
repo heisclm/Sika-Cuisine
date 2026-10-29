@@ -1,12 +1,38 @@
+/**
+ * @file packages/shared/src/schemas/index.ts
+ * @description Zod runtime validation schemas for Sika Cuisine authentication, orders, and menu contracts.
+ *
+ * VALIDATION STRATEGY:
+ * - Shared Contracts: The exact same schemas validate request bodies in Next.js Route Handlers
+ *   and form inputs in the React Native mobile application, preventing schema drift.
+ * - Defensive Edge-Case Handling: Ghanaian telephone formatting, conditional requirement rules
+ *   (e.g., delivery addresses are strictly mandatory for delivery, but forbidden for pickup),
+ *   and payment-fulfilment pairing enforcement.
+ */
+
 import { z } from "zod";
 
+/**
+ * Validates Ghanaian mobile telephone numbers across all major networks:
+ * - MTN Ghana (024, 054, 055, 059, 053)
+ * - Telecel / Vodafone Ghana (020, 050)
+ * - AT / AirtelTigo Ghana (027, 057, 026)
+ *
+ * Accepts both local (0244123456) and international (+233244123456) prefixes.
+ */
 export const phoneRegex = /^(?:\+233|0)[235][0-9]{8}$/;
 
+/**
+ * Authentication login schema for customers and restaurant staff.
+ */
 export const loginSchema = z.object({
   email: z.string().trim().email("Please enter a valid email address."),
   password: z.string().min(6, "Password must be at least 6 characters."),
 });
 
+/**
+ * Customer registration schema enforcing identity and contact integrity.
+ */
 export const registerSchema = z.object({
   fullName: z.string().trim().min(2, "Full name must be at least 2 characters."),
   email: z.string().trim().email("Please enter a valid email address."),
@@ -20,6 +46,10 @@ export const registerSchema = z.object({
   password: z.string().min(6, "Password must be at least 6 characters."),
 });
 
+/**
+ * Line-item order input schema.
+ * Enforces portion limits (1 to 50) and restricts instructions to 250 characters.
+ */
 export const orderItemInputSchema = z.object({
   menuItemId: z.string().min(1, "Menu item ID is required."),
   quantity: z
@@ -31,6 +61,9 @@ export const orderItemInputSchema = z.object({
   specialInstructions: z.string().max(250, "Instructions cannot exceed 250 characters.").optional(),
 });
 
+/**
+ * Delivery address schema for home or workplace dispatch in Sunyani.
+ */
 export const deliveryAddressInputSchema = z.object({
   recipientName: z.string().trim().min(2, "Recipient name is required."),
   recipientPhone: z.string().trim().regex(phoneRegex, "Valid Ghanaian phone number is required."),
@@ -42,6 +75,14 @@ export const deliveryAddressInputSchema = z.object({
   deliveryNotes: z.string().trim().max(300).optional(),
 });
 
+/**
+ * Order creation schema with cross-field conditional validation via superRefine.
+ *
+ * Invariants Enforced:
+ * 1. If fulfilmentType is DELIVERY, deliveryAddress is required.
+ * 2. If paymentMethod is CASH_ON_COLLECTION, fulfilmentType must be COLLECTION.
+ * 3. If paymentMethod is CASH_ON_DELIVERY, fulfilmentType must be DELIVERY.
+ */
 export const createOrderSchema = z
   .object({
     fulfilmentType: z.enum(["DELIVERY", "COLLECTION"]),
@@ -58,7 +99,7 @@ export const createOrderSchema = z
     customerNotes: z.string().trim().max(500).optional(),
   })
   .superRefine((data, ctx) => {
-    // If fulfilment is DELIVERY, deliveryAddress is mandatory
+    // Delivery orders require a destination
     if (data.fulfilmentType === "DELIVERY" && !data.deliveryAddress) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
@@ -86,6 +127,9 @@ export const createOrderSchema = z
     }
   });
 
+/**
+ * Order status update schema used by staff dashboard endpoints.
+ */
 export const updateOrderStatusSchema = z.object({
   targetStatus: z.enum([
     "PENDING",
@@ -100,13 +144,12 @@ export const updateOrderStatusSchema = z.object({
     "REJECTED",
   ]),
   note: z.string().max(250).optional(),
+  reason: z.string().max(250).optional(),
   rejectionReason: z.string().max(250).optional(),
   cancellationReason: z.string().max(250).optional(),
 });
 
 export type LoginInput = z.infer<typeof loginSchema>;
 export type RegisterInput = z.infer<typeof registerSchema>;
-export type OrderItemInput = z.infer<typeof orderItemInputSchema>;
-export type DeliveryAddressInput = z.infer<typeof deliveryAddressInputSchema>;
 export type CreateOrderInput = z.infer<typeof createOrderSchema>;
 export type UpdateOrderStatusInput = z.infer<typeof updateOrderStatusSchema>;

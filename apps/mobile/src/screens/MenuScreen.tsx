@@ -1,3 +1,13 @@
+/**
+ * @file apps/mobile/src/screens/MenuScreen.tsx
+ * @description Customer menu catalog screen with real-time search, category filtering, and offline resilience.
+ *
+ * CATALOG ARCHITECTURE:
+ * 1. Hybrid Data Fetching: Queries GET /api/v1/menu/items on mount and pull-to-refresh; falls back to DEFAULT_MENU_ITEMS if offline.
+ * 2. Multi-Criteria Filtering: Combines category pill selection with real-time case-insensitive search queries.
+ * 3. Reactive Cart Bar: Sticky bottom banner indicates active portion count and pesewas subtotal with instant checkout routing.
+ */
+
 import React, { useState, useMemo, useEffect, useCallback } from "react";
 import {
   View,

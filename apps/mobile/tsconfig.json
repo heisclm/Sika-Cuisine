@@ -1,28 +1,16 @@
 {
+  "extends": "expo/tsconfig.base",
   "compilerOptions": {
-    "target": "ESNext",
-    "module": "CommonJS",
-    "lib": ["DOM", "ESNext"],
-    "allowJs": true,
-    "jsx": "react-native",
-    "noEmit": true,
-    "isolatedModules": true,
     "strict": true,
-    "moduleResolution": "node",
-    "allowSyntheticDefaultImports": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
     "baseUrl": ".",
-    "typeRoots": [
-      "./node_modules/@types",
-      "../../node_modules/@types"
-    ],
     "paths": {
       "@/*": ["./src/*"],
-      "@sika/shared": ["../../packages/shared/src/index.ts"],
-      "react": ["./node_modules/@types/react"],
-      "react/*": ["./node_modules/@types/react/*"]
+      "@sika/shared": ["../../packages/shared/src/index.ts"]
     }
   },
-  "include": ["src/**/*", "App.tsx"]
+  "include": [
+    "src/**/*",
+    "App.tsx",
+    "index.js"
+  ]
 }
