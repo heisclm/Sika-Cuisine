@@ -1,3 +1,0 @@
-(()=>{"use strict";module.exports=[75935,a=>{let b=(0,a.i(11857).registerClientReference)(function(){throw Error("Attempted to call BespokeSeal() from the server but BespokeSeal is on the client. It's not possible to invoke a client function from the server, it can only be rendered as a Component or passed to props of a Client Component.")},"[project]/apps/web/src/components/creative/BespokeSeal.tsx","BespokeSeal");a.s(["BespokeSeal",0,b])},5435,a=>{var b=a.i(75935);a.n(b)},717,(a,b,c)=>{b.exports=a.r(24951).vendored["react-rsc"].React}]})();
-
-//# sourceMappingURL=_1qv6lmozmlfub._.js.map

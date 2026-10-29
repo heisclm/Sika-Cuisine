@@ -1,3 +1,0 @@
-module.exports=[41925,a=>{"use strict";var b=a.i(7997);a.s(["default",0,function(){return(0,b.jsxs)("div",{className:"min-h-[70vh] flex flex-col items-center justify-center p-4",children:[(0,b.jsxs)("div",{className:"relative flex items-center justify-center",children:[(0,b.jsx)("div",{className:"h-16 w-16 rounded-full border-2 border-brand-red/20 border-t-brand-red animate-spin"}),(0,b.jsx)("div",{className:"absolute font-serif text-xs font-bold text-brand-gold",children:"SC"})]}),(0,b.jsx)("p",{className:"mt-4 text-xs uppercase tracking-[0.2em] font-semibold text-gray-400",children:"Simmering Fresh • Sika Cuisine"})]})}])},92195,function(a){a.n(a.i(41925))}];
-
-//# sourceMappingURL=apps_web_src_app_loading_tsx_0u3uu9a4-n5f2._.js.map
