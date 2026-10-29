@@ -1,0 +1,36 @@
+2:"$Sreact.fragment"
+3:"/_next/static/chunks/13cq6tfj7nb3a.js"
+4:"/_next/static/chunks/166fvp_ipk_sb.js"
+5:I[39756,["$3","$4"],"default"]
+6:I[37457,["$3","$4"],"default"]
+7:"/_next/static/chunks/08zkjdxu-hwi4.js"
+8:I[24997,["$3","$4","$7"],"BespokeSeal"]
+9:I[22016,["$3","$4","$7"],""]
+a:I[5014,["$3","$4","$7"],"default"]
+11:I[47257,["$3","$4"],"ClientPageRoot"]
+12:"/_next/static/chunks/3mhdmemo9hzyg.js"
+13:I[94206,["$3","$4","$12"],"default"]
+16:I[97367,["$3","$4"],"OutletBoundary"]
+17:"$Sreact.suspense"
+1a:"ViewportBoundary"
+1b:I[97367,["$3","$4"],"$1a"]
+1c:"MetadataBoundary"
+1d:I[97367,["$3","$4"],"$1c"]
+c:X
+c:C
+d:X
+10:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$2","c",{"children":[["$","$L11",null,{"Component":"$13","serverProvidedParams":{"searchParams":{},"params":{},"promises":["$@14","$@15"]}}],[["$","script","script-0",{"src":"/_next/static/chunks/3mhdmemo9hzyg.js","async":true}]],["$","$L16",null,{"children":["$","$17",null,{"name":"Next.MetadataOutlet","children":"$@18"}]}]]}],"p":"$@19","v":null,"s":"$d"}}]]
+e:[["children",{"s":"forgot-password","h":96,"d":{"r":["$","$2","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@f","v":"$c","s":"$d"},"c":"$Q10"}]]
+1:[["children",{"s":"(auth)","h":64,"d":{"r":["$","$2","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}],"notFound":[["$","div",null,{"className":"relative min-h-[80vh] flex items-center justify-center py-20 px-4 sm:px-6 lg:px-8 overflow-hidden bg-background text-gray-200","children":[["$","div",null,{"className":"absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[400px] studio-vignette pointer-events-none -z-10"}],["$","div",null,{"className":"relative z-10 max-w-lg w-full text-center space-y-6","children":[["$","div",null,{"className":"flex justify-center mb-2","children":["$","$L8",null,{"size":74}]}],["$","div",null,{"className":"inline-flex items-center gap-2.5","children":[["$","span",null,{"className":"h-px w-6 bg-brand-red/60"}],["$","span",null,{"className":"text-[11px] font-semibold uppercase tracking-[0.25em] text-brand-red","children":"Error 404 • Missing Delicacy"}],["$","span",null,{"className":"h-px w-6 bg-brand-red/60"}]]}],["$","h1",null,{"className":"font-serif text-3xl sm:text-5xl font-bold text-white tracking-tight leading-tight","children":"This Plate Has Left the Kitchen"}],["$","p",null,{"className":"text-sm sm:text-base text-gray-400 font-light leading-relaxed max-w-md mx-auto","children":"The delicacy or page you are looking for is no longer on our kitchen pass. Let us guide you back to our simmering pots and charcoal grills in Sunyani."}],["$","div",null,{"className":"pt-4 flex flex-col sm:flex-row items-center justify-center gap-3.5","children":[["$","$L9",null,{"href":"/menu","className":"w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-full text-sm font-semibold text-white bg-brand-red hover:bg-brand-red-hover active:scale-95 transition-all shadow-sm","children":[["$","$La",null,{"icon":{"name":"utensils","size":24,"node":[["path",{"d":"M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2","key":"cjf0a3"}],["path",{"d":"M7 2v20","key":"1473qp"}],["path",{"d":"M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7","key":"j28e5"}]],"aliases":["fork-knife"]},"className":"h-4 w-4"}],["$","span",null,{"children":"Browse Full Menu"}]]}],["$","$L9",null,{"href":"/","className":"w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-full bg-[#1c1d22] border border-white/10 text-sm font-semibold text-gray-200 hover:text-white hover:bg-[#25272e] transition-colors","children":[["$","$La",null,{"icon":{"name":"house","size":24,"node":[["path",{"d":"M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8","key":"5wwlr5"}],["path",{"d":"M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z","key":"r6nss1"}]],"aliases":["home"]},"className":"h-4 w-4"}],["$","span",null,{"children":"Return Home"}]]}]]}],["$","div",null,{"className":"pt-6 border-t border-border-subtle/50 text-[11px] uppercase tracking-widest text-gray-500 font-medium","children":"Sika Cuisine • Sunyani Central • Bono Region"}]]}]]}],[]]}]]}],"p":"$@b","v":"$c","s":"$d"},"c":"$Qe"}]]
+0:{"t":{"t":{"s":"","h":20,"c":"$Q1"},"h":{"r":["$","$2","h",{"children":[null,["$","$L1b",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1, maximum-scale=5"}],["$","meta","2",{"name":"theme-color","content":"#0a0a0c"}]]}],["$","$L1d",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$17",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Sika Cuisine — Culinary Lounge & Fast Doorstep Delivery in Sunyani"}],["$","meta","1",{"name":"description","content":"Order authentic Ghanaian delicacies online in Sunyani, Bono Region. Savor charcoal-grilled whole tilapia with banku, slow-simmered smoky jollof, light soup with fufu, fresh pineapple fruit rice, and stone-baked pizza delivered hot across Sunyani."}],["$","meta","2",{"name":"author","content":"Sika Cuisine Culinary Lounge"}],["$","link","3",{"rel":"manifest","href":"/manifest.webmanifest"}],["$","meta","4",{"name":"keywords","content":"Sika Cuisine,Sunyani restaurant,Ghanaian food delivery Sunyani,Jollof Sunyani,Tilapia Banku Sunyani,Sika Cuisine Lounge,Bono Region food delivery,Fiapre food delivery,UENR campus food"}],["$","meta","5",{"property":"og:title","content":"Sika Cuisine — Authentic Ghanaian Dining & Delivery in Sunyani"}],["$","meta","6",{"property":"og:description","content":"Savor charcoal-grilled whole tilapia, slow-simmered jollof, silky banku with okro, light soups, and artisan pizza delivered hot across Sunyani."}],["$","meta","7",{"property":"og:url","content":"https://sikacuisine.com"}],["$","meta","8",{"property":"og:site_name","content":"Sika Cuisine"}],["$","meta","9",{"property":"og:locale","content":"en_GH"}],["$","meta","10",{"property":"og:type","content":"website"}],["$","meta","11",{"name":"twitter:card","content":"summary_large_image"}],["$","meta","12",{"name":"twitter:title","content":"Sika Cuisine — Sunyani, Ghana"}],["$","meta","13",{"name":"twitter:description","content":"Authentic Ghanaian culinary gastronomy and lounge dining in Sunyani, Bono Region."}]]}]}],null]}],null]}],"p":"$@1e","v":null,"s":"$d"}},"a":"$@1f","u":"$@20","b":"Z-Oku1CLQS1jdqqCWBNpZ"}
+14:{}
+15:"$10:0:1:d:r:props:children:0:props:serverProvidedParams:params"
+18:null
+20:true
+d:300
+d:C
+1f:0
+f:"$undefined"
+b:"$undefined"
+1e:"$undefined"
+19:"$undefined"

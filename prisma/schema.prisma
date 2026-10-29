@@ -22,12 +22,14 @@ enum FulfilmentType {
 }
 
 enum FulfilmentStatus {
-  PENDING_CONFIRMATION
+  PENDING
   CONFIRMED
   PREPARING
-  READY_FOR_COLLECTION
+  READY_FOR_DISPATCH
   OUT_FOR_DELIVERY
-  COMPLETED
+  DELIVERED
+  READY_FOR_PICKUP
+  COLLECTED
   CANCELLED
   REJECTED
 }
@@ -176,7 +178,7 @@ model Order {
   guestName                String?
 
   fulfilmentType           FulfilmentType   @default(DELIVERY)
-  fulfilmentStatus         FulfilmentStatus @default(PENDING_CONFIRMATION)
+  fulfilmentStatus         FulfilmentStatus @default(PENDING)
   paymentStatus            PaymentStatus    @default(PENDING)
   paymentMethod            PaymentMethod    @default(PAYSTACK)
 

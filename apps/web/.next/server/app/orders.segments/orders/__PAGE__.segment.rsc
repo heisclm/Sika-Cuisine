@@ -1,0 +1,32 @@
+2:"/_next/static/chunks/13cq6tfj7nb3a.js"
+3:"/_next/static/chunks/166fvp_ipk_sb.js"
+4:"LoadingBoundaryProvider"
+5:I[39756,["$2","$3"],"$4"]
+6:"$Sreact.fragment"
+7:I[39756,["$2","$3"],"default"]
+8:I[37457,["$2","$3"],"default"]
+d:I[47257,["$2","$3"],"ClientPageRoot"]
+e:"/_next/static/chunks/3lpm691w8qt1s.js"
+f:I[72291,["$2","$3","$e"],"default"]
+12:I[97367,["$2","$3"],"OutletBoundary"]
+13:"$Sreact.suspense"
+16:"ViewportBoundary"
+17:I[97367,["$2","$3"],"$16"]
+18:"MetadataBoundary"
+19:I[97367,["$2","$3"],"$18"]
+a:X
+a:C
+b:X
+c:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$6","c",{"children":[["$","$Ld",null,{"Component":"$f","serverProvidedParams":{"searchParams":{},"params":{},"promises":["$@10","$@11"]}}],[["$","script","script-0",{"src":"/_next/static/chunks/3lpm691w8qt1s.js","async":true}]],["$","$L12",null,{"children":["$","$13",null,{"name":"Next.MetadataOutlet","children":"$@14"}]}]]}],"p":"$@15","v":null,"s":"$b"}}]]
+1:[["children",{"s":"orders","h":68,"d":{"r":["$","$L5",null,{"loading":[["$","div","l",{"className":"min-h-screen bg-background pb-24","children":[["$","div",null,{"className":"border-b border-border-subtle bg-surface-300 py-14 sm:py-20 text-center animate-pulse","children":["$","div",null,{"className":"mx-auto max-w-xl px-4 space-y-4","children":[["$","div",null,{"className":"h-4 w-40 bg-surface-100 rounded-full mx-auto"}],["$","div",null,{"className":"h-10 w-2/3 bg-surface-100 rounded-2xl mx-auto"}],["$","div",null,{"className":"h-4 w-full bg-surface-100 rounded-full mx-auto"}]]}]}],["$","div",null,{"className":"mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 -mt-8","children":[["$","div",null,{"className":"rounded-3xl bg-surface-300/80 border border-border-subtle p-8 shadow-2xl animate-pulse space-y-4","children":[["$","div",null,{"className":"h-6 w-48 bg-surface-100 rounded-full"}],["$","div",null,{"className":"h-4 w-72 bg-surface-100 rounded-full"}],["$","div",null,{"className":"h-12 w-full bg-surface-100 rounded-xl"}]]}],["$","div",null,{"className":"mt-12 space-y-4","children":[["$","div","0",{"className":"rounded-3xl bg-surface-300/60 border border-border-subtle p-6 space-y-4 animate-pulse h-36"}],["$","div","1",{"className":"rounded-3xl bg-surface-300/60 border border-border-subtle p-6 space-y-4 animate-pulse h-36"}],["$","div","2",{"className":"rounded-3xl bg-surface-300/60 border border-border-subtle p-6 space-y-4 animate-pulse h-36"}]]}]]}]]}],[],null],"children":["$","$6","c",{"children":[null,["$","$L7",null,{"parallelRouterKey":"children","template":["$","$L8",null,{}]}]]}]}],"p":"$@9","v":"$a","s":"$b"},"c":"$Qc"}]]
+0:{"t":{"t":{"s":"","h":28,"c":"$Q1"},"h":{"r":["$","$6","h",{"children":[null,["$","$L17",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1, maximum-scale=5"}],["$","meta","2",{"name":"theme-color","content":"#0a0a0c"}]]}],["$","$L19",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$13",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Sika Cuisine — Culinary Lounge & Fast Doorstep Delivery in Sunyani"}],["$","meta","1",{"name":"description","content":"Order authentic Ghanaian delicacies online in Sunyani, Bono Region. Savor charcoal-grilled whole tilapia with banku, slow-simmered smoky jollof, light soup with fufu, fresh pineapple fruit rice, and stone-baked pizza delivered hot across Sunyani."}],["$","meta","2",{"name":"author","content":"Sika Cuisine Culinary Lounge"}],["$","link","3",{"rel":"manifest","href":"/manifest.webmanifest"}],["$","meta","4",{"name":"keywords","content":"Sika Cuisine,Sunyani restaurant,Ghanaian food delivery Sunyani,Jollof Sunyani,Tilapia Banku Sunyani,Sika Cuisine Lounge,Bono Region food delivery,Fiapre food delivery,UENR campus food"}],["$","meta","5",{"property":"og:title","content":"Sika Cuisine — Authentic Ghanaian Dining & Delivery in Sunyani"}],["$","meta","6",{"property":"og:description","content":"Savor charcoal-grilled whole tilapia, slow-simmered jollof, silky banku with okro, light soups, and artisan pizza delivered hot across Sunyani."}],["$","meta","7",{"property":"og:url","content":"https://sikacuisine.com"}],["$","meta","8",{"property":"og:site_name","content":"Sika Cuisine"}],["$","meta","9",{"property":"og:locale","content":"en_GH"}],["$","meta","10",{"property":"og:type","content":"website"}],["$","meta","11",{"name":"twitter:card","content":"summary_large_image"}],["$","meta","12",{"name":"twitter:title","content":"Sika Cuisine — Sunyani, Ghana"}],["$","meta","13",{"name":"twitter:description","content":"Authentic Ghanaian culinary gastronomy and lounge dining in Sunyani, Bono Region."}]]}]}],null]}],null]}],"p":"$@1a","v":null,"s":"$b"}},"a":"$@1b","u":"$@1c","b":"Z-Oku1CLQS1jdqqCWBNpZ"}
+10:{}
+11:"$c:0:1:d:r:props:children:0:props:serverProvidedParams:params"
+14:null
+1c:true
+b:300
+b:C
+1b:0
+9:"$undefined"
+1a:"$undefined"
+15:"$undefined"

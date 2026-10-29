@@ -1,0 +1,40 @@
+{
+  "headers": {
+    "x-nextjs-stale-time": "300",
+    "x-nextjs-prerender": "1",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/rider/layout,_N_T_/rider/login/layout,_N_T_/rider/login/page,_N_T_/rider/login"
+  },
+  "segmentPaths": [
+    "/_tree",
+    "/_full",
+    "/_index",
+    "/rider/login/__PAGE__"
+  ],
+  "prefetchHints": {
+    "hints": 0,
+    "slots": {
+      "children": {
+        "hints": 64,
+        "slots": {
+          "children": {
+            "hints": 96,
+            "slots": {
+              "children": {
+                "hints": 160,
+                "slots": null
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "routeCache": {
+    "key": "/route-cache/APP_PAGE/04e7b2b0c122a7e6026f4ff935b130d26a23cd33a77d6fc993e916d4bfb33922/$/rider/login",
+    "owner": {
+      "kind": "APP_PAGE",
+      "sourceRoute": "/rider/login/page"
+    },
+    "isFallback": false
+  }
+}

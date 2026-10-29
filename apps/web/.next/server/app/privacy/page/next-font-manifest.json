@@ -1,0 +1,13 @@
+{
+  "pages": {},
+  "app": {
+    "[project]/apps/web/src/app/privacy/page": [
+      "static/media/Fraunces_Variable.p.2v8df2pld5wmx.ttf",
+      "static/media/Fraunces_Italic_Variable.p.1jgsj9bjnlw0-.ttf",
+      "static/media/PlusJakartaSans_Variable.p.0qnuojqj60ziw.ttf",
+      "static/media/Syne_Variable.p.2e-t4p6ws0hhz.ttf"
+    ]
+  },
+  "appUsingSizeAdjust": false,
+  "pagesUsingSizeAdjust": false
+}

@@ -1,0 +1,3 @@
+module.exports=[5056,a=>{"use strict";var b=a.i(87924),c=a.i(46686);a.s(["BespokeSeal",0,function({size:a=56,className:d=""}){return(0,b.jsx)("div",{style:{width:a,height:a},className:`relative inline-flex items-center justify-center rounded-2xl overflow-hidden shadow-md select-none ${d}`,children:(0,b.jsx)(c.f,{size:a})})}])}];
+
+//# sourceMappingURL=apps_web_src_components_creative_BespokeSeal_tsx_1vi0gkx_krr2o._.js.map

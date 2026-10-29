@@ -40,7 +40,7 @@ async function main() {
       passwordHash: staffPasswordHash,
       fullName: "Kitchen Staff Sunyani",
       phone: "+233 55 440 6681",
-      role: Role.STAFF,
+      role: Role.STAFF_KITCHEN,
     },
   });
 
@@ -884,11 +884,11 @@ async function main() {
         create: [
           {
             fromStatus: null,
-            toStatus: FulfilmentStatus.PENDING_CONFIRMATION,
+            toStatus: FulfilmentStatus.PENDING,
             note: "Order placed online.",
           },
           {
-            fromStatus: FulfilmentStatus.PENDING_CONFIRMATION,
+            fromStatus: FulfilmentStatus.PENDING,
             toStatus: FulfilmentStatus.CONFIRMED,
             note: "Order confirmed by kitchen staff.",
             changedByUserId: staff.id,

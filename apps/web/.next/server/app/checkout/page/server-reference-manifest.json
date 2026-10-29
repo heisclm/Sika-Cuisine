@@ -1,0 +1,15 @@
+{
+  "node": {
+    "40e872ef3359dec74fbd36ccbcaade4fd2ddf6ea98": {
+      "workers": {
+        "app/checkout/page": {
+          "moduleId": 98860,
+          "async": false
+        }
+      },
+      "exportedName": "createOrderAction",
+      "filename": "apps/web/src/app/actions/order.ts"
+    }
+  },
+  "edge": {}
+}
