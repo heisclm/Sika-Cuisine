@@ -1,51 +1,76 @@
 import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
+import { Cloud, WifiOff } from "lucide-react-native";
+import { SikaColors, SikaRadius, SikaSpace } from "../theme";
 
 interface OfflineBannerProps {
   isOffline: boolean;
   lastSynchronizedAt?: string | null;
 }
 
+/**
+ * Displays connection and cache staleness status transparently without fabricating live updates.
+ */
 export function OfflineBanner({ isOffline, lastSynchronizedAt }: OfflineBannerProps) {
   if (!isOffline && !lastSynchronizedAt) {
     return null;
   }
 
   const formattedTime = lastSynchronizedAt
-    ? new Date(lastSynchronizedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+    ? new Date(lastSynchronizedAt).toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      })
     : null;
 
   return (
-    <View style={styles.bannerContainer}>
-      <View style={styles.pulseDot} />
-      <Text style={styles.bannerText}>
+    <View style={[styles.banner, isOffline ? styles.offlineBanner : styles.cachedBanner]}>
+      {isOffline ? (
+        <WifiOff size={15} color={SikaColors.warning} style={styles.icon} />
+      ) : (
+        <Cloud size={15} color={SikaColors.success} style={styles.icon} />
+      )}
+      <Text
+        style={[
+          styles.bannerText,
+          { color: isOffline ? SikaColors.warning : SikaColors.warmWhite },
+        ]}
+        numberOfLines={2}
+      >
         {isOffline
-          ? `Offline Mode — Viewing cached data${formattedTime ? ` from ${formattedTime}` : ""}. Live updates paused.`
-          : `Cached Data — Last synced at ${formattedTime || "recently"}`}
+          ? `Offline Mode — Viewing cached data${
+              formattedTime ? ` from ${formattedTime}` : ""
+            }. Live updates paused.`
+          : `Synced with Sunyani kitchen at ${formattedTime || "recently"}`}
       </Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  bannerContainer: {
-    backgroundColor: "rgba(180, 83, 9, 0.95)", // Amber-700
-    paddingVertical: 8,
-    paddingHorizontal: 16,
+  banner: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
+    paddingVertical: SikaSpace.sm,
+    paddingHorizontal: SikaSpace.lg,
+    borderBottomWidth: 1,
   },
-  pulseDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: "#fef3c7",
-    marginRight: 8,
+  offlineBanner: {
+    backgroundColor: SikaColors.warningBg,
+    borderBottomColor: SikaColors.warningBorder,
+  },
+  cachedBanner: {
+    backgroundColor: SikaColors.surface,
+    borderBottomColor: SikaColors.border,
+  },
+  icon: {
+    marginRight: SikaSpace.sm,
   },
   bannerText: {
-    color: "#ffffff",
     fontSize: 12,
     fontWeight: "600",
+    flexShrink: 1,
+    borderRadius: SikaRadius.sm,
   },
 });

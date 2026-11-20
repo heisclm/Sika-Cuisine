@@ -1,131 +1,167 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { motion } from "framer-motion";
 import { MapPin, Menu, X, User } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import { RestaurantClocheIcon } from "@/components/icons/RestaurantClocheIcon";
 import { Logo } from "@/components/brand/Logo";
 import { MobileMenu } from "./MobileMenu";
+import { CUSTOMER_NAV_LINKS, RESTAURANT_INFO } from "@/lib/navigation";
+import { SikaMotion } from "@sika/shared";
 
+interface NavSessionUser {
+  id: string;
+  fullName: string;
+  email: string;
+  role: string;
+}
+
+/**
+ * Primary persistent Web navigation bar.
+ * Consumes `CUSTOMER_NAV_LINKS` from `@sika/shared` so desktop links and the responsive
+ * mobile side drawer always share identical destinations, labels, and active route states.
+ */
 export function Navbar() {
   const pathname = usePathname();
   const { totalCount, setIsCartOpen } = useCart();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [sessionUser, setSessionUser] = useState<NavSessionUser | null>(null);
+  const menuTriggerRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setMobileMenuOpen(false);
-    };
-    if (mobileMenuOpen) {
-      document.addEventListener("keydown", handleKeyDown);
-    }
+    let active = true;
+    fetch("/api/v1/auth/me")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((payload) => {
+        if (active && payload?.success && payload.user) {
+          setSessionUser(payload.user);
+        } else if (active) {
+          setSessionUser(null);
+        }
+      })
+      .catch(() => {
+        if (active) setSessionUser(null);
+      });
     return () => {
-      document.removeEventListener("keydown", handleKeyDown);
+      active = false;
     };
-  }, [mobileMenuOpen]);
-
-  const navLinks = [
-    { name: "Home", href: "/" },
-    { name: "Menu", href: "/menu" },
-    { name: "Track Order", href: "/orders" },
-    { name: "About Us", href: "/about" },
-    { name: "Contact", href: "/contact" },
-  ];
+  }, [pathname]);
 
   const isRouteActive = (href: string) => {
-    if (href === "/") {
-      return pathname === "/";
-    }
+    if (href === "/") return pathname === "/";
     return pathname === href || pathname.startsWith(`${href}/`);
   };
 
+  const firstName = sessionUser?.fullName?.split(" ")[0] || "Account";
+
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-white/[0.06] bg-[#141518]">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8 h-18 sm:h-20">
-        
+    <header className="sticky top-0 z-40 w-full border-b border-[#333333] bg-[#101010]/95 backdrop-blur-xl">
+      <div className="mx-auto flex h-16 sm:h-20 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8 gap-4">
         {/* Brand Identity */}
-        <Link href="/" className="flex items-center gap-2.5 sm:gap-3 group shrink-0">
-          <Logo size={42} className="shadow-[0_4px_12px_rgba(0,0,0,0.5)] group-hover:scale-105 group-hover:rotate-[-2deg] transition-all duration-300" />
+        <Link
+          href="/"
+          className="group flex items-center gap-3 shrink-0 rounded-xl focus-visible:outline-none"
+        >
+          <Logo
+            size={40}
+            className="shadow-[0_4px_14px_rgba(0,0,0,0.5)] transition-transform duration-300 group-hover:scale-105"
+          />
           <div className="flex flex-col select-none">
             <span className="font-serif text-xl sm:text-2xl font-black tracking-tight text-white flex items-center leading-none whitespace-nowrap">
-              Sika Cuisine<span className="text-brand-red ml-0.5">.</span>
+              {RESTAURANT_INFO.brandName}
+              <span className="text-[#D71920] ml-0.5">.</span>
             </span>
-            <span className="text-[9px] sm:text-[10px] tracking-[0.18em] sm:tracking-[0.2em] uppercase font-semibold text-gray-400 mt-1 flex items-center gap-1 font-mono whitespace-nowrap">
-              <MapPin className="h-2.5 w-2.5 text-brand-red flex-shrink-0" /> Sunyani, Ghana
+            <span className="mt-1 flex items-center gap-1 font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-[#A3A3A3] whitespace-nowrap">
+              <MapPin className="h-2.5 w-2.5 text-[#F0444A] flex-shrink-0" aria-hidden="true" />
+              {RESTAURANT_INFO.city}
             </span>
           </div>
         </Link>
 
-        {/* Desktop Navigation Links - reserved for lg+ viewports to prevent tablet collision */}
-        <nav className="hidden lg:flex items-center gap-6 xl:gap-8">
-          {navLinks.map((link) => {
+        {/* Desktop Primary Links */}
+        <nav aria-label="Primary navigation" className="hidden lg:flex items-center gap-2 xl:gap-3">
+          {CUSTOMER_NAV_LINKS.map((link) => {
             const active = isRouteActive(link.href);
             return (
               <Link
                 key={link.name}
                 href={link.href}
-                className={`text-sm font-medium transition-all duration-200 whitespace-nowrap relative py-1.5 ${
-                  active
-                    ? "text-white font-semibold"
-                    : "text-gray-300 hover:text-white hover:-translate-y-0.5"
+                aria-current={active ? "page" : undefined}
+                className={`relative rounded-full px-4 py-2 text-sm font-medium transition-colors duration-200 whitespace-nowrap ${
+                  active ? "text-white font-semibold" : "text-[#A3A3A3] hover:text-[#F5F1EA]"
                 }`}
               >
-                <span>{link.name}</span>
+                <span className="relative z-10">{link.name}</span>
                 {active && (
-                  <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-brand-red rounded-full shadow-[0_0_8px_rgba(229,9,20,0.7)] animate-scale-in" />
+                  <motion.span
+                    layoutId="sika-desktop-nav-pill"
+                    transition={{ type: "spring", ...SikaMotion.spring }}
+                    className="absolute inset-0 rounded-full border border-[#D71920]/45 bg-[#1C1C1C]"
+                  />
                 )}
               </Link>
             );
           })}
         </nav>
 
-        {/* Header Right Actions */}
-        <div className="flex items-center gap-2 sm:gap-3.5 shrink-0">
-          {/* Dining Order Tray Button with Cassie Evans cloche micro-interaction */}
+        {/* Right Actions: Cart + Account + Mobile Drawer Trigger */}
+        <div className="flex items-center gap-2.5 shrink-0">
           <button
             id="header-cart-button"
+            type="button"
             onClick={() => setIsCartOpen(true)}
-            className="group relative flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-full bg-[#1c1d22] border border-white/10 text-white hover:border-brand-red/50 hover:bg-[#25272e] active:scale-95 transition-all duration-200 shadow-sm"
-            aria-label="View order tray"
+            className="group relative flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-full border border-[#333333] bg-[#1C1C1C] text-[#F5F1EA] hover:border-[#D71920]/60 hover:bg-[#262626] active:scale-95 transition-all"
+            aria-label={`View cart (${totalCount} ${totalCount === 1 ? "item" : "items"})`}
           >
-            <div className="group-hover:-translate-y-0.5 group-hover:rotate-[-3deg] transition-transform duration-300 ease-out">
-              <RestaurantClocheIcon className="h-4 w-4 sm:h-5 sm:w-5" />
-            </div>
+            <RestaurantClocheIcon className="h-4 w-4 sm:h-5 sm:w-5 transition-transform duration-200 group-hover:-translate-y-0.5" />
             {totalCount > 0 && (
-              <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-brand-red text-[11px] font-bold text-white shadow-md animate-scale-in">
+              <motion.span
+                key={totalCount}
+                initial={{ scale: 0.7 }}
+                animate={{ scale: 1 }}
+                transition={{ type: "spring", stiffness: 500, damping: 24 }}
+                className="absolute -top-1 -right-1 flex h-5 min-w-[20px] px-1 items-center justify-center rounded-full bg-[#D71920] text-[11px] font-bold text-white shadow-md tabular-nums"
+              >
                 {totalCount}
-              </span>
+              </motion.span>
             )}
           </button>
 
-          {/* Desktop/Tablet Sign In Pill Button */}
           <Link
-            href="/login"
-            className="hidden sm:inline-flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm font-semibold text-white bg-brand-red hover:bg-brand-red-hover active:scale-95 transition-all shadow-[0_4px_14px_rgba(229,9,20,0.35)] shrink-0 whitespace-nowrap"
+            href={sessionUser ? "/account" : "/login"}
+            className="hidden sm:inline-flex items-center gap-2 rounded-full bg-[#D71920] hover:bg-[#A91017] px-4 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-semibold text-white active:scale-95 transition-all shadow-[0_6px_18px_rgba(215,25,32,0.35)] whitespace-nowrap"
           >
-            <User className="h-3.5 w-3.5" />
-            <span>Sign In</span>
+            <User className="h-3.5 w-3.5" aria-hidden="true" />
+            <span>{sessionUser ? firstName : "Sign In"}</span>
           </Link>
 
-          {/* Mobile & Tablet Circular Menu Toggle Button */}
           <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="lg:hidden flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-full bg-[#1c1d22] border border-white/10 text-gray-200 hover:text-white hover:bg-[#25272e] active:scale-95 transition-all shadow-sm"
-            aria-label="Toggle navigation menu"
+            ref={menuTriggerRef}
+            type="button"
+            onClick={() => setMobileMenuOpen((prev) => !prev)}
+            className="lg:hidden flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-full border border-[#333333] bg-[#1C1C1C] text-[#F5F1EA] hover:border-[#D71920]/50 hover:bg-[#262626] active:scale-95 transition-all"
+            aria-label={mobileMenuOpen ? "Close navigation menu" : "Open navigation menu"}
             aria-expanded={mobileMenuOpen}
+            aria-controls="sika-mobile-drawer"
           >
-            {mobileMenuOpen ? <X className="h-5 w-5 text-brand-red" /> : <Menu className="h-5 w-5" />}
+            {mobileMenuOpen ? (
+              <X className="h-5 w-5 text-[#F0444A]" aria-hidden="true" />
+            ) : (
+              <Menu className="h-5 w-5" aria-hidden="true" />
+            )}
           </button>
         </div>
       </div>
 
-      {/* Full-Screen Matte Studio Mobile Navigation */}
       <MobileMenu
         isOpen={mobileMenuOpen}
         onClose={() => setMobileMenuOpen(false)}
         pathname={pathname}
+        returnFocusRef={menuTriggerRef}
+        sessionUser={sessionUser}
       />
     </header>
   );

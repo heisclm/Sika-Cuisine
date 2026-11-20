@@ -50,9 +50,9 @@ export function AmbientEmbers({
     window.addEventListener("resize", resize);
 
     const colors = [
-      "225, 29, 72",  // Sika Crimson Red
-      "245, 158, 11", // Warm Charcoal Gold
-      "217, 119, 6",  // Amber Embers
+      "215, 25, 32",  // Sika Primary Red
+      "240, 68, 74",  // Sika Light Red
+      "245, 241, 234", // Warm White
     ];
 
     const opacityScale = opacity / 0.5;

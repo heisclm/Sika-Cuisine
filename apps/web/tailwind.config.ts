@@ -1,4 +1,5 @@
 import type { Config } from "tailwindcss";
+import { SikaBrand, SikaPalette } from "../../packages/shared/src/design-tokens";
 
 const config: Config = {
   content: [
@@ -10,30 +11,37 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        background: "#141518",
+        background: SikaPalette.deepBlack,
+        foreground: SikaPalette.warmWhite,
         surface: {
-          50: "#27292f",
-          100: "#202227",
-          200: "#1a1b20",
-          300: "#151619",
-          400: "#101113",
-          DEFAULT: "#1a1b20",
+          50: SikaPalette.surfaceHover,
+          100: SikaPalette.elevatedSurface,
+          200: SikaPalette.charcoal,
+          300: "#161616",
+          400: SikaPalette.deepBlack,
+          elevated: SikaPalette.elevatedSurface,
+          DEFAULT: SikaPalette.charcoal,
         },
         brand: {
           red: {
-            DEFAULT: "#e50914",
-            hover: "#b91c1c",
-            light: "#ff3842",
-            dark: "#8f0007",
-            gradientStart: "#f01c24",
-            gradientEnd: "#a80710",
+            DEFAULT: SikaBrand.red,
+            hover: SikaBrand.redHover,
+            light: SikaBrand.redReadable,
+            dark: SikaBrand.redDark,
+            gradientStart: SikaBrand.redGradientStart,
+            gradientEnd: SikaBrand.redGradientEnd,
           },
-          gold: "#f59e0b",
         },
+        warmWhite: SikaPalette.warmWhite,
         border: {
-          subtle: "#282a30",
-          muted: "#1f2025",
-          highlight: "#393c44",
+          subtle: SikaPalette.border,
+          muted: "#262626",
+          highlight: "#484848",
+        },
+        semantic: {
+          success: SikaPalette.successText,
+          warning: SikaPalette.warningText,
+          error: SikaPalette.errorText,
         },
       },
       fontFamily: {
@@ -42,13 +50,13 @@ const config: Config = {
         display: ["var(--font-display)", "Syne", "sans-serif"],
       },
       boxShadow: {
-        glow: "0 0 40px -10px rgba(229, 9, 20, 0.35)",
-        card: "0 20px 40px -15px rgba(0, 0, 0, 0.7)",
-        plate: "0 25px 50px -12px rgba(0, 0, 0, 0.85)",
+        glow: `0 0 36px -8px rgba(${SikaBrand.redRgb}, 0.42)`,
+        card: "0 18px 40px -16px rgba(0, 0, 0, 0.75)",
+        plate: "0 24px 48px -12px rgba(0, 0, 0, 0.85)",
       },
       borderRadius: {
-        "3xl": "1.75rem",
-        "4xl": "2.25rem",
+        "3xl": "1.5rem",
+        "4xl": "2rem",
       },
     },
   },

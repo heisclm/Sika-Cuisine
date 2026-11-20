@@ -1,133 +1,170 @@
 import React from "react";
 import Link from "next/link";
-import { ShieldCheck, Heart, MapPin, ArrowRight, Flame } from "lucide-react";
-import { BespokeSeal } from "@/components/creative/BespokeSeal";
-import { TiltCard } from "@/components/creative/TiltCard";
-import { KineticMarquee } from "@/components/creative/KineticMarquee";
+import { ArrowRight, ChefHat, Clock, Flame, MapPin, Phone, ShieldCheck, UtensilsCrossed } from "lucide-react";
+import { RESTAURANT_INFO } from "@/lib/navigation";
+import { SUNYANI_DELIVERY_ZONES } from "@/lib/delivery-zones";
+import { formatPesewasToGhs } from "@/lib/currency";
+
+const KITCHEN_PILLARS = [
+  {
+    icon: Flame,
+    title: "Charcoal & Clay-Pot Craft",
+    description:
+      "Every whole tilapia is seasoned with Sunyani herbs and grilled to order over live hardwood coals, while local soups slow-simmer daily.",
+  },
+  {
+    icon: ShieldCheck,
+    title: "Transparent Ghana Cedis Pricing",
+    description:
+      "Menu prices, delivery zone tariffs across Sunyani, and payment methods are shown upfront before you confirm your order.",
+  },
+  {
+    icon: Clock,
+    title: "Built for Pickup & Doorstep Delivery",
+    description:
+      "Collect directly from our Commercial Road counter at zero delivery charge, or dispatch a rider across Central Sunyani, Fiapre, and estates.",
+  },
+];
 
 export default function AboutPage() {
   return (
-    <div className="min-h-screen bg-background pb-24 text-gray-200">
-      <div className="border-b border-white/[0.06] bg-[#16171b] py-14 sm:py-20 text-center relative overflow-hidden">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-5xl h-[300px] studio-vignette pointer-events-none -z-10" />
-        <div className="mx-auto max-w-3xl px-4 relative z-10">
-          <div className="flex justify-center mb-6">
-            <BespokeSeal size={76} />
-          </div>
-          <div className="inline-flex items-center gap-2.5 mb-3">
-            <span className="h-px w-8 bg-brand-red/60" />
-            <span className="text-[11px] font-semibold uppercase tracking-[0.25em] text-brand-red">
-              Sunyani Culinary Heritage
+    <div className="min-h-screen bg-[#101010] pb-20">
+      {/* Editorial Hero */}
+      <section className="relative overflow-hidden border-b border-[#333333] bg-[#1C1C1C]">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-14 sm:py-20 grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
+          <div className="lg:col-span-6 space-y-5">
+            <span className="inline-flex items-center gap-2 rounded-full border border-[#D71920]/40 bg-[#D71920]/10 px-3.5 py-1 font-mono text-[11px] font-bold uppercase tracking-[0.2em] text-[#F0444A]">
+              <ChefHat className="h-3.5 w-3.5" aria-hidden="true" />
+              Our Sunyani Kitchen
             </span>
-            <span className="h-px w-8 bg-brand-red/60" />
-          </div>
-          <div>
-            <h1 className="font-serif text-3xl sm:text-5xl lg:text-6xl font-bold text-white tracking-tight">
-              The Sika Cuisine Story
+            <h1 className="font-serif text-3xl sm:text-5xl font-black tracking-tight text-white leading-[1.08]">
+              Honest Ghanaian Hospitality, Crafted Fresh in Sunyani Central.
             </h1>
-          </div>
-          <p className="mt-4 text-sm sm:text-lg text-gray-300 leading-relaxed font-light max-w-2xl mx-auto">
-            Rooted in the rich agricultural heart of the Bono Region, Sika Cuisine is Sunyani&apos;s premier destination for authentic, slow-simmered Ghanaian gastronomy and vibrant lounge dining.
-          </p>
-        </div>
-      </div>
-
-      {/* Locomotive Kinetic Marquee */}
-      <KineticMarquee speedSeconds={42} direction="right" className="border-b border-white/[0.06] bg-[#111215]/90 backdrop-blur-md" />
-
-      <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 pt-16 space-y-16">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <TiltCard maxAngle={6} scale={1.02} glare={false} className="rounded-3xl">
-            <div className="h-full rounded-3xl bg-surface-300/90 border border-border-subtle p-8 text-center space-y-3.5 hover:border-brand-red/40 transition-colors shadow-card">
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-red/10 text-brand-red mx-auto">
-                <Flame className="h-7 w-7" />
-              </div>
-              <h3 className="font-serif text-xl font-bold text-white">Charcoal Grill & Woodsmoke</h3>
-              <p className="text-xs text-gray-400 leading-relaxed font-light">
-                From our signature charcoal-grilled whole tilapia with chilli to succulent spiced chicken packages, our dishes are kissed with natural embers and woodsmoke aromatics.
-              </p>
-            </div>
-          </TiltCard>
-
-          <TiltCard maxAngle={6} scale={1.02} glare={false} className="rounded-3xl">
-            <div className="h-full rounded-3xl bg-surface-300/90 border border-border-subtle p-8 text-center space-y-3.5 hover:border-brand-red/40 transition-colors shadow-card">
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-950/60 text-emerald-400 mx-auto">
-                <ShieldCheck className="h-7 w-7" />
-              </div>
-              <h3 className="font-serif text-xl font-bold text-white">Uncompromising Hygiene</h3>
-              <p className="text-xs text-gray-400 leading-relaxed font-light">
-                Every cut of beef, fresh tilapia, farm chicken, and local vegetable is inspected daily. We uphold rigorous food safety and immaculate kitchen standards across every station.
-              </p>
-            </div>
-          </TiltCard>
-
-          <TiltCard maxAngle={6} scale={1.02} glare={false} className="rounded-3xl">
-            <div className="h-full rounded-3xl bg-surface-300/90 border border-border-subtle p-8 text-center space-y-3.5 hover:border-brand-red/40 transition-colors shadow-card">
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-gold/10 text-brand-gold mx-auto">
-                <Heart className="h-7 w-7" />
-              </div>
-              <h3 className="font-serif text-xl font-bold text-white">Local Sunyani Pride</h3>
-              <p className="text-xs text-gray-400 leading-relaxed font-light">
-                We proudly celebrate Sunyani&apos;s culinary identity. Our couriers provide fast direct dispatch from Fiapre and UENR Campus to Berlin Top, Kotokrom, and Sunyani Central.
-              </p>
-            </div>
-          </TiltCard>
-        </div>
-
-        <div className="rounded-3xl bg-surface-300/90 border border-border-subtle p-8 sm:p-12 grid grid-cols-1 md:grid-cols-2 gap-10 items-center shadow-card">
-          <div className="space-y-4">
-            <div className="inline-flex items-center gap-2 text-brand-red text-xs font-bold uppercase tracking-widest">
-              <span>Authentic Kitchen Craft</span>
-            </div>
-            <h2 className="font-serif text-3xl sm:text-4xl font-bold text-white leading-tight">
-              Honoring Ghana&apos;s Iconic Dishes
-            </h2>
-            <p className="text-sm text-gray-300 leading-relaxed font-light">
-              At Sika Cuisine, authenticity is our promise. Our traditional stews and soups — from slow-simmered Okro soup with Banku to rich Groundnut soup with Omutuo, Tuo Zaafi (TZ) with Ayoyo, and silky Pounded Fufu in spiced light soup — are cooked with time-honored patience.
+            <p className="text-sm sm:text-base text-[#A3A3A3] leading-relaxed">
+              Sika Cuisine brings together beloved Ghanaian classics — charcoal-grilled tilapia with banku, slow-cooked jollof, traditional fufu and aprapransa, spiced fruit rice, and stone-baked artisan pizzas — served from {RESTAURANT_INFO.address}.
             </p>
-            <p className="text-sm text-gray-300 leading-relaxed font-light">
-              Alongside our traditional staples, our kitchen crafts signature creations: Wok-infused Sunyani Pineapple & Coconut Fruit Rice, the celebrated SIKA Special Combo (De Mixture), Loaded Fries, and stone-baked artisan pizzas.
-            </p>
-            <div className="pt-2">
+            <div className="flex flex-wrap gap-3 pt-2">
               <Link
                 href="/menu"
-                className="btn-red-gradient inline-flex items-center gap-2 px-6 py-3 rounded-full text-sm font-semibold text-white shadow-glow"
+                className="inline-flex items-center gap-2 rounded-xl bg-[#D71920] hover:bg-[#A91017] px-6 py-3 text-sm font-semibold text-white transition-colors"
               >
+                <UtensilsCrossed className="h-4 w-4" aria-hidden="true" />
                 <span>Explore Full Menu</span>
-                <ArrowRight className="h-4 w-4" />
+                <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              </Link>
+              <Link
+                href="/contact"
+                className="inline-flex items-center gap-2 rounded-xl border border-[#333333] bg-[#262626] hover:bg-[#2F2F2F] px-6 py-3 text-sm font-semibold text-[#F5F1EA] transition-colors"
+              >
+                <Phone className="h-4 w-4 text-[#F0444A]" aria-hidden="true" />
+                <span>Contact Us</span>
               </Link>
             </div>
           </div>
 
-          <div className="relative rounded-2xl overflow-hidden border border-border-subtle h-80 sm:h-96 shadow-2xl">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/images/restaurant/lounge-interior.jpg"
-              alt="Sika Cuisine Kitchen Atmosphere"
-              className="h-full w-full object-cover"
-            />
+          <div className="lg:col-span-6">
+            <div className="relative overflow-hidden rounded-3xl border border-[#333333] aspect-[4/3] shadow-2xl">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/images/restaurant/lounge-interior.jpg"
+                alt="Sika Cuisine Sunyani Dining Lounge"
+                className="h-full w-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#101010]/85 via-transparent to-transparent" />
+              <div className="absolute bottom-5 left-5 right-5 flex items-center justify-between gap-4 rounded-2xl border border-[#333333] bg-[#1C1C1C]/90 px-4 py-3 backdrop-blur-md">
+                <div>
+                  <p className="font-serif text-base font-bold text-[#F5F1EA]">Sika Cuisine Lounge</p>
+                  <p className="text-xs text-[#A3A3A3]">{RESTAURANT_INFO.address}</p>
+                </div>
+                <span className="rounded-full border border-[#22C55E]/35 bg-[#22C55E]/15 px-3 py-1 font-mono text-[11px] font-semibold text-[#4ADE80]">
+                  Mon–Sun Service
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Kitchen Pillars */}
+      <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-14 space-y-12">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {KITCHEN_PILLARS.map((pillar) => {
+            const Icon = pillar.icon;
+            return (
+              <div
+                key={pillar.title}
+                className="rounded-3xl border border-[#333333] bg-[#1C1C1C] p-6 space-y-3"
+              >
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[#333333] bg-[#262626] text-[#F0444A]">
+                  <Icon className="h-5 w-5" aria-hidden="true" />
+                </div>
+                <h2 className="font-serif text-xl font-bold text-[#F5F1EA]">{pillar.title}</h2>
+                <p className="text-sm leading-relaxed text-[#A3A3A3]">{pillar.description}</p>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Delivery Coverage Summary */}
+        <div className="rounded-3xl border border-[#333333] bg-[#1C1C1C] p-6 sm:p-8 space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+            <div>
+              <span className="font-mono text-[11px] font-bold uppercase tracking-[0.2em] text-[#F0444A]">
+                Sunyani Dispatch Network
+              </span>
+              <h2 className="mt-1 font-serif text-2xl font-bold text-[#F5F1EA]">
+                Zone Tariffs Across Sunyani
+              </h2>
+            </div>
+            <p className="text-xs text-[#A3A3A3] flex items-center gap-1.5">
+              <MapPin className="h-3.5 w-3.5 text-[#F0444A]" aria-hidden="true" />
+              Restaurant counter pickup is always GHS 0.00
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {SUNYANI_DELIVERY_ZONES.map((zone) => (
+              <div
+                key={zone.id}
+                className="flex items-center justify-between rounded-2xl border border-[#333333] bg-[#262626] px-4 py-3"
+              >
+                <div className="min-w-0 pr-3">
+                  <p className="text-sm font-semibold text-[#F5F1EA] truncate">{zone.name}</p>
+                  <p className="text-xs text-[#A3A3A3] truncate">
+                    Est. {zone.estimatedMinutes} mins &bull; {zone.description}
+                  </p>
+                </div>
+                <span className="font-mono text-sm font-bold text-[#F0444A] tabular-nums flex-shrink-0">
+                  {formatPesewasToGhs(zone.feePesewas)}
+                </span>
+              </div>
+            ))}
           </div>
         </div>
 
-        <div className="rounded-3xl bg-gradient-to-r from-surface-300 via-surface-200 to-surface-300 border border-border-subtle p-8 text-center space-y-4">
+        {/* Bottom CTA Strip */}
+        <div className="rounded-3xl border border-[#333333] bg-gradient-to-r from-[#1C1C1C] via-[#262626] to-[#1C1C1C] p-8 text-center space-y-4">
           <h3 className="font-serif text-2xl font-bold text-white">
-            Visit Sika Cuisine Lounge or Order to Your Door
+            Dine at Our Lounge or Order Straight to Your Door
           </h3>
-          <p className="text-xs sm:text-sm text-gray-300 max-w-xl mx-auto leading-relaxed font-light">
-            Located in Sunyani Central, Bono Region. Order online for swift doorstep delivery or pickup at our counter.
+          <p className="mx-auto max-w-xl text-sm text-[#A3A3A3]">
+            Located in {RESTAURANT_INFO.city}. Place an order online for live kitchen preparation tracking or call our counter directly.
           </p>
-          <div className="pt-2 flex flex-wrap items-center justify-center gap-4 text-xs">
-            <span className="font-semibold text-white flex items-center gap-1.5">
-              <MapPin className="h-4 w-4 text-brand-red" />
-              Commercial Road, Sunyani Central
+          <div className="flex flex-wrap items-center justify-center gap-4 text-xs sm:text-sm pt-1">
+            <span className="inline-flex items-center gap-1.5 font-semibold text-[#F5F1EA]">
+              <MapPin className="h-4 w-4 text-[#F0444A]" aria-hidden="true" />
+              {RESTAURANT_INFO.address}
             </span>
-            <span className="text-gray-500">&bull;</span>
-            <span className="text-gray-300">
-              Call / WhatsApp: <strong className="text-white">0533376760 / 0554406681</strong>
-            </span>
+            <span className="text-[#737373]">&bull;</span>
+            <a
+              href={`tel:${RESTAURANT_INFO.primaryPhoneIntl}`}
+              className="font-mono font-bold text-white hover:text-[#F0444A] transition-colors"
+            >
+              {RESTAURANT_INFO.primaryPhone} / {RESTAURANT_INFO.secondaryPhone}
+            </a>
           </div>
         </div>
-      </div>
+      </section>
     </div>
   );
 }

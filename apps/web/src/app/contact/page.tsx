@@ -1,177 +1,233 @@
 "use client";
 
 import React, { useState } from "react";
-import { MapPin, Phone, Mail, Clock, Send, CheckCircle2 } from "lucide-react";
-import { TiltCard } from "@/components/creative/TiltCard";
-import { MagneticButton } from "@/components/creative/MagneticButton";
+import { CheckCircle2, Clock, MapPin, MessageCircle, Phone, Send } from "lucide-react";
+import { RESTAURANT_INFO } from "@/lib/navigation";
+import { Button } from "@/components/ui/Button";
+import { PageReveal } from "@/components/ui/MotionPrimitives";
 
+/**
+ * Contact & Sunyani location page.
+ * Prepares customer inquiries locally and routes direct confirmation via WhatsApp or telephone.
+ */
 export default function ContactPage() {
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [subject, setSubject] = useState("");
+  const [message, setMessage] = useState("");
   const [submitted, setSubmitted] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!name.trim() || !phone.trim() || !message.trim()) return;
     setSubmitted(true);
   };
 
+  const whatsappInquiryUrl = `${RESTAURANT_INFO.whatsappBaseUrl}?text=${encodeURIComponent(
+    `Hello Sika Cuisine,\nName: ${name}\nPhone: ${phone}\nSubject: ${subject || "General Inquiry"}\nMessage: ${message}`
+  )}`;
+
   return (
-    <div className="min-h-screen bg-background pb-24 text-gray-200">
-      <div className="border-b border-white/[0.06] bg-[#16171b] py-16 sm:py-20 text-center relative overflow-hidden">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-5xl h-[300px] studio-vignette pointer-events-none -z-10" />
-        <div className="mx-auto max-w-3xl px-4 relative z-10">
-          <div className="inline-flex items-center gap-2.5 mb-3">
-            <span className="h-px w-6 bg-brand-red/60" />
-            <span className="text-[11px] font-semibold uppercase tracking-[0.25em] text-brand-red">
-              Sunyani Central &bull; Bono Region
-            </span>
-            <span className="h-px w-6 bg-brand-red/60" />
-          </div>
-          <h1 className="font-serif text-4xl sm:text-5xl lg:text-6xl font-bold text-white tracking-tight">
-            Connect With Sika Cuisine
+    <div className="min-h-screen bg-[#101010] py-12 sm:py-16">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-12">
+        <PageReveal className="max-w-2xl space-y-3">
+          <span className="font-mono text-[11px] font-bold uppercase tracking-[0.22em] text-[#F0444A]">
+            Sunyani Hospitality Desk
+          </span>
+          <h1 className="font-serif text-3xl sm:text-5xl font-black tracking-tight text-white">
+            Reach Sika Cuisine
           </h1>
-          <p className="mt-3 text-sm sm:text-base text-gray-400 font-light max-w-xl mx-auto leading-relaxed">
-            Have questions about catering, custom dietary orders, or bulk corporate lunch deliveries? Reach out to us.
+          <p className="text-sm sm:text-base text-[#A3A3A3] leading-relaxed">
+            Questions about group catering, order updates, or pickup directions in Sunyani Central? Reach our kitchen desk directly by phone or WhatsApp.
           </p>
-        </div>
-      </div>
+        </PageReveal>
 
-      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 pt-12">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-          <div className="lg:col-span-5 space-y-6">
-            <TiltCard maxAngle={6} scale={1.01} glare={true} className="rounded-3xl">
-              <div className="h-full rounded-3xl bg-surface-300 border border-border-subtle p-6 space-y-6 shadow-card">
-                <h2 className="font-serif text-xl font-bold text-white border-b border-border-subtle pb-3">
-                  Sunyani Kitchen Details
-                </h2>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          {/* Contact Details Sidebar */}
+          <div className="lg:col-span-5 space-y-5">
+            <div className="rounded-3xl border border-[#333333] bg-[#1C1C1C] p-6 space-y-5">
+              <h2 className="font-serif text-xl font-bold text-[#F5F1EA]">
+                Direct Channels
+              </h2>
 
-                <div className="space-y-5 text-sm">
-                  <div className="flex items-start gap-3.5">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-red/10 text-brand-red flex-shrink-0">
-                      <MapPin className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-white">Physical Address</h4>
-                      <p className="text-gray-400 text-xs mt-0.5">
-                        Commercial Road, Sunyani Central, Bono Region, Ghana
-                      </p>
-                    </div>
+              <div className="space-y-4 text-sm">
+                <div className="flex items-start gap-3.5">
+                  <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl border border-[#333333] bg-[#262626] text-[#F0444A]">
+                    <MapPin className="h-4 w-4" aria-hidden="true" />
                   </div>
-
-                  <div className="flex items-start gap-3.5">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-red/10 text-brand-red flex-shrink-0">
-                      <Phone className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-white">Call / WhatsApp</h4>
-                      <p className="text-gray-300 text-xs mt-0.5 font-medium">0533376760 / 0554406681</p>
-                      <p className="text-gray-400 text-[11px] mt-0.5">Social: @sikacuisine.restaurant</p>
-                    </div>
+                  <div>
+                    <p className="font-semibold text-[#F5F1EA]">Restaurant Location</p>
+                    <p className="text-xs text-[#A3A3A3] mt-0.5">{RESTAURANT_INFO.address}</p>
+                    <p className="text-xs text-[#737373] mt-0.5">{RESTAURANT_INFO.city}</p>
                   </div>
+                </div>
 
-                  <div className="flex items-start gap-3.5">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-red/10 text-brand-red flex-shrink-0">
-                      <Mail className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-white">Direct Email</h4>
-                      <p className="text-gray-400 text-xs mt-0.5">orders@sikacuisine.com</p>
-                    </div>
+                <div className="flex items-start gap-3.5">
+                  <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl border border-[#333333] bg-[#262626] text-[#F0444A]">
+                    <Phone className="h-4 w-4" aria-hidden="true" />
                   </div>
-
-                  <div className="flex items-start gap-3.5">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-red/10 text-brand-red flex-shrink-0">
-                      <Clock className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-white">Operating Hours</h4>
-                      <p className="text-gray-400 text-xs mt-0.5">
-                        Mon — Sat: 10:00 AM – 10:00 PM<br />
-                        Sunday: 12:00 PM – 9:00 PM
-                      </p>
+                  <div>
+                    <p className="font-semibold text-[#F5F1EA]">Telephone Orders &amp; Support</p>
+                    <div className="mt-1 flex flex-col gap-1 font-mono text-xs">
+                      <a
+                        href={`tel:${RESTAURANT_INFO.primaryPhoneIntl}`}
+                        className="text-[#F5F1EA] hover:text-[#F0444A] transition-colors"
+                      >
+                        {RESTAURANT_INFO.primaryPhone}
+                      </a>
+                      <a
+                        href={`tel:${RESTAURANT_INFO.secondaryPhoneIntl}`}
+                        className="text-[#A3A3A3] hover:text-[#F0444A] transition-colors"
+                      >
+                        {RESTAURANT_INFO.secondaryPhone}
+                      </a>
                     </div>
                   </div>
                 </div>
+
+                <div className="flex items-start gap-3.5">
+                  <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl border border-[#333333] bg-[#262626] text-[#4ADE80]">
+                    <Clock className="h-4 w-4" aria-hidden="true" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-[#F5F1EA]">Kitchen Hours (GMT)</p>
+                    <p className="text-xs text-[#A3A3A3] mt-0.5">Mon – Sat: 10:00 AM – 10:00 PM</p>
+                    <p className="text-xs text-[#A3A3A3] mt-0.5">Sunday: 12:00 PM – 9:00 PM</p>
+                  </div>
+                </div>
               </div>
-            </TiltCard>
+
+              <a
+                href={`${RESTAURANT_INFO.whatsappBaseUrl}?text=Hello%20Sika%20Cuisine%20Sunyani,%20I%20have%20an%20inquiry`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-[#22C55E]/35 bg-[#22C55E]/15 hover:bg-[#22C55E]/25 px-4 py-3 text-sm font-semibold text-[#4ADE80] transition-colors"
+              >
+                <MessageCircle className="h-4 w-4" aria-hidden="true" />
+                <span>Message Kitchen on WhatsApp</span>
+              </a>
+            </div>
           </div>
 
+          {/* Inquiry Composer */}
           <div className="lg:col-span-7">
-            <div className="rounded-3xl bg-surface-300 border border-border-subtle p-8 sm:p-10">
-              <h2 className="font-serif text-2xl font-bold text-white mb-2">
-                Send a Direct Message
+            <div className="rounded-3xl border border-[#333333] bg-[#1C1C1C] p-6 sm:p-8">
+              <h2 className="font-serif text-xl sm:text-2xl font-bold text-[#F5F1EA]">
+                Prepare a Kitchen Inquiry
               </h2>
-              <p className="text-xs text-gray-400 mb-6">
-                Our kitchen supervisor will respond to your inquiry promptly.
+              <p className="mt-1 text-xs sm:text-sm text-[#A3A3A3] mb-6">
+                Compose your catering or order question below, then launch WhatsApp or call directly for immediate response.
               </p>
 
               {submitted ? (
-                <div className="rounded-2xl bg-emerald-950/40 border border-emerald-800 p-6 text-center space-y-2">
-                  <CheckCircle2 className="h-8 w-8 text-emerald-400 mx-auto" />
-                  <h3 className="font-serif text-lg font-bold text-white">
-                    Message Sent Successfully!
-                  </h3>
-                  <p className="text-xs text-gray-300">
-                    Thank you for reaching out to Sika Cuisine Sunyani. We will get back to you shortly.
-                  </p>
+                <div className="rounded-2xl border border-[#22C55E]/35 bg-[#22C55E]/10 p-6 text-center space-y-4">
+                  <CheckCircle2 className="h-9 w-9 text-[#4ADE80] mx-auto" aria-hidden="true" />
+                  <div className="space-y-1.5">
+                    <h3 className="font-serif text-lg font-bold text-[#F5F1EA]">
+                      Message Draft Ready
+                    </h3>
+                    <p className="text-xs sm:text-sm text-[#A3A3A3]">
+                      Send your pre-filled note directly to Sika Cuisine on WhatsApp or call {RESTAURANT_INFO.primaryPhone}.
+                    </p>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-1">
+                    <a
+                      href={whatsappInquiryUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-[#D71920] hover:bg-[#A91017] px-5 py-2.5 text-xs sm:text-sm font-semibold text-white transition-colors"
+                    >
+                      <MessageCircle className="h-4 w-4" aria-hidden="true" />
+                      <span>Send via WhatsApp</span>
+                    </a>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => setSubmitted(false)}
+                    >
+                      Edit Message
+                    </Button>
+                  </div>
                 </div>
               ) : (
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">
+                      <label
+                        htmlFor="contact-name"
+                        className="block text-xs font-semibold uppercase tracking-wider text-[#A3A3A3] mb-1.5"
+                      >
                         Your Name *
                       </label>
                       <input
+                        id="contact-name"
                         type="text"
                         required
-                        placeholder="e.g. Kwame Mensah"
-                        className="w-full rounded-xl bg-surface-200 border border-border-subtle p-3 text-sm text-white focus:outline-none focus:border-brand-red"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        placeholder="e.g. Akosua Boateng"
+                        className="w-full rounded-xl border border-[#333333] bg-[#262626] p-3 text-sm text-[#F5F1EA] placeholder-[#737373] focus:outline-none focus:border-[#D71920]"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">
+                      <label
+                        htmlFor="contact-phone"
+                        className="block text-xs font-semibold uppercase tracking-wider text-[#A3A3A3] mb-1.5"
+                      >
                         Phone Number *
                       </label>
                       <input
+                        id="contact-phone"
                         type="tel"
                         required
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
                         placeholder="0244123456"
-                        className="w-full rounded-xl bg-surface-200 border border-border-subtle p-3 text-sm text-white focus:outline-none focus:border-brand-red"
+                        className="w-full rounded-xl border border-[#333333] bg-[#262626] p-3 text-sm text-[#F5F1EA] placeholder-[#737373] focus:outline-none focus:border-[#D71920] font-mono"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">
+                    <label
+                      htmlFor="contact-subject"
+                      className="block text-xs font-semibold uppercase tracking-wider text-[#A3A3A3] mb-1.5"
+                    >
                       Subject
                     </label>
                     <input
+                      id="contact-subject"
                       type="text"
-                      placeholder="e.g. Event Catering / Delivery Feedback"
-                      className="w-full rounded-xl bg-surface-200 border border-border-subtle p-3 text-sm text-white focus:outline-none focus:border-brand-red"
+                      value={subject}
+                      onChange={(e) => setSubject(e.target.value)}
+                      placeholder="e.g. Event Catering / Group Pickup"
+                      className="w-full rounded-xl border border-[#333333] bg-[#262626] p-3 text-sm text-[#F5F1EA] placeholder-[#737373] focus:outline-none focus:border-[#D71920]"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">
+                    <label
+                      htmlFor="contact-message"
+                      className="block text-xs font-semibold uppercase tracking-wider text-[#A3A3A3] mb-1.5"
+                    >
                       Message *
                     </label>
                     <textarea
+                      id="contact-message"
                       required
                       rows={4}
+                      value={message}
+                      onChange={(e) => setMessage(e.target.value)}
                       placeholder="How can we serve you in Sunyani today?"
-                      className="w-full rounded-xl bg-surface-200 border border-border-subtle p-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-brand-red"
+                      className="w-full rounded-xl border border-[#333333] bg-[#262626] p-3 text-sm text-[#F5F1EA] placeholder-[#737373] focus:outline-none focus:border-[#D71920]"
                     />
                   </div>
 
-                  <MagneticButton strength={0.2}>
-                    <button
-                      type="submit"
-                      className="btn-red-gradient inline-flex items-center gap-2 px-8 py-3.5 rounded-full text-sm font-semibold text-white shadow-glow"
-                    >
-                      <Send className="h-4 w-4" />
-                      <span>Send Inquiry</span>
-                    </button>
-                  </MagneticButton>
+                  <Button type="submit" variant="primary" size="lg">
+                    <Send className="h-4 w-4" aria-hidden="true" />
+                    <span>Prepare Inquiry</span>
+                  </Button>
                 </form>
               )}
             </div>

@@ -3,10 +3,16 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Lock, Mail, ArrowRight, AlertCircle, Loader2, UserPlus, Compass, Eye, EyeOff } from "lucide-react";
+import { ArrowRight, Compass, Eye, EyeOff, Lock, Mail, UserPlus } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
+import { Button } from "@/components/ui/Button";
+import { PageReveal } from "@/components/ui/MotionPrimitives";
 
-export default function CustomerLoginPage() {
+/**
+ * Customer sign-in page backed by `POST /api/v1/auth/login`.
+ * Stores HTTP-only session cookies on the server and routes signed-in guests to `/account`.
+ */
+export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -14,86 +20,117 @@ export default function CustomerLoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setError(null);
+    setLoading(true);
 
-    setTimeout(() => {
+    try {
+      const res = await fetch("/api/v1/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim(), password }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        setError(data.error || "Invalid email or password.");
+        setLoading(false);
+        return;
+      }
+
+      router.push("/account");
+      router.refresh();
+    } catch {
+      setError("Network connection error. Please check your internet and try again.");
       setLoading(false);
-      router.push("/menu");
-    }, 600);
+    }
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center py-16 px-4 sm:px-6 lg:px-8">
-      <div className="w-full max-w-md space-y-8 rounded-3xl bg-surface-300 border border-border-subtle p-8 sm:p-10 shadow-2xl">
-        <div className="text-center">
-          <Link href="/" className="inline-block group">
-            <Logo size={56} className="mx-auto mb-3 shadow-md group-hover:scale-105 transition-transform" />
-            <span className="font-serif text-3xl font-black tracking-tight text-white flex items-center justify-center">
-              Sika Cuisine<span className="text-brand-red ml-0.5">.</span>
-            </span>
+    <div className="min-h-[calc(100vh-80px)] bg-[#101010] px-4 py-12 flex items-center justify-center">
+      <PageReveal className="w-full max-w-md rounded-3xl border border-[#333333] bg-[#1C1C1C] p-6 sm:p-8 shadow-2xl space-y-6">
+        <div className="text-center space-y-2">
+          <Link href="/" className="inline-flex justify-center">
+            <Logo size={48} />
           </Link>
-          <h2 className="mt-4 font-serif text-2xl font-bold text-white">
-            Welcome Back, Diner
-          </h2>
-          <p className="mt-1 text-xs text-gray-400">
-            Sign in to track orders, reorder your favorite Sunyani dishes, and access saved delivery addresses.
+          <span className="block font-mono text-[11px] font-bold uppercase tracking-[0.22em] text-[#F0444A]">
+            Customer Sign In
+          </span>
+          <h1 className="font-serif text-2xl sm:text-3xl font-bold text-[#F5F1EA]">
+            Welcome Back to Sika
+          </h1>
+          <p className="text-xs sm:text-sm text-[#A3A3A3]">
+            Sign in to view your saved profile, order history, and active deliveries.
           </p>
         </div>
 
         {error && (
-          <div className="flex items-center gap-2 rounded-2xl bg-red-950/50 border border-red-800 p-3 text-xs text-red-200">
-            <AlertCircle className="h-4 w-4 text-brand-red flex-shrink-0" />
-            <span>{error}</span>
+          <div
+            role="alert"
+            className="rounded-xl border border-[#FB7185]/40 bg-[#FB7185]/10 px-4 py-3 text-xs sm:text-sm text-[#FDA4AF]"
+          >
+            {error}
           </div>
         )}
 
-        <form onSubmit={handleLogin} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5">
+            <label
+              htmlFor="login-email"
+              className="block text-xs font-semibold uppercase tracking-wider text-[#A3A3A3] mb-1.5"
+            >
               Email Address
             </label>
             <div className="relative">
-              <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
+              <Mail
+                className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#737373]"
+                aria-hidden="true"
+              />
               <input
+                id="login-email"
                 type="email"
                 required
+                autoComplete="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="kwame@example.com"
-                className="w-full rounded-xl bg-surface-200 border border-border-subtle pl-10 pr-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-brand-red"
+                className="w-full rounded-xl border border-[#333333] bg-[#262626] pl-10 pr-4 py-3 text-sm text-[#F5F1EA] placeholder-[#737373] focus:outline-none focus:border-[#D71920]"
               />
             </div>
           </div>
 
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400">
+              <label
+                htmlFor="login-password"
+                className="block text-xs font-semibold uppercase tracking-wider text-[#A3A3A3]"
+              >
                 Password
               </label>
-              <Link
-                href="/forgot-password"
-                className="text-xs text-brand-red hover:underline font-medium"
-              >
+              <Link href="/forgot-password" className="text-xs font-medium text-[#F0444A] hover:underline">
                 Forgot password?
               </Link>
             </div>
             <div className="relative">
-              <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500 pointer-events-none" />
+              <Lock
+                className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#737373]"
+                aria-hidden="true"
+              />
               <input
+                id="login-password"
                 type={showPassword ? "text" : "password"}
                 required
+                autoComplete="current-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full rounded-xl bg-surface-200 border border-border-subtle pl-10 pr-10 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-brand-red font-mono"
+                className="w-full rounded-xl border border-[#333333] bg-[#262626] pl-10 pr-11 py-3 text-sm text-[#F5F1EA] placeholder-[#737373] focus:outline-none focus:border-[#D71920] font-mono"
               />
               <button
                 type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors p-1"
+                onClick={() => setShowPassword((prev) => !prev)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-1.5 text-[#A3A3A3] hover:text-white transition-colors"
                 aria-label={showPassword ? "Hide password" : "Show password"}
               >
                 {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -101,54 +138,41 @@ export default function CustomerLoginPage() {
             </div>
           </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="btn-red-gradient flex w-full items-center justify-center gap-2 py-3.5 rounded-full text-sm font-semibold text-white shadow-glow disabled:opacity-50 mt-6"
-          >
-            {loading ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <>
-                <span>Sign In to Account</span>
-                <ArrowRight className="h-4 w-4" />
-              </>
-            )}
-          </button>
+          <Button type="submit" variant="primary" size="lg" fullWidth loading={loading} className="mt-2">
+            <span>Sign In to Account</span>
+            <ArrowRight className="h-4 w-4" aria-hidden="true" />
+          </Button>
         </form>
 
-        <div className="pt-2 text-center space-y-4">
-          <p className="text-xs text-gray-400">
+        <div className="space-y-4 pt-2 text-center">
+          <p className="text-xs text-[#A3A3A3]">
             Don&apos;t have an account yet?{" "}
             <Link
               href="/register"
-              className="font-semibold text-brand-red hover:underline inline-flex items-center gap-1"
+              className="inline-flex items-center gap-1 font-semibold text-[#F0444A] hover:underline"
             >
-              <UserPlus className="h-3 w-3 inline" />
+              <UserPlus className="h-3.5 w-3.5" aria-hidden="true" />
               <span>Create an Account</span>
             </Link>
           </p>
 
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-border-subtle/80" />
-            </div>
-            <div className="relative flex justify-center text-xs">
-              <span className="bg-surface-300 px-3 text-gray-500 uppercase tracking-widest text-[10px]">
-                or
-              </span>
-            </div>
+          <div className="relative flex items-center justify-center">
+            <div className="w-full border-t border-[#333333]" />
+            <span className="bg-[#1C1C1C] px-3 font-mono text-[10px] uppercase tracking-[0.2em] text-[#737373]">
+              or
+            </span>
+            <div className="w-full border-t border-[#333333]" />
           </div>
 
           <Link
             href="/orders"
-            className="inline-flex items-center justify-center gap-2 text-xs font-semibold text-gray-300 hover:text-white bg-surface-200/80 hover:bg-surface-100 border border-border-subtle px-4 py-2.5 rounded-full w-full transition-colors"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-[#333333] bg-[#262626] hover:bg-[#2F2F2F] px-4 py-3 text-xs font-semibold text-[#F5F1EA] transition-colors"
           >
-            <Compass className="h-3.5 w-3.5 text-brand-red" />
+            <Compass className="h-4 w-4 text-[#F0444A]" aria-hidden="true" />
             <span>Track Existing Order as Guest</span>
           </Link>
         </div>
-      </div>
+      </PageReveal>
     </div>
   );
 }

@@ -1,46 +1,119 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getFallbackMenuItems } from "@/lib/menu-catalog";
 
+/**
+ * Retrieves restaurant menu items from PostgreSQL with optional category, featured,
+ * slug, and availability filtering, falling back gracefully to `FALLBACK_MENU_ITEMS`
+ * whenever `DATABASE_URL` is unconfigured or the database cannot be reached.
+ */
 export async function GET(req: NextRequest) {
-  try {
-    const { searchParams } = new URL(req.url);
-    const categoryId = searchParams.get("categoryId");
-    const featuredOnly = searchParams.get("featured") === "true";
+  const { searchParams } = new URL(req.url);
+  const categoryId = searchParams.get("categoryId");
+  const featuredOnly = searchParams.get("featured") === "true";
+  const includeUnavailable = searchParams.get("includeUnavailable") === "true";
+  const slug = searchParams.get("slug");
 
-    const where: any = { isAvailable: true };
-    if (categoryId) {
-      where.categoryId = categoryId;
-    }
-    if (featuredOnly) {
-      where.isFeatured = true;
-    }
+  const hasDatabaseUrl = Boolean(process.env.DATABASE_URL?.trim());
 
-    const items = await prisma.menuItem.findMany({
-      where,
-      orderBy: [{ isFeatured: "desc" }, { sortOrder: "asc" }],
-      include: {
-        category: {
-          select: { id: true, name: true, slug: true },
-        },
-        optionGroups: {
+  if (hasDatabaseUrl) {
+    try {
+      if (slug) {
+        const item = await prisma.menuItem.findUnique({
+          where: { slug },
           include: {
-            options: {
-              where: { isAvailable: true },
+            category: {
+              select: { id: true, name: true, slug: true },
+            },
+            optionGroups: {
+              include: {
+                options: {
+                  where: { isAvailable: true },
+                },
+              },
+            },
+          },
+        });
+
+        if (item) {
+          return NextResponse.json({ success: true, item, source: "database" });
+        }
+
+        const fallbackItem = getFallbackMenuItems({ slug });
+        if (!fallbackItem) {
+          return NextResponse.json(
+            { success: false, error: "Dish not found." },
+            { status: 404 }
+          );
+        }
+        return NextResponse.json({ success: true, item: fallbackItem, source: "catalog" });
+      }
+
+      const where: Record<string, unknown> = includeUnavailable ? {} : { isAvailable: true };
+      if (categoryId) {
+        where.categoryId = categoryId;
+      }
+      if (featuredOnly) {
+        where.isFeatured = true;
+      }
+
+      const items = await prisma.menuItem.findMany({
+        where,
+        orderBy: [{ isAvailable: "desc" }, { isFeatured: "desc" }, { sortOrder: "asc" }],
+        include: {
+          category: {
+            select: { id: true, name: true, slug: true },
+          },
+          optionGroups: {
+            include: {
+              options: {
+                where: { isAvailable: true },
+              },
             },
           },
         },
-      },
-    });
+      });
 
+      if (items.length > 0 || categoryId) {
+        return NextResponse.json({
+          success: true,
+          items,
+          source: "database",
+        });
+      }
+    } catch (error) {
+      console.warn(
+        "[API v1 Menu Items] Database unreachable; serving local Sunyani catalog fallback:",
+        error instanceof Error ? error.message : error
+      );
+    }
+  }
+
+  // Fallback path when DATABASE_URL is absent, DB is unreachable, or DB is unseeded
+  if (slug) {
+    const fallbackItem = getFallbackMenuItems({ slug });
+    if (!fallbackItem) {
+      return NextResponse.json(
+        { success: false, error: "Dish not found." },
+        { status: 404 }
+      );
+    }
     return NextResponse.json({
       success: true,
-      items,
+      item: fallbackItem,
+      source: "catalog",
     });
-  } catch (error: any) {
-    console.error("[API v1 Menu Items Error]:", error);
-    return NextResponse.json(
-      { success: false, error: "Unable to retrieve menu items." },
-      { status: 500 }
-    );
   }
+
+  const fallbackItems = getFallbackMenuItems({
+    categoryId,
+    featuredOnly,
+    includeUnavailable,
+  });
+
+  return NextResponse.json({
+    success: true,
+    items: fallbackItems,
+    source: "catalog",
+  });
 }

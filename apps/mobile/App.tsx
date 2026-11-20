@@ -1,288 +1,460 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
-  SafeAreaView,
-  View,
-  Text,
+  ActivityIndicator,
+  Animated,
+  Image,
+  Pressable,
   StyleSheet,
-  TouchableOpacity,
+  Text,
+  View,
 } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { StatusBar } from "expo-status-bar";
+import {
+  SafeAreaProvider,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
+import {
+  Home,
+  Receipt,
+  User,
+  UtensilsCrossed,
+} from "lucide-react-native";
+import { MOBILE_TAB_NAV, MobileTabId } from "@sika/shared";
+import { RestaurantClocheIcon } from "./src/components/icons/RestaurantClocheIcon";
 import { CartProvider, useCart } from "./src/context/CartContext";
-import { MenuScreen } from "./src/screens/MenuScreen";
+import { ToastProvider } from "./src/context/ToastContext";
+import { MOBILE_IMAGE_ASSETS } from "./src/data/dish-images";
+import { AuthScreen } from "./src/screens/AuthScreen";
 import { CartScreen } from "./src/screens/CartScreen";
 import { CheckoutScreen } from "./src/screens/CheckoutScreen";
+import { HomeScreen } from "./src/screens/HomeScreen";
+import { MenuScreen } from "./src/screens/MenuScreen";
+import { OnboardingScreen } from "./src/screens/OnboardingScreen";
+import { OrdersScreen } from "./src/screens/OrdersScreen";
 import { OrderTrackingScreen } from "./src/screens/OrderTrackingScreen";
 import { ProfileScreen } from "./src/screens/ProfileScreen";
+import { SikaColors, SikaSpace } from "./src/theme";
 
-/**
- * Valid client screen tabs within the bottom navigation hierarchy.
- */
-type ScreenTab = "menu" | "cart" | "checkout" | "tracking" | "profile";
+const ONBOARDING_STORAGE_KEY = "@sika_onboarding_seen_v2";
 
-/**
- * Primary viewport component rendered within the CartProvider context.
- * Coordinates top brand banner, screen switches, and bottom tab navigation.
- */
-function AppContent() {
-  const [activeTab, setActiveTab] = useState<ScreenTab>("menu");
-  const [activeOrderNumber, setActiveOrderNumber] = useState<string>("SIKA-2026-1042");
+type ActiveScreen =
+  | "home"
+  | "menu"
+  | "cart"
+  | "checkout"
+  | "orders"
+  | "tracking"
+  | "account"
+  | "auth";
+
+function renderTabIcon(tabId: MobileTabId, color: string, focused: boolean) {
+  const strokeWidth = focused ? 2.2 : 1.75;
+  switch (tabId) {
+    case "home":
+      return <Home size={18} strokeWidth={strokeWidth} color={color} />;
+    case "menu":
+      return <UtensilsCrossed size={18} strokeWidth={strokeWidth} color={color} />;
+    case "orders":
+      return <Receipt size={18} strokeWidth={strokeWidth} color={color} />;
+    case "account":
+      return <User size={18} strokeWidth={strokeWidth} color={color} />;
+  }
+}
+
+function getScreenSubtitle(screen: ActiveScreen): string {
+  switch (screen) {
+    case "home":
+      return "Sunyani Showcase";
+    case "menu":
+      return "Full Kitchen Menu";
+    case "cart":
+      return "Order Tray";
+    case "checkout":
+      return "Checkout";
+    case "orders":
+      return "Order History";
+    case "tracking":
+      return "Live Order Tracker";
+    case "account":
+      return "Customer Account";
+    case "auth":
+      return "Sign In & Account";
+  }
+}
+
+function SikaMobileShell() {
+  const insets = useSafeAreaInsets();
   const { totalItemCount } = useCart();
 
+  const [onboardingChecked, setOnboardingChecked] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+
+  const [activeScreen, setActiveScreen] = useState<ActiveScreen>("home");
+  const [menuCategoryId, setMenuCategoryId] = useState<string>("all");
+  const [menuSearchQuery, setMenuSearchQuery] = useState<string>("");
+  const [activeOrderNumber, setActiveOrderNumber] = useState<string>("");
+
+  const badgeScale = useRef(new Animated.Value(1)).current;
+  const previousCountRef = useRef(totalItemCount);
+
+  useEffect(() => {
+    AsyncStorage.getItem(ONBOARDING_STORAGE_KEY)
+      .then((seen) => {
+        setShowOnboarding(seen !== "true");
+      })
+      .catch(() => {
+        setShowOnboarding(false);
+      })
+      .finally(() => {
+        setOnboardingChecked(true);
+      });
+  }, []);
+
+  // Spring pop animation on header Cloche pill whenever item count increases
+  useEffect(() => {
+    if (totalItemCount > previousCountRef.current) {
+      badgeScale.setValue(0.84);
+      Animated.spring(badgeScale, {
+        toValue: 1,
+        damping: 12,
+        stiffness: 280,
+        useNativeDriver: true,
+      }).start();
+    }
+    previousCountRef.current = totalItemCount;
+  }, [totalItemCount, badgeScale]);
+
+  const handleFinishOnboarding = async () => {
+    await AsyncStorage.setItem(ONBOARDING_STORAGE_KEY, "true").catch(() => {});
+    setShowOnboarding(false);
+  };
+
+  const handleReplayOnboarding = async () => {
+    await AsyncStorage.removeItem(ONBOARDING_STORAGE_KEY).catch(() => {});
+    setShowOnboarding(true);
+  };
+
+  const navigateToMenu = (categoryId = "all", initialQuery = "") => {
+    setMenuCategoryId(categoryId || "all");
+    setMenuSearchQuery(initialQuery || "");
+    setActiveScreen("menu");
+  };
+
+  const navigateToTracking = (orderNumber: string) => {
+    setActiveOrderNumber(orderNumber);
+    setActiveScreen("tracking");
+  };
+
+  if (!onboardingChecked) {
+    return (
+      <View style={styles.bootSplash}>
+        <ActivityIndicator size="large" color={SikaColors.accent} />
+      </View>
+    );
+  }
+
+  if (showOnboarding) {
+    return <OnboardingScreen onComplete={handleFinishOnboarding} />;
+  }
+
+  const activeTab: MobileTabId =
+    activeScreen === "home"
+      ? "home"
+      : activeScreen === "orders" || activeScreen === "tracking"
+      ? "orders"
+      : activeScreen === "account" || activeScreen === "auth"
+      ? "account"
+      : "menu";
+
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar style="light" />
-
-      {/* Top Application Header */}
-      <View style={styles.header}>
-        <View style={styles.headerBrand}>
-          <Text style={styles.brandTitle}>SIKA CUISINE</Text>
-          <Text style={styles.brandSubtitle}>SUNYANI, GHANA</Text>
-        </View>
-
-        {activeTab !== "cart" && activeTab !== "checkout" && (
-          <TouchableOpacity
-            style={styles.headerCartButton}
-            onPress={() => setActiveTab("cart")}
-            accessibilityLabel="View Cart"
-          >
-            <Text style={styles.headerCartIcon}>🛍️</Text>
-            {totalItemCount > 0 && (
-              <View style={styles.headerBadge}>
-                <Text style={styles.headerBadgeText}>{totalItemCount}</Text>
-              </View>
-            )}
-          </TouchableOpacity>
-        )}
-      </View>
-
-      {/* Main Screen Body */}
-      <View style={styles.body}>
-        {activeTab === "menu" && (
-          <MenuScreen onNavigateToCart={() => setActiveTab("cart")} />
-        )}
-
-        {activeTab === "cart" && (
-          <CartScreen
-            onNavigateToMenu={() => setActiveTab("menu")}
-            onNavigateToCheckout={() => setActiveTab("checkout")}
-          />
-        )}
-
-        {activeTab === "checkout" && (
-          <CheckoutScreen
-            onBackToCart={() => setActiveTab("cart")}
-            onOrderPlaced={(orderNumber) => {
-              setActiveOrderNumber(orderNumber);
-              setActiveTab("tracking");
-            }}
-          />
-        )}
-
-        {activeTab === "tracking" && (
-          <OrderTrackingScreen orderNumber={activeOrderNumber} />
-        )}
-
-        {activeTab === "profile" && (
-          <ProfileScreen
-            onTrackSampleOrder={() => setActiveTab("tracking")}
-          />
-        )}
-      </View>
-
-      {/* Bottom Navigation Tab Bar */}
-      <View style={styles.tabBar}>
-        <TouchableOpacity
-          style={[styles.tabButton, activeTab === "menu" && styles.tabButtonActive]}
-          onPress={() => setActiveTab("menu")}
+    <View style={styles.root}>
+      {/* Persistent Brand Header */}
+      <View
+        style={[
+          styles.header,
+          { paddingTop: Math.max(insets.top + 8, SikaSpace.lg) },
+        ]}
+      >
+        <Pressable
+          onPress={() => setActiveScreen("home")}
+          style={styles.brandCluster}
+          accessibilityRole="button"
+          accessibilityLabel="Return to Sika Cuisine Home"
         >
-          <Text style={styles.tabIcon}>🍲</Text>
-          <Text
-            style={[styles.tabLabel, activeTab === "menu" && styles.tabLabelActive]}
-          >
-            Menu
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[
-            styles.tabButton,
-            (activeTab === "cart" || activeTab === "checkout") && styles.tabButtonActive,
-          ]}
-          onPress={() => setActiveTab("cart")}
-        >
-          <View style={styles.tabCartIconWrap}>
-            <Text style={styles.tabIcon}>🛍️</Text>
-            {totalItemCount > 0 && (
-              <View style={styles.tabBadge}>
-                <Text style={styles.tabBadgeText}>{totalItemCount}</Text>
-              </View>
-            )}
+          <Image
+            source={MOBILE_IMAGE_ASSETS.logo}
+            style={styles.logo}
+            resizeMode="contain"
+          />
+          <View>
+            <Text style={styles.brandTitle}>SIKA CUISINE.</Text>
+            <Text style={styles.brandSubtitle}>{getScreenSubtitle(activeScreen)}</Text>
           </View>
-          <Text
-            style={[
-              styles.tabLabel,
-              (activeTab === "cart" || activeTab === "checkout") && styles.tabLabelActive,
-            ]}
-          >
-            Cart
-          </Text>
-        </TouchableOpacity>
+        </Pressable>
 
-        <TouchableOpacity
-          style={[
-            styles.tabButton,
-            activeTab === "tracking" && styles.tabButtonActive,
-          ]}
-          onPress={() => setActiveTab("tracking")}
-        >
-          <Text style={styles.tabIcon}>🛵</Text>
-          <Text
-            style={[
-              styles.tabLabel,
-              activeTab === "tracking" && styles.tabLabelActive,
-            ]}
+        {/* Circular Dining Cloche Tray Button matching Web Navbar */}
+        <Animated.View style={{ transform: [{ scale: badgeScale }] }}>
+          <Pressable
+            onPress={() => setActiveScreen("cart")}
+            accessibilityRole="button"
+            accessibilityLabel={`Open tray with ${totalItemCount} items`}
+            style={styles.cartHeaderBtn}
           >
-            Tracking
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[
-            styles.tabButton,
-            activeTab === "profile" && styles.tabButtonActive,
-          ]}
-          onPress={() => setActiveTab("profile")}
-        >
-          <Text style={styles.tabIcon}>👤</Text>
-          <Text
-            style={[
-              styles.tabLabel,
-              activeTab === "profile" && styles.tabLabelActive,
-            ]}
-          >
-            Account
-          </Text>
-        </TouchableOpacity>
+            <RestaurantClocheIcon size={20} color={SikaColors.warmWhite} />
+            {totalItemCount > 0 ? (
+              <View style={styles.cartBadge}>
+                <Text style={styles.cartBadgeText}>{totalItemCount}</Text>
+              </View>
+            ) : null}
+          </Pressable>
+        </Animated.View>
       </View>
-    </SafeAreaView>
+
+      {/* Main Content Stage */}
+      <View style={styles.stage}>
+        {activeScreen === "home" && (
+          <HomeScreen
+            onNavigateToMenu={navigateToMenu}
+            onOpenCart={() => setActiveScreen("cart")}
+            onOpenOrders={() => setActiveScreen("orders")}
+          />
+        )}
+
+        {activeScreen === "menu" && (
+          <MenuScreen
+            initialCategoryId={menuCategoryId}
+            initialSearch={menuSearchQuery}
+            onNavigateToCart={() => setActiveScreen("cart")}
+          />
+        )}
+
+        {activeScreen === "cart" && (
+          <CartScreen
+            onNavigateToMenu={() => navigateToMenu("all")}
+            onNavigateToCheckout={() => setActiveScreen("checkout")}
+          />
+        )}
+
+        {activeScreen === "checkout" && (
+          <CheckoutScreen
+            onBackToCart={() => setActiveScreen("cart")}
+            onOrderPlaced={navigateToTracking}
+          />
+        )}
+
+        {activeScreen === "orders" && (
+          <OrdersScreen
+            onTrackOrder={navigateToTracking}
+            onBrowseMenu={() => navigateToMenu("all")}
+          />
+        )}
+
+        {activeScreen === "tracking" && (
+          <OrderTrackingScreen
+            orderNumber={activeOrderNumber}
+            onBack={() => setActiveScreen("orders")}
+          />
+        )}
+
+        {activeScreen === "account" && (
+          <ProfileScreen
+            onNavigateToAuth={() => setActiveScreen("auth")}
+            onNavigateToOrders={() => setActiveScreen("orders")}
+            onReplayOnboarding={handleReplayOnboarding}
+          />
+        )}
+
+        {activeScreen === "auth" && (
+          <AuthScreen
+            onAuthSuccess={() => setActiveScreen("account")}
+            onCancel={() => setActiveScreen("account")}
+            onTrackAsGuest={() => setActiveScreen("orders")}
+          />
+        )}
+      </View>
+
+      {/* Floating Capsule Bottom Navigation Dock */}
+      <View
+        style={[
+          styles.dockWrapper,
+          { paddingBottom: Math.max(insets.bottom, 10) },
+        ]}
+      >
+        <View style={styles.dockPill}>
+          {MOBILE_TAB_NAV.map((tab) => {
+            const focused = activeTab === tab.id;
+            const iconColor = focused ? SikaColors.text : SikaColors.secondaryText;
+
+            return (
+              <Pressable
+                key={tab.id}
+                onPress={() => {
+                  if (tab.id === "home") setActiveScreen("home");
+                  else if (tab.id === "menu") navigateToMenu("all", "");
+                  else if (tab.id === "orders") setActiveScreen("orders");
+                  else setActiveScreen("account");
+                }}
+                accessibilityRole="tab"
+                accessibilityLabel={tab.accessibilityLabel}
+                accessibilityState={{ selected: focused }}
+                style={[styles.tabItem, focused && styles.tabItemActive]}
+              >
+                {renderTabIcon(tab.id, iconColor, focused)}
+                <Text
+                  style={[styles.tabLabel, focused && styles.tabLabelActive]}
+                  numberOfLines={1}
+                >
+                  {tab.label}
+                </Text>
+                {focused ? <View style={styles.activeDot} /> : null}
+              </Pressable>
+            );
+          })}
+        </View>
+      </View>
+    </View>
   );
 }
 
 export default function App() {
   return (
-    <CartProvider>
-      <AppContent />
-    </CartProvider>
+    <SafeAreaProvider>
+      <StatusBar style="light" />
+      <ToastProvider>
+        <CartProvider>
+          <SikaMobileShell />
+        </CartProvider>
+      </ToastProvider>
+    </SafeAreaProvider>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
+  bootSplash: {
     flex: 1,
-    backgroundColor: "#0d0e12",
+    backgroundColor: SikaColors.background,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  root: {
+    flex: 1,
+    backgroundColor: SikaColors.background,
   },
   header: {
-    height: 56,
-    borderBottomColor: "rgba(255, 255, 255, 0.08)",
-    borderBottomWidth: 1,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 18,
-    backgroundColor: "#12141a",
+    paddingHorizontal: SikaSpace.md,
+    paddingBottom: SikaSpace.md,
+    borderBottomWidth: 1,
+    borderBottomColor: SikaColors.border,
+    backgroundColor: SikaColors.surface,
   },
-  headerBrand: {
+  brandCluster: {
     flexDirection: "row",
-    alignItems: "baseline",
-    gap: 8,
+    alignItems: "center",
+    gap: SikaSpace.sm + 2,
+  },
+  logo: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
   },
   brandTitle: {
-    color: "#ffffff",
-    fontSize: 16,
+    color: SikaColors.text,
+    fontSize: 13.5,
     fontWeight: "900",
     letterSpacing: 1.2,
   },
   brandSubtitle: {
-    color: "#e11d48",
-    fontSize: 10,
-    fontWeight: "700",
-    letterSpacing: 1,
-  },
-  headerCartButton: {
-    position: "relative",
-    padding: 6,
-  },
-  headerCartIcon: {
-    fontSize: 20,
-  },
-  headerBadge: {
-    position: "absolute",
-    top: 0,
-    right: 0,
-    backgroundColor: "#e11d48",
-    borderRadius: 9,
-    width: 18,
-    height: 18,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  headerBadgeText: {
-    color: "#ffffff",
-    fontSize: 10,
-    fontWeight: "800",
-  },
-  body: {
-    flex: 1,
-  },
-  tabBar: {
-    height: 62,
-    flexDirection: "row",
-    backgroundColor: "#12141a",
-    borderTopColor: "rgba(255, 255, 255, 0.08)",
-    borderTopWidth: 1,
-    alignItems: "center",
-  },
-  tabButton: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    height: "100%",
-  },
-  tabButtonActive: {
-    borderTopColor: "#e11d48",
-    borderTopWidth: 2,
-  },
-  tabIcon: {
-    fontSize: 18,
-    marginBottom: 2,
-  },
-  tabCartIconWrap: {
-    position: "relative",
-  },
-  tabBadge: {
-    position: "absolute",
-    top: -4,
-    right: -10,
-    backgroundColor: "#e11d48",
-    borderRadius: 8,
-    minWidth: 16,
-    height: 16,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 2,
-  },
-  tabBadgeText: {
-    color: "#ffffff",
-    fontSize: 9,
-    fontWeight: "800",
-  },
-  tabLabel: {
-    color: "#6b7280",
+    color: SikaColors.secondaryText,
     fontSize: 11,
     fontWeight: "600",
+    marginTop: 1,
+  },
+  cartHeaderBtn: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    borderWidth: 1,
+    borderColor: SikaColors.border,
+    backgroundColor: SikaColors.elevated,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  cartBadge: {
+    position: "absolute",
+    top: -3,
+    right: -3,
+    minWidth: 19,
+    height: 19,
+    borderRadius: 10,
+    backgroundColor: SikaColors.accent,
+    paddingHorizontal: 5,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1.5,
+    borderColor: SikaColors.surface,
+  },
+  cartBadgeText: {
+    color: SikaColors.text,
+    fontSize: 10,
+    fontWeight: "900",
+    fontVariant: ["tabular-nums"],
+  },
+  stage: {
+    flex: 1,
+  },
+  dockWrapper: {
+    backgroundColor: SikaColors.background,
+    paddingHorizontal: 14,
+    paddingTop: 6,
+  },
+  dockPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderRadius: 28,
+    backgroundColor: "#181818",
+    borderWidth: 1,
+    borderColor: SikaColors.border,
+    padding: 5,
+    shadowColor: "#000000",
+    shadowOpacity: 0.55,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 12,
+  },
+  tabItem: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingTop: 7,
+    paddingBottom: 10,
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: "transparent",
+    gap: 3,
+  },
+  tabItemActive: {
+    backgroundColor: "rgba(215, 25, 32, 0.18)",
+    borderColor: "rgba(215, 25, 32, 0.50)",
+  },
+  tabLabel: {
+    color: SikaColors.secondaryText,
+    fontSize: 10.5,
+    fontWeight: "700",
   },
   tabLabelActive: {
-    color: "#e11d48",
-    fontWeight: "700",
+    color: SikaColors.text,
+    fontWeight: "800",
+  },
+  activeDot: {
+    position: "absolute",
+    bottom: 3,
+    width: 14,
+    height: 2.5,
+    borderRadius: 2,
+    backgroundColor: SikaColors.accent,
   },
 });

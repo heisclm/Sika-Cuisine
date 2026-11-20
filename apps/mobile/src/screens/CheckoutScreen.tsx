@@ -1,149 +1,163 @@
-/**
- * @file apps/mobile/src/screens/CheckoutScreen.tsx
- * @description Customer checkout screen enforcing Ghanaian contact validation, delivery tariffs, and offline resilience.
- *
- * WORKFLOW & BUSINESS RULES:
- * 1. Fulfilment Branching: Dynamically swaps between Delivery (Zone 1-4 address form) and Pickup (Restaurant counter).
- * 2. Strict Zero-Fee Pickup: Selecting 'COLLECTION' immediately zeroes the delivery fee and hides address inputs.
- * 3. Payment Method Pairing: Prohibits Cash on Collection for delivery and Cash on Delivery for pickup.
- * 4. Offline Order Queuing: If the server API is unreachable, persists the order in local cache to guarantee zero data loss.
- */
-
-import React, { useState, useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TextInput,
-  TouchableOpacity,
-  ActivityIndicator,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
 } from "react-native";
 import {
+  AlertCircle,
+  ArrowLeft,
+  Banknote,
+  Bike,
+  CheckCircle2,
+  CreditCard,
+  MapPin,
+  Store,
+} from "lucide-react-native";
+import {
   FulfilmentType,
-  PaymentMethod,
-  formatPesewasToGhs,
-  calculateDeliveryFeePesewas,
-  SUNYANI_DELIVERY_ZONES,
-  phoneRegex,
   OrderDTO,
+  PaymentMethod,
+  RESTAURANT_INFO,
+  SUNYANI_DELIVERY_ZONES,
+  calculateDeliveryFeePesewas,
+  formatPesewasToGhs,
+  phoneRegex,
 } from "@sika/shared";
+import { Button } from "../components/ui/Button";
 import { useCart } from "../context/CartContext";
+import { useToast } from "../context/ToastContext";
 import { apiRequest } from "../services/api-client";
-import { updateCachedOrder, CachedOrderSummary } from "../services/offline-order-cache";
+import { CachedOrderSummary, updateCachedOrder } from "../services/offline-order-cache";
 import { getCurrentUser } from "../services/storage";
+import { SikaColors, SikaRadius, SikaSpace } from "../theme";
 
 interface CheckoutScreenProps {
   onBackToCart: () => void;
   onOrderPlaced: (orderNumber: string) => void;
 }
 
-export function CheckoutScreen({
-  onBackToCart,
-  onOrderPlaced,
-}: CheckoutScreenProps) {
+/**
+ * Customer checkout screen enforcing Ghanaian contact validation, Sunyani
+ * delivery tariffs (or zero-fee pickup), payment pairing, and offline fallback queueing.
+ */
+export function CheckoutScreen({ onBackToCart, onOrderPlaced }: CheckoutScreenProps) {
   const { items, cartSubtotalPesewas, clearCart } = useCart();
+  const { error: toastError, success: toastSuccess } = useToast();
 
-  // Fulfilment state
   const [fulfilmentType, setFulfilmentType] = useState<FulfilmentType>("DELIVERY");
-
-  // Customer Contact
-  const [fullName, setFullName] = useState<string>("");
-  const [phone, setPhone] = useState<string>("");
-  const [email, setEmail] = useState<string>("");
-
-  // Delivery Address
-  const [streetAddress, setStreetAddress] = useState<string>("");
-  const [selectedZoneLocality, setSelectedZoneLocality] = useState<string>(
-    SUNYANI_DELIVERY_ZONES[0].localities[0] // Default to Sunyani Central
-  );
-  const [landmark, setLandmark] = useState<string>("");
-  const [deliveryNotes, setDeliveryNotes] = useState<string>("");
-
-  // Payment Method
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("PAYSTACK");
 
-  // Submission state
-  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [fullName, setFullName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
+
+  const [streetAddress, setStreetAddress] = useState("");
+  const [selectedZoneLocality, setSelectedZoneLocality] = useState(
+    SUNYANI_DELIVERY_ZONES[0].localities[0]
+  );
+  const [landmark, setLandmark] = useState("");
+  const [deliveryNotes, setDeliveryNotes] = useState("");
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // Authoritative Delivery Fee calculation
-  const deliveryFeePesewas = useMemo(() => {
-    return calculateDeliveryFeePesewas(
-      fulfilmentType,
-      fulfilmentType === "DELIVERY" ? selectedZoneLocality : null
-    );
-  }, [fulfilmentType, selectedZoneLocality]);
+  // Prefill contact information when a customer session already exists in SecureStore
+  useEffect(() => {
+    let active = true;
+    getCurrentUser().then((user) => {
+      if (!active || !user) return;
+      setFullName((prev) => prev || user.fullName || "");
+      setPhone((prev) => prev || user.phone || "");
+      setEmail((prev) => prev || user.email || "");
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
 
-  const grandTotalPesewas = useMemo(() => {
-    return cartSubtotalPesewas + deliveryFeePesewas;
-  }, [cartSubtotalPesewas, deliveryFeePesewas]);
+  const deliveryFeePesewas = useMemo(
+    () =>
+      calculateDeliveryFeePesewas(
+        fulfilmentType,
+        fulfilmentType === "DELIVERY" ? selectedZoneLocality : null
+      ),
+    [fulfilmentType, selectedZoneLocality]
+  );
 
-  // Adjust payment method when switching between DELIVERY and COLLECTION
-  const handleFulfilmentChange = (type: FulfilmentType) => {
-    setFulfilmentType(type);
-    if (type === "COLLECTION" && paymentMethod === "CASH_ON_DELIVERY") {
+  const grandTotalPesewas = useMemo(
+    () => cartSubtotalPesewas + deliveryFeePesewas,
+    [cartSubtotalPesewas, deliveryFeePesewas]
+  );
+
+  const handleFulfilmentChange = (nextType: FulfilmentType) => {
+    setFulfilmentType(nextType);
+    if (nextType === "COLLECTION" && paymentMethod === "CASH_ON_DELIVERY") {
       setPaymentMethod("CASH_ON_COLLECTION");
-    } else if (type === "DELIVERY" && paymentMethod === "CASH_ON_COLLECTION") {
+    } else if (nextType === "DELIVERY" && paymentMethod === "CASH_ON_COLLECTION") {
       setPaymentMethod("CASH_ON_DELIVERY");
     }
   };
 
-  const validateForm = (): boolean => {
-    setErrorMessage(null);
+  const cashVariant: PaymentMethod =
+    fulfilmentType === "DELIVERY" ? "CASH_ON_DELIVERY" : "CASH_ON_COLLECTION";
 
-    if (!fullName.trim() || fullName.trim().length < 2) {
-      setErrorMessage("Please enter your full name.");
-      return false;
+  const validateForm = (): string | null => {
+    const cleanPhone = phone.replace(/\s+/g, "").trim();
+
+    if (fullName.trim().length < 2) {
+      return "Please enter your full name.";
     }
-
-    const cleanPhone = phone.trim();
     if (!cleanPhone || !phoneRegex.test(cleanPhone)) {
-      setErrorMessage(
-        "Please enter a valid Ghanaian phone number (e.g. 0244123456 or +233244123456)."
-      );
-      return false;
+      return "Please enter a valid Ghanaian phone number (e.g. 0244123456 or +233244123456).";
     }
-
     if (!email.trim() || !email.includes("@")) {
-      setErrorMessage("Please enter a valid email address for order notifications.");
-      return false;
+      return "Please enter a valid email address for order notifications.";
     }
-
-    if (fulfilmentType === "DELIVERY") {
-      if (!streetAddress.trim() || streetAddress.trim().length < 3) {
-        setErrorMessage("Please provide your delivery street address or house number.");
-        return false;
-      }
+    if (fulfilmentType === "DELIVERY" && streetAddress.trim().length < 3) {
+      return "Please provide your Sunyani street address, hostel, or house number.";
     }
-
-    return true;
+    return null;
   };
 
   const handlePlaceOrder = async () => {
-    if (!validateForm()) return;
-    if (items.length === 0) {
-      Alert.alert("Cart Empty", "Your cart has no items. Please select dishes first.");
+    const validationErr = validateForm();
+    if (validationErr) {
+      setErrorMessage(validationErr);
       return;
     }
 
-    setIsSubmitting(true);
+    if (items.length === 0) {
+      toastError("Tray Empty", "Please select dishes from the menu first.");
+      return;
+    }
+
     setErrorMessage(null);
+    setIsSubmitting(true);
+
+    const compactPhone = phone.replace(/\s+/g, "").trim();
+    const resolvedMethod: PaymentMethod =
+      paymentMethod === "PAYSTACK" ? "PAYSTACK" : cashVariant;
 
     const payload = {
       fulfilmentType,
-      paymentMethod,
+      paymentMethod: resolvedMethod,
       customerInfo: {
         fullName: fullName.trim(),
         email: email.trim(),
-        phone: phone.trim(),
+        phone: compactPhone,
       },
       deliveryAddress:
         fulfilmentType === "DELIVERY"
           ? {
               recipientName: fullName.trim(),
-              recipientPhone: phone.trim(),
+              recipientPhone: compactPhone,
               streetAddress: streetAddress.trim(),
               areaLocality: selectedZoneLocality,
               landmark: landmark.trim() || undefined,
@@ -173,41 +187,36 @@ export function CheckoutScreen({
       const customerId = user?.id || "guest";
 
       if (response.success && response.data?.order) {
-        const confirmedOrder = response.data.order;
-        const cachedSummary: CachedOrderSummary = {
-          orderId: confirmedOrder.id,
-          orderNumber: confirmedOrder.orderNumber,
-          fulfilmentType: confirmedOrder.fulfilmentType,
-          lastKnownStatus: confirmedOrder.fulfilmentStatus,
-          statusHistory: (confirmedOrder.statusHistory || []).map((h) => ({
+        const confirmed = response.data.order;
+        const summary: CachedOrderSummary = {
+          orderId: confirmed.id,
+          orderNumber: confirmed.orderNumber,
+          fulfilmentType: confirmed.fulfilmentType,
+          lastKnownStatus: confirmed.fulfilmentStatus,
+          statusHistory: (confirmed.statusHistory || []).map((h) => ({
             status: h.toStatus,
             timestamp: h.createdAt,
             note: h.note,
           })),
-          totalPesewas: confirmedOrder.totalPesewas,
-          itemsSummary: confirmedOrder.items.map((i) => ({
+          totalPesewas: confirmed.totalPesewas,
+          itemsSummary: confirmed.items.map((i) => ({
             name: i.itemNameSnapshot,
             quantity: i.quantity,
           })),
           lastSynchronizedAt: new Date().toISOString(),
         };
 
-        // Cache to offline store
-        await updateCachedOrder(customerId, cachedSummary);
+        await updateCachedOrder(customerId, summary);
         clearCart();
         setIsSubmitting(false);
+        toastSuccess("Order Submitted", `Reference #${confirmed.orderNumber}`);
+
         Alert.alert(
-          "Order Received! 🎉",
-          `Your order #${confirmedOrder.orderNumber} has been submitted to Sika Cuisine kitchen.`,
-          [
-            {
-              text: "Track Order",
-              onPress: () => onOrderPlaced(confirmedOrder.orderNumber),
-            },
-          ]
+          "Order Confirmed",
+          `Your order #${confirmed.orderNumber} has been sent to Sika Cuisine Sunyani.`,
+          [{ text: "Track Order", onPress: () => onOrderPlaced(confirmed.orderNumber) }]
         );
-      } else {
-        // Fallback for offline or simulation mode when backend DB is disconnected
+      } else if (response.isOffline) {
         const fallbackOrderNumber = `SIKA-${new Date().getFullYear()}-${Math.floor(
           1000 + Math.random() * 9000
         )}`;
@@ -226,7 +235,7 @@ export function CheckoutScreen({
             {
               status: "PENDING",
               timestamp: new Date().toISOString(),
-              note: "Order recorded locally via Sika Cuisine Mobile App.",
+              note: "Recorded in offline device queue awaiting server sync.",
             },
           ],
         };
@@ -236,602 +245,509 @@ export function CheckoutScreen({
         setIsSubmitting(false);
 
         Alert.alert(
-          "Order Recorded (Offline Cache)",
-          `Order #${fallbackOrderNumber} recorded locally. It will synchronize with Sika Cuisine servers automatically when network reconnects.`,
-          [
-            {
-              text: "Track Order",
-              onPress: () => onOrderPlaced(fallbackOrderNumber),
-            },
-          ]
+          "Saved to Offline Queue",
+          `Order #${fallbackOrderNumber} is cached locally while offline. View tracking details below.`,
+          [{ text: "View Order", onPress: () => onOrderPlaced(fallbackOrderNumber) }]
         );
+      } else {
+        setIsSubmitting(false);
+        setErrorMessage(response.error || "Unable to submit order. Check details and retry.");
       }
-    } catch (err: any) {
+    } catch (err) {
       setIsSubmitting(false);
       setErrorMessage(
-        err.message || "An unexpected error occurred while placing your order."
+        err instanceof Error
+          ? err.message
+          : "Unexpected error placing your order. Please retry."
       );
     }
   };
 
   return (
-    <View style={styles.container}>
-      {/* Header Bar */}
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      style={styles.root}
+    >
+      {/* Sub-header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={onBackToCart} style={styles.backButton}>
-          <Text style={styles.backButtonText}>← Cart</Text>
-        </TouchableOpacity>
+        <Pressable
+          onPress={onBackToCart}
+          hitSlop={10}
+          accessibilityRole="button"
+          accessibilityLabel="Back to cart"
+          style={styles.backBtn}
+        >
+          <ArrowLeft size={16} color={SikaColors.warmWhite} />
+          <Text style={styles.backText}>Tray</Text>
+        </Pressable>
         <Text style={styles.headerTitle}>Checkout</Text>
         <View style={styles.headerSpacer} />
       </View>
 
       <ScrollView
-        style={styles.scrollArea}
-        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
       >
-        {errorMessage && (
-          <View style={styles.errorAlert}>
-            <Text style={styles.errorAlertText}>⚠️ {errorMessage}</Text>
+        {errorMessage ? (
+          <View style={styles.errorBanner}>
+            <AlertCircle size={17} color={SikaColors.error} />
+            <Text style={styles.errorText}>{errorMessage}</Text>
           </View>
-        )}
+        ) : null}
 
-        {/* Fulfilment Toggle */}
-        <View style={styles.sectionCard}>
-          <Text style={styles.sectionLabel}>FULFILMENT METHOD</Text>
-          <View style={styles.toggleRow}>
-            <TouchableOpacity
-              style={[
-                styles.toggleButton,
-                fulfilmentType === "DELIVERY" && styles.toggleButtonActive,
-              ]}
-              onPress={() => handleFulfilmentChange("DELIVERY")}
-            >
-              <Text style={styles.toggleIcon}>🛵</Text>
-              <Text
-                style={[
-                  styles.toggleLabel,
-                  fulfilmentType === "DELIVERY" && styles.toggleLabelActive,
-                ]}
-              >
-                Delivery
-              </Text>
-            </TouchableOpacity>
+        {/* 1. Fulfilment Selector */}
+        <Text style={styles.sectionTitle}>1. Fulfilment Method</Text>
+        <View style={styles.toggleGrid}>
+          <Pressable
+            onPress={() => handleFulfilmentChange("DELIVERY")}
+            style={[
+              styles.optionCard,
+              fulfilmentType === "DELIVERY" && styles.optionCardActive,
+            ]}
+          >
+            <Bike
+              size={20}
+              color={
+                fulfilmentType === "DELIVERY"
+                  ? SikaColors.accentLight
+                  : SikaColors.secondaryText
+              }
+            />
+            <Text style={styles.optionTitle}>Delivery</Text>
+            <Text style={styles.optionSub}>Sunyani zones</Text>
+          </Pressable>
 
-            <TouchableOpacity
-              style={[
-                styles.toggleButton,
-                fulfilmentType === "COLLECTION" && styles.toggleButtonActive,
-              ]}
-              onPress={() => handleFulfilmentChange("COLLECTION")}
-            >
-              <Text style={styles.toggleIcon}>🛍️</Text>
-              <Text
-                style={[
-                  styles.toggleLabel,
-                  fulfilmentType === "COLLECTION" && styles.toggleLabelActive,
-                ]}
-              >
-                Pickup / Takeaway
-              </Text>
-            </TouchableOpacity>
-          </View>
+          <Pressable
+            onPress={() => handleFulfilmentChange("COLLECTION")}
+            style={[
+              styles.optionCard,
+              fulfilmentType === "COLLECTION" && styles.optionCardActive,
+            ]}
+          >
+            <Store
+              size={20}
+              color={
+                fulfilmentType === "COLLECTION"
+                  ? SikaColors.success
+                  : SikaColors.secondaryText
+              }
+            />
+            <Text style={styles.optionTitle}>Pickup</Text>
+            <Text style={[styles.optionSub, { color: SikaColors.success }]}>
+              GHS 0.00 fee
+            </Text>
+          </Pressable>
         </View>
 
-        {/* Customer Information */}
-        <View style={styles.sectionCard}>
-          <Text style={styles.sectionLabel}>CUSTOMER CONTACT</Text>
+        {/* 2. Contact Information */}
+        <Text style={styles.sectionTitle}>2. Contact Information</Text>
+        <View style={styles.formCard}>
+          <Text style={styles.inputLabel}>Full Name *</Text>
+          <TextInput
+            value={fullName}
+            onChangeText={setFullName}
+            placeholder="Kwame Mensah"
+            placeholderTextColor={SikaColors.muted}
+            style={styles.input}
+          />
 
-          <View style={styles.fieldGroup}>
-            <Text style={styles.inputLabel}>Full Name *</Text>
-            <TextInput
-              style={styles.textInput}
-              placeholder="e.g. Kwame Mensah"
-              placeholderTextColor="#6b7280"
-              value={fullName}
-              onChangeText={setFullName}
-            />
-          </View>
+          <Text style={styles.inputLabel}>Ghana Phone Number *</Text>
+          <TextInput
+            value={phone}
+            onChangeText={setPhone}
+            keyboardType="phone-pad"
+            placeholder="0244123456"
+            placeholderTextColor={SikaColors.muted}
+            style={styles.input}
+          />
 
-          <View style={styles.fieldGroup}>
-            <Text style={styles.inputLabel}>Ghanaian Phone Number *</Text>
-            <TextInput
-              style={styles.textInput}
-              placeholder="024 412 3456 or +233..."
-              placeholderTextColor="#6b7280"
-              value={phone}
-              onChangeText={setPhone}
-              keyboardType="phone-pad"
-            />
-          </View>
-
-          <View style={styles.fieldGroup}>
-            <Text style={styles.inputLabel}>Email Address *</Text>
-            <TextInput
-              style={styles.textInput}
-              placeholder="kwame@example.com"
-              placeholderTextColor="#6b7280"
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-            />
-          </View>
+          <Text style={styles.inputLabel}>Email Address *</Text>
+          <TextInput
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            placeholder="kwame@example.com"
+            placeholderTextColor={SikaColors.muted}
+            style={styles.input}
+          />
         </View>
 
-        {/* Delivery Address or Pickup Info */}
+        {/* 3. Destination Zone or Counter Info */}
         {fulfilmentType === "DELIVERY" ? (
-          <View style={styles.sectionCard}>
-            <Text style={styles.sectionLabel}>SUNYANI DELIVERY DESTINATION</Text>
-
-            <View style={styles.fieldGroup}>
-              <Text style={styles.inputLabel}>Locality / Suburb (Select Zone)</Text>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.localityScroll}
-              >
-                {SUNYANI_DELIVERY_ZONES.map((zone) =>
-                  zone.localities.map((loc) => {
-                    const isSelected = selectedZoneLocality === loc;
-                    return (
-                      <TouchableOpacity
-                        key={`${zone.id}-${loc}`}
-                        onPress={() => setSelectedZoneLocality(loc)}
-                        style={[
-                          styles.localityPill,
-                          isSelected && styles.localityPillActive,
-                        ]}
-                      >
-                        <Text
-                          style={[
-                            styles.localityText,
-                            isSelected && styles.localityTextActive,
-                          ]}
-                        >
-                          {loc} • {formatPesewasToGhs(zone.feePesewas)}
+          <>
+            <Text style={styles.sectionTitle}>3. Sunyani Delivery Zone &amp; Address</Text>
+            <View style={styles.formCard}>
+              <Text style={styles.inputLabel}>Select Zone *</Text>
+              <View style={styles.zoneList}>
+                {SUNYANI_DELIVERY_ZONES.map((zone) => {
+                  const zoneActive = zone.localities.includes(selectedZoneLocality);
+                  return (
+                    <Pressable
+                      key={zone.id}
+                      onPress={() => setSelectedZoneLocality(zone.localities[0])}
+                      style={[styles.zoneRow, zoneActive && styles.zoneRowActive]}
+                    >
+                      <View style={styles.zoneTextCol}>
+                        <Text style={styles.zoneName}>{zone.name}</Text>
+                        <Text style={styles.zoneDesc} numberOfLines={2}>
+                          {zone.description} ({zone.estimatedMinutes}m est.)
                         </Text>
-                      </TouchableOpacity>
-                    );
-                  })
-                )}
-              </ScrollView>
-            </View>
+                      </View>
+                      <Text style={styles.zoneFee}>
+                        {formatPesewasToGhs(zone.feePesewas)}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
 
-            <View style={styles.fieldGroup}>
-              <Text style={styles.inputLabel}>Street Address / House No. *</Text>
+              <Text style={styles.inputLabel}>Street / House / Hostel *</Text>
               <TextInput
-                style={styles.textInput}
-                placeholder="House No. 42, Near UENR Campus Gate"
-                placeholderTextColor="#6b7280"
                 value={streetAddress}
                 onChangeText={setStreetAddress}
+                placeholder="House No. 42, UENR Main Road"
+                placeholderTextColor={SikaColors.muted}
+                style={styles.input}
               />
-            </View>
 
-            <View style={styles.fieldGroup}>
-              <Text style={styles.inputLabel}>Prominent Landmark (Optional)</Text>
+              <Text style={styles.inputLabel}>Nearby Landmark (Optional)</Text>
               <TextInput
-                style={styles.textInput}
-                placeholder="Opposite Shell Station, Blue Gate"
-                placeholderTextColor="#6b7280"
                 value={landmark}
                 onChangeText={setLandmark}
+                placeholder="Opposite Goil Fuel Station"
+                placeholderTextColor={SikaColors.muted}
+                style={styles.input}
               />
             </View>
-
-            <View style={styles.fieldGroup}>
-              <Text style={styles.inputLabel}>Rider Instructions (Optional)</Text>
-              <TextInput
-                style={styles.textInput}
-                placeholder="Call upon arrival at the gate..."
-                placeholderTextColor="#6b7280"
-                value={deliveryNotes}
-                onChangeText={setDeliveryNotes}
-              />
-            </View>
-          </View>
+          </>
         ) : (
-          <View style={styles.sectionCard}>
-            <Text style={styles.sectionLabel}>PICKUP RESTAURANT LOCATION</Text>
-            <View style={styles.pickupLocationBox}>
-              <Text style={styles.pickupLocationTitle}>📍 Sika Cuisine Sunyani</Text>
-              <Text style={styles.pickupLocationDesc}>
-                Commercial Area, Central Sunyani, Bono Region, Ghana.
-              </Text>
-              <Text style={styles.pickupTimeNotice}>
-                ⏱ Estimated ready time: 20–25 minutes after confirmation.
+          <View style={styles.pickupCard}>
+            <MapPin size={20} color={SikaColors.success} />
+            <View style={styles.pickupCopy}>
+              <Text style={styles.pickupTitle}>Counter Collection — Sunyani Central</Text>
+              <Text style={styles.pickupDesc}>
+                Collect hot at {RESTAURANT_INFO.address}. Delivery tariff is zero.
               </Text>
             </View>
           </View>
         )}
 
-        {/* Payment Method */}
-        <View style={styles.sectionCard}>
-          <Text style={styles.sectionLabel}>PAYMENT METHOD</Text>
-
-          <TouchableOpacity
-            style={[
-              styles.paymentOption,
-              paymentMethod === "PAYSTACK" && styles.paymentOptionActive,
-            ]}
+        {/* 4. Payment Method */}
+        <Text style={styles.sectionTitle}>4. Payment &amp; Instructions</Text>
+        <View style={styles.toggleGrid}>
+          <Pressable
             onPress={() => setPaymentMethod("PAYSTACK")}
+            style={[
+              styles.optionCard,
+              paymentMethod === "PAYSTACK" && styles.optionCardActive,
+            ]}
           >
-            <View style={styles.paymentRadio}>
-              {paymentMethod === "PAYSTACK" && <View style={styles.radioInner} />}
-            </View>
-            <View style={styles.paymentTextWrap}>
-              <Text style={styles.paymentTitle}>Paystack (Mobile Money / Card)</Text>
-              <Text style={styles.paymentSubtitle}>
-                MTN MoMo, Telecel Cash, AT Money, Visa, Mastercard
-              </Text>
-            </View>
-          </TouchableOpacity>
+            <CreditCard
+              size={20}
+              color={
+                paymentMethod === "PAYSTACK"
+                  ? SikaColors.accentLight
+                  : SikaColors.secondaryText
+              }
+            />
+            <Text style={styles.optionTitle}>Paystack</Text>
+            <Text style={styles.optionSub}>MoMo &amp; Cards</Text>
+          </Pressable>
 
-          {fulfilmentType === "DELIVERY" && (
-            <TouchableOpacity
-              style={[
-                styles.paymentOption,
-                paymentMethod === "CASH_ON_DELIVERY" && styles.paymentOptionActive,
-              ]}
-              onPress={() => setPaymentMethod("CASH_ON_DELIVERY")}
-            >
-              <View style={styles.paymentRadio}>
-                {paymentMethod === "CASH_ON_DELIVERY" && (
-                  <View style={styles.radioInner} />
-                )}
-              </View>
-              <View style={styles.paymentTextWrap}>
-                <Text style={styles.paymentTitle}>Cash on Delivery</Text>
-                <Text style={styles.paymentSubtitle}>
-                  Pay cash or MoMo directly to the dispatch rider upon delivery
-                </Text>
-              </View>
-            </TouchableOpacity>
-          )}
-
-          {fulfilmentType === "COLLECTION" && (
-            <TouchableOpacity
-              style={[
-                styles.paymentOption,
-                paymentMethod === "CASH_ON_COLLECTION" && styles.paymentOptionActive,
-              ]}
-              onPress={() => setPaymentMethod("CASH_ON_COLLECTION")}
-            >
-              <View style={styles.paymentRadio}>
-                {paymentMethod === "CASH_ON_COLLECTION" && (
-                  <View style={styles.radioInner} />
-                )}
-              </View>
-              <View style={styles.paymentTextWrap}>
-                <Text style={styles.paymentTitle}>Pay at Restaurant Counter</Text>
-                <Text style={styles.paymentSubtitle}>
-                  Pay cash or MoMo at pickup point when collecting your meal
-                </Text>
-              </View>
-            </TouchableOpacity>
-          )}
+          <Pressable
+            onPress={() => setPaymentMethod(cashVariant)}
+            style={[
+              styles.optionCard,
+              paymentMethod !== "PAYSTACK" && styles.optionCardActive,
+            ]}
+          >
+            <Banknote
+              size={20}
+              color={
+                paymentMethod !== "PAYSTACK"
+                  ? SikaColors.success
+                  : SikaColors.secondaryText
+              }
+            />
+            <Text style={styles.optionTitle}>
+              {fulfilmentType === "DELIVERY" ? "Cash Delivery" : "Cash Pickup"}
+            </Text>
+            <Text style={styles.optionSub}>Pay at handover</Text>
+          </Pressable>
         </View>
 
-        {/* Order Financial Summary */}
-        <View style={styles.sectionCard}>
-          <Text style={styles.sectionLabel}>TOTAL SUMMARY</Text>
+        <View style={styles.formCard}>
+          <Text style={styles.inputLabel}>Delivery / Kitchen Notes (Optional)</Text>
+          <TextInput
+            value={deliveryNotes}
+            onChangeText={setDeliveryNotes}
+            multiline
+            numberOfLines={2}
+            placeholder="Call on arrival at main gate..."
+            placeholderTextColor={SikaColors.muted}
+            style={[styles.input, styles.notesArea]}
+          />
+        </View>
 
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Subtotal ({items.length} items)</Text>
-            <Text style={styles.summaryValue}>
-              {formatPesewasToGhs(cartSubtotalPesewas)}
-            </Text>
+        {/* Financial Breakdown */}
+        <View style={styles.totalsCard}>
+          <View style={styles.totalRow}>
+            <Text style={styles.totalLabel}>Food Subtotal</Text>
+            <Text style={styles.totalVal}>{formatPesewasToGhs(cartSubtotalPesewas)}</Text>
           </View>
-
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>
-              Delivery Fee {fulfilmentType === "COLLECTION" ? "(Pickup)" : ""}
+          <View style={styles.totalRow}>
+            <Text style={styles.totalLabel}>
+              {fulfilmentType === "DELIVERY" ? "Delivery Tariff" : "Counter Pickup"}
             </Text>
-            <Text
-              style={[
-                styles.summaryValue,
-                deliveryFeePesewas === 0 && styles.freeDeliveryValue,
-              ]}
-            >
-              {deliveryFeePesewas === 0 ? "FREE (GH₵ 0.00)" : formatPesewasToGhs(deliveryFeePesewas)}
-            </Text>
+            <Text style={styles.totalVal}>{formatPesewasToGhs(deliveryFeePesewas)}</Text>
           </View>
-
-          <View style={styles.totalDivider} />
-
-          <View style={styles.summaryRow}>
-            <Text style={styles.grandTotalLabel}>TOTAL AMOUNT</Text>
-            <Text style={styles.grandTotalValue}>
-              {formatPesewasToGhs(grandTotalPesewas)}
-            </Text>
+          <View style={styles.grandRow}>
+            <Text style={styles.grandLabel}>Total Due</Text>
+            <Text style={styles.grandVal}>{formatPesewasToGhs(grandTotalPesewas)}</Text>
           </View>
         </View>
-      </ScrollView>
 
-      {/* Sticky Bottom Place Order Action */}
-      <View style={styles.footerAction}>
-        <TouchableOpacity
-          activeOpacity={0.85}
-          disabled={isSubmitting}
+        <Button
+          title={`Confirm Order (${formatPesewasToGhs(grandTotalPesewas)})`}
+          variant="primary"
+          size="lg"
+          fullWidth
+          loading={isSubmitting}
+          leadingIcon={<CheckCircle2 size={17} color={SikaColors.text} />}
           onPress={handlePlaceOrder}
-          style={[styles.submitButton, isSubmitting && styles.submitButtonDisabled]}
-        >
-          {isSubmitting ? (
-            <ActivityIndicator color="#ffffff" />
-          ) : (
-            <Text style={styles.submitButtonText}>
-              Place Order • {formatPesewasToGhs(grandTotalPesewas)}
-            </Text>
-          )}
-        </TouchableOpacity>
-      </View>
-    </View>
+        />
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  root: {
     flex: 1,
-    backgroundColor: "#0d0e12",
+    backgroundColor: SikaColors.background,
   },
   header: {
-    height: 52,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 16,
+    paddingHorizontal: SikaSpace.lg,
+    paddingVertical: SikaSpace.md,
     borderBottomWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.08)",
+    borderBottomColor: SikaColors.border,
   },
-  backButton: {
+  backBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
     paddingVertical: 6,
-    paddingHorizontal: 8,
+    paddingHorizontal: 10,
+    borderRadius: SikaRadius.pill,
+    borderWidth: 1,
+    borderColor: SikaColors.border,
+    backgroundColor: SikaColors.surface,
   },
-  backButtonText: {
-    color: "#e11d48",
-    fontSize: 14,
+  backText: {
+    color: SikaColors.warmWhite,
+    fontSize: 12,
     fontWeight: "700",
   },
   headerTitle: {
-    color: "#ffffff",
+    color: SikaColors.text,
     fontSize: 17,
     fontWeight: "800",
   },
   headerSpacer: {
-    width: 48,
-  },
-  scrollArea: {
-    flex: 1,
+    width: 64,
   },
   scrollContent: {
-    padding: 16,
-    paddingBottom: 24,
+    padding: SikaSpace.lg,
+    paddingBottom: 36,
+    gap: SikaSpace.md,
   },
-  errorAlert: {
-    backgroundColor: "rgba(239, 68, 68, 0.15)",
-    borderColor: "rgba(239, 68, 68, 0.5)",
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 16,
-  },
-  errorAlertText: {
-    color: "#fca5a5",
-    fontSize: 13,
-    fontWeight: "600",
-  },
-  sectionCard: {
-    backgroundColor: "#161720",
-    borderRadius: 20,
-    borderColor: "rgba(255, 255, 255, 0.08)",
-    borderWidth: 1,
-    padding: 16,
-    marginBottom: 16,
-  },
-  sectionLabel: {
-    color: "#9ca3af",
-    fontSize: 11,
-    fontWeight: "700",
-    letterSpacing: 1,
-    marginBottom: 12,
-  },
-  toggleRow: {
-    flexDirection: "row",
-    gap: 10,
-  },
-  toggleButton: {
-    flex: 1,
+  errorBanner: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    paddingVertical: 12,
-    borderRadius: 12,
-    backgroundColor: "#1c1e29",
+    gap: SikaSpace.sm,
+    borderRadius: SikaRadius.md,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.08)",
+    borderColor: SikaColors.errorBorder,
+    backgroundColor: SikaColors.errorBg,
+    padding: SikaSpace.md,
   },
-  toggleButtonActive: {
-    backgroundColor: "rgba(225, 29, 72, 0.15)",
-    borderColor: "#e11d48",
-  },
-  toggleIcon: {
-    fontSize: 18,
-  },
-  toggleLabel: {
-    color: "#9ca3af",
+  errorText: {
+    flex: 1,
+    color: "#FDA4AF",
     fontSize: 13,
-    fontWeight: "600",
+    lineHeight: 18,
   },
-  toggleLabelActive: {
-    color: "#ffffff",
-    fontWeight: "700",
+  sectionTitle: {
+    color: SikaColors.warmWhite,
+    fontSize: 15,
+    fontWeight: "800",
+    marginTop: SikaSpace.xs,
   },
-  fieldGroup: {
-    marginBottom: 14,
+  toggleGrid: {
+    flexDirection: "row",
+    gap: SikaSpace.md,
+  },
+  optionCard: {
+    flex: 1,
+    borderRadius: SikaRadius.lg,
+    borderWidth: 1,
+    borderColor: SikaColors.border,
+    backgroundColor: SikaColors.surface,
+    padding: SikaSpace.lg,
+    gap: 4,
+  },
+  optionCardActive: {
+    borderColor: SikaColors.accent,
+    backgroundColor: SikaColors.accentWash12,
+  },
+  optionTitle: {
+    color: SikaColors.text,
+    fontSize: 14,
+    fontWeight: "800",
+    marginTop: 4,
+  },
+  optionSub: {
+    color: SikaColors.secondaryText,
+    fontSize: 12,
+  },
+  formCard: {
+    borderRadius: SikaRadius.xl,
+    borderWidth: 1,
+    borderColor: SikaColors.border,
+    backgroundColor: SikaColors.surface,
+    padding: SikaSpace.lg,
   },
   inputLabel: {
-    color: "#d1d5db",
-    fontSize: 12,
-    fontWeight: "600",
-    marginBottom: 6,
-  },
-  textInput: {
-    backgroundColor: "#1c1e29",
-    borderColor: "rgba(255, 255, 255, 0.08)",
-    borderWidth: 1,
-    borderRadius: 12,
-    color: "#ffffff",
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    fontSize: 13,
-  },
-  localityScroll: {
-    gap: 8,
-    paddingVertical: 4,
-  },
-  localityPill: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 12,
-    backgroundColor: "#1c1e29",
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.08)",
-  },
-  localityPillActive: {
-    backgroundColor: "rgba(225, 29, 72, 0.15)",
-    borderColor: "#e11d48",
-  },
-  localityText: {
-    color: "#9ca3af",
-    fontSize: 12,
-    fontWeight: "600",
-  },
-  localityTextActive: {
-    color: "#ffffff",
+    color: SikaColors.secondaryText,
+    fontSize: 11,
     fontWeight: "700",
+    textTransform: "uppercase",
+    letterSpacing: 0.7,
+    marginBottom: 6,
+    marginTop: SikaSpace.sm,
   },
-  pickupLocationBox: {
-    backgroundColor: "rgba(255, 255, 255, 0.04)",
-    borderRadius: 12,
-    padding: 12,
-    borderLeftWidth: 3,
-    borderLeftColor: "#e11d48",
-  },
-  pickupLocationTitle: {
-    color: "#ffffff",
+  input: {
+    borderRadius: SikaRadius.md,
+    borderWidth: 1,
+    borderColor: SikaColors.border,
+    backgroundColor: SikaColors.elevated,
+    color: SikaColors.warmWhite,
+    paddingHorizontal: SikaSpace.md,
+    paddingVertical: 11,
     fontSize: 14,
-    fontWeight: "700",
-    marginBottom: 4,
   },
-  pickupLocationDesc: {
-    color: "#9ca3af",
-    fontSize: 12,
-    marginBottom: 6,
+  notesArea: {
+    minHeight: 68,
+    textAlignVertical: "top",
   },
-  pickupTimeNotice: {
-    color: "#34d399",
-    fontSize: 12,
-    fontWeight: "600",
+  zoneList: {
+    gap: SikaSpace.sm,
+    marginBottom: SikaSpace.sm,
   },
-  paymentOption: {
+  zoneRow: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#1c1e29",
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 10,
+    justifyContent: "space-between",
+    borderRadius: SikaRadius.md,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.08)",
+    borderColor: SikaColors.border,
+    backgroundColor: SikaColors.elevated,
+    padding: SikaSpace.md,
   },
-  paymentOptionActive: {
-    borderColor: "#e11d48",
-    backgroundColor: "rgba(225, 29, 72, 0.08)",
+  zoneRowActive: {
+    borderColor: SikaColors.accent,
+    backgroundColor: SikaColors.accentWash12,
   },
-  paymentRadio: {
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    borderWidth: 2,
-    borderColor: "#e11d48",
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 12,
-  },
-  radioInner: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: "#e11d48",
-  },
-  paymentTextWrap: {
+  zoneTextCol: {
     flex: 1,
+    paddingRight: SikaSpace.md,
   },
-  paymentTitle: {
-    color: "#ffffff",
+  zoneName: {
+    color: SikaColors.warmWhite,
     fontSize: 13,
     fontWeight: "700",
-    marginBottom: 2,
   },
-  paymentSubtitle: {
-    color: "#9ca3af",
+  zoneDesc: {
+    color: SikaColors.secondaryText,
     fontSize: 11,
+    marginTop: 2,
   },
-  summaryRow: {
+  zoneFee: {
+    color: SikaColors.accentLight,
+    fontSize: 13,
+    fontWeight: "800",
+    fontVariant: ["tabular-nums"],
+  },
+  pickupCard: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: SikaSpace.md,
+    borderRadius: SikaRadius.lg,
+    borderWidth: 1,
+    borderColor: SikaColors.successBorder,
+    backgroundColor: SikaColors.successBg,
+    padding: SikaSpace.lg,
+  },
+  pickupCopy: {
+    flex: 1,
+  },
+  pickupTitle: {
+    color: SikaColors.warmWhite,
+    fontSize: 14,
+    fontWeight: "800",
+  },
+  pickupDesc: {
+    color: SikaColors.secondaryText,
+    fontSize: 12,
+    marginTop: 3,
+    lineHeight: 17,
+  },
+  totalsCard: {
+    borderRadius: SikaRadius.xl,
+    borderWidth: 1,
+    borderColor: SikaColors.border,
+    backgroundColor: SikaColors.surface,
+    padding: SikaSpace.lg,
+    gap: SikaSpace.sm,
+    marginTop: SikaSpace.xs,
+  },
+  totalRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  totalLabel: {
+    color: SikaColors.secondaryText,
+    fontSize: 13,
+  },
+  totalVal: {
+    color: SikaColors.warmWhite,
+    fontSize: 13,
+    fontWeight: "700",
+    fontVariant: ["tabular-nums"],
+  },
+  grandRow: {
+    marginTop: SikaSpace.sm,
+    paddingTop: SikaSpace.md,
+    borderTopWidth: 1,
+    borderTopColor: SikaColors.border,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 8,
   },
-  summaryLabel: {
-    color: "#9ca3af",
-    fontSize: 13,
-  },
-  summaryValue: {
-    color: "#ffffff",
-    fontSize: 13,
-    fontWeight: "600",
-  },
-  freeDeliveryValue: {
-    color: "#34d399",
-    fontWeight: "700",
-  },
-  totalDivider: {
-    height: 1,
-    backgroundColor: "rgba(255, 255, 255, 0.08)",
-    marginVertical: 10,
-  },
-  grandTotalLabel: {
-    color: "#ffffff",
-    fontSize: 14,
+  grandLabel: {
+    color: SikaColors.text,
+    fontSize: 16,
     fontWeight: "800",
   },
-  grandTotalValue: {
-    color: "#e11d48",
-    fontSize: 18,
+  grandVal: {
+    color: SikaColors.accentLight,
+    fontSize: 20,
     fontWeight: "900",
-  },
-  footerAction: {
-    backgroundColor: "#12141a",
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderTopWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.08)",
-  },
-  submitButton: {
-    backgroundColor: "#e11d48",
-    paddingVertical: 14,
-    borderRadius: 16,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  submitButtonDisabled: {
-    opacity: 0.6,
-  },
-  submitButtonText: {
-    color: "#ffffff",
-    fontSize: 15,
-    fontWeight: "800",
+    fontVariant: ["tabular-nums"],
   },
 });

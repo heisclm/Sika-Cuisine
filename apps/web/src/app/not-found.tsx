@@ -1,54 +1,41 @@
 import React from "react";
 import Link from "next/link";
-import { Utensils, Home } from "lucide-react";
-import { BespokeSeal } from "@/components/creative/BespokeSeal";
+import { Compass, Home, UtensilsCrossed } from "lucide-react";
 
-export default function NotFound() {
+export default function NotFoundPage() {
   return (
-    <div className="relative min-h-[80vh] flex items-center justify-center py-20 px-4 sm:px-6 lg:px-8 overflow-hidden bg-background text-gray-200">
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[400px] studio-vignette pointer-events-none -z-10" />
-
-      <div className="relative z-10 max-w-lg w-full text-center space-y-6">
-        <div className="flex justify-center mb-2">
-          <BespokeSeal size={74} />
+    <div className="min-h-[calc(100vh-80px)] bg-[#101010] px-4 py-16 flex items-center justify-center">
+      <div className="w-full max-w-md rounded-3xl border border-[#333333] bg-[#1C1C1C] p-8 text-center space-y-5 shadow-2xl">
+        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-[#D71920]/40 bg-[#D71920]/15 text-[#F0444A]">
+          <Compass className="h-7 w-7" aria-hidden="true" />
         </div>
-
-        <div className="inline-flex items-center gap-2.5">
-          <span className="h-px w-6 bg-brand-red/60" />
-          <span className="text-[11px] font-semibold uppercase tracking-[0.25em] text-brand-red">
-            Error 404 &bull; Missing Delicacy
+        <div className="space-y-2">
+          <span className="font-mono text-xs font-bold uppercase tracking-[0.22em] text-[#F0444A]">
+            404 — Page Missing
           </span>
-          <span className="h-px w-6 bg-brand-red/60" />
+          <h1 className="font-serif text-2xl sm:text-3xl font-bold text-[#F5F1EA]">
+            Dish or Page Not Found
+          </h1>
+          <p className="text-sm text-[#A3A3A3] leading-relaxed">
+            The route you followed does not exist or may have moved. Head back to our Sunyani menu or homepage.
+          </p>
         </div>
 
-        <h1 className="font-serif text-3xl sm:text-5xl font-bold text-white tracking-tight leading-tight">
-          This Plate Has Left the Kitchen
-        </h1>
-
-        <p className="text-sm sm:text-base text-gray-400 font-light leading-relaxed max-w-md mx-auto">
-          The delicacy or page you are looking for is no longer on our kitchen pass. Let us guide you back to our simmering pots and charcoal grills in Sunyani.
-        </p>
-
-        <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-3.5">
+        <div className="flex flex-col sm:flex-row gap-3 pt-2">
           <Link
             href="/menu"
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-full text-sm font-semibold text-white bg-brand-red hover:bg-brand-red-hover active:scale-95 transition-all shadow-sm"
+            className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#D71920] hover:bg-[#A91017] px-5 text-sm font-semibold text-white transition-colors"
           >
-            <Utensils className="h-4 w-4" />
-            <span>Browse Full Menu</span>
+            <UtensilsCrossed className="h-4 w-4" aria-hidden="true" />
+            <span>Browse Menu</span>
           </Link>
-
           <Link
             href="/"
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-full bg-[#1c1d22] border border-white/10 text-sm font-semibold text-gray-200 hover:text-white hover:bg-[#25272e] transition-colors"
+            className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-[#333333] bg-[#262626] hover:bg-[#2F2F2F] px-5 text-sm font-semibold text-[#F5F1EA] transition-colors"
           >
-            <Home className="h-4 w-4" />
-            <span>Return Home</span>
+            <Home className="h-4 w-4" aria-hidden="true" />
+            <span>Homepage</span>
           </Link>
-        </div>
-
-        <div className="pt-6 border-t border-border-subtle/50 text-[11px] uppercase tracking-widest text-gray-500 font-medium">
-          Sika Cuisine &bull; Sunyani Central &bull; Bono Region
         </div>
       </div>
     </div>

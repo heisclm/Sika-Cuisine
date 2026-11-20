@@ -1,343 +1,399 @@
-import React from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
   Linking,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
-import { SUNYANI_DELIVERY_ZONES, formatPesewasToGhs } from "@sika/shared";
+import {
+  ChevronRight,
+  Clock,
+  LogOut,
+  MapPin,
+  Phone,
+  Receipt,
+  RotateCcw,
+  ShieldCheck,
+  User as UserIcon,
+} from "lucide-react-native";
+import {
+  RESTAURANT_INFO,
+  SUNYANI_DELIVERY_ZONES,
+  UserDTO,
+  formatPesewasToGhs,
+} from "@sika/shared";
+import { Badge } from "../components/ui/Badge";
+import { Button } from "../components/ui/Button";
+import { useToast } from "../context/ToastContext";
+import { apiRequest } from "../services/api-client";
+import { clearOrdersCache } from "../services/offline-order-cache";
+import { getCurrentUser, removeAuthToken } from "../services/storage";
+import { SikaColors, SikaRadius, SikaSpace } from "../theme";
 
 interface ProfileScreenProps {
-  onTrackSampleOrder: () => void;
+  onNavigateToAuth: () => void;
+  onNavigateToOrders: () => void;
+  onReplayOnboarding: () => void;
 }
 
-export function ProfileScreen({ onTrackSampleOrder }: ProfileScreenProps) {
-  const handleCallSupport = (phone: string) => {
-    Linking.openURL(`tel:${phone.replace(/\s+/g, "")}`);
+/**
+ * Customer Account, Restaurant Details, Sunyani Delivery Rates, and Session Controls.
+ */
+export function ProfileScreen({
+  onNavigateToAuth,
+  onNavigateToOrders,
+  onReplayOnboarding,
+}: ProfileScreenProps) {
+  const { info } = useToast();
+  const [user, setUser] = useState<UserDTO | null>(null);
+
+  const loadUser = useCallback(async () => {
+    const localUser = await getCurrentUser();
+    setUser(localUser);
+  }, []);
+
+  useEffect(() => {
+    loadUser();
+  }, [loadUser]);
+
+  const handleSignOut = async () => {
+    const current = await getCurrentUser();
+    await apiRequest("/auth/logout", { method: "POST" }).catch(() => {});
+    await removeAuthToken();
+    if (current?.id) {
+      await clearOrdersCache(current.id);
+    }
+    setUser(null);
+    info("Signed Out", "Your device credentials have been cleared.");
   };
 
   return (
     <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.content}
+      style={styles.root}
+      contentContainerStyle={styles.scrollContent}
       showsVerticalScrollIndicator={false}
     >
-      {/* User Card */}
-      <View style={styles.userCard}>
-        <View style={styles.avatarCircle}>
-          <Text style={styles.avatarInitials}>SC</Text>
+      {/* Account Identity Card */}
+      <View style={styles.card}>
+        {user ? (
+          <View style={styles.profileHeader}>
+            <View style={styles.avatar}>
+              <UserIcon size={24} color={SikaColors.accentLight} />
+            </View>
+            <View style={styles.profileInfo}>
+              <View style={styles.nameRow}>
+                <Text style={styles.name}>{user.fullName}</Text>
+                <Badge label={user.role.replace(/_/g, " ")} variant="brand" />
+              </View>
+              <Text style={styles.metaText}>{user.email}</Text>
+              <Text style={styles.metaMono}>{user.phone}</Text>
+            </View>
+          </View>
+        ) : (
+          <View style={styles.guestBlock}>
+            <View style={styles.guestRow}>
+              <View style={styles.avatar}>
+                <ShieldCheck size={24} color={SikaColors.accentLight} />
+              </View>
+              <View style={styles.profileInfo}>
+                <Text style={styles.name}>Guest Mode</Text>
+                <Text style={styles.metaText}>
+                  Sign in to prefill checkout details and sync order history.
+                </Text>
+              </View>
+            </View>
+            <Button
+              title="Sign In or Create Account"
+              variant="primary"
+              size="md"
+              fullWidth
+              onPress={onNavigateToAuth}
+            />
+          </View>
+        )}
+      </View>
+
+      {/* Quick Shortcuts */}
+      <View style={styles.card}>
+        <Pressable onPress={onNavigateToOrders} style={styles.actionRow}>
+          <View style={styles.actionLeft}>
+            <Receipt size={18} color={SikaColors.accentLight} />
+            <Text style={styles.actionText}>View &amp; Track Orders</Text>
+          </View>
+          <ChevronRight size={17} color={SikaColors.muted} />
+        </Pressable>
+
+        <View style={styles.divider} />
+
+        <Pressable onPress={onReplayOnboarding} style={styles.actionRow}>
+          <View style={styles.actionLeft}>
+            <RotateCcw size={18} color={SikaColors.accentLight} />
+            <Text style={styles.actionText}>Replay Onboarding Tour</Text>
+          </View>
+          <ChevronRight size={17} color={SikaColors.muted} />
+        </Pressable>
+
+        {user ? (
+          <>
+            <View style={styles.divider} />
+            <Pressable onPress={handleSignOut} style={styles.actionRow}>
+              <View style={styles.actionLeft}>
+                <LogOut size={18} color={SikaColors.error} />
+                <Text style={[styles.actionText, { color: "#FDA4AF" }]}>Sign Out</Text>
+              </View>
+              <ChevronRight size={17} color={SikaColors.error} />
+            </Pressable>
+          </>
+        ) : null}
+      </View>
+
+      {/* Restaurant Info & Direct Dial */}
+      <View style={styles.card}>
+        <Text style={styles.cardHeading}>Sika Cuisine Sunyani</Text>
+
+        <View style={styles.infoItem}>
+          <MapPin size={16} color={SikaColors.accentLight} />
+          <View style={styles.infoCopy}>
+            <Text style={styles.infoTitle}>Kitchen &amp; Counter Address</Text>
+            <Text style={styles.infoSub}>{RESTAURANT_INFO.address}</Text>
+          </View>
         </View>
-        <View style={styles.userInfo}>
-          <Text style={styles.userName}>Sika Customer</Text>
-          <Text style={styles.userSubtitle}>Sunyani, Bono Region, Ghana</Text>
+
+        <View style={styles.infoItem}>
+          <Clock size={16} color={SikaColors.success} />
+          <View style={styles.infoCopy}>
+            <Text style={styles.infoTitle}>Service Hours (GMT)</Text>
+            <Text style={styles.infoSub}>{RESTAURANT_INFO.hoursWeekday}</Text>
+            <Text style={styles.infoSub}>{RESTAURANT_INFO.hoursSunday}</Text>
+          </View>
+        </View>
+
+        <View style={styles.phoneBtnsRow}>
+          <Pressable
+            onPress={() => Linking.openURL(`tel:${RESTAURANT_INFO.primaryPhoneIntl}`)}
+            style={styles.phoneChip}
+          >
+            <Phone size={14} color={SikaColors.accentLight} />
+            <Text style={styles.phoneChipText}>{RESTAURANT_INFO.primaryPhone}</Text>
+          </Pressable>
+
+          <Pressable
+            onPress={() => Linking.openURL(`tel:${RESTAURANT_INFO.secondaryPhoneIntl}`)}
+            style={styles.phoneChip}
+          >
+            <Phone size={14} color={SikaColors.accentLight} />
+            <Text style={styles.phoneChipText}>{RESTAURANT_INFO.secondaryPhone}</Text>
+          </Pressable>
         </View>
       </View>
 
-      {/* Quick Action: Track Active Order */}
-      <TouchableOpacity
-        style={styles.trackCard}
-        onPress={onTrackSampleOrder}
-        activeOpacity={0.85}
-      >
-        <View style={styles.trackCardLeft}>
-          <Text style={styles.trackCardIcon}>🛵</Text>
-          <View>
-            <Text style={styles.trackCardTitle}>Recent Order Tracking</Text>
-            <Text style={styles.trackCardSubtitle}>
-              Check real-time kitchen status & delivery progress
-            </Text>
-          </View>
-        </View>
-        <Text style={styles.trackCardArrow}>→</Text>
-      </TouchableOpacity>
-
-      {/* Sunyani Delivery Zones Card */}
-      <View style={styles.sectionCard}>
-        <Text style={styles.sectionTitle}>SUNYANI DELIVERY ZONES & RATES</Text>
-        <Text style={styles.sectionSubtitle}>
-          Authoritative pricing based on distance from Sika Cuisine Sunyani:
+      {/* Sunyani Delivery Rates */}
+      <View style={styles.card}>
+        <Text style={styles.cardHeading}>Sunyani Delivery Zones</Text>
+        <Text style={styles.zoneHint}>
+          Counter pickup on Commercial Road is always GHS 0.00.
         </Text>
 
-        <View style={styles.zoneList}>
+        <View style={styles.zonesList}>
           {SUNYANI_DELIVERY_ZONES.map((zone) => (
-            <View key={zone.id} style={styles.zoneItem}>
-              <View style={styles.zoneHeader}>
+            <View key={zone.id} style={styles.zoneRow}>
+              <View style={styles.zoneLeft}>
                 <Text style={styles.zoneName}>{zone.name}</Text>
-                <Text style={styles.zoneFee}>
-                  {formatPesewasToGhs(zone.feePesewas)}
-                </Text>
+                <Text style={styles.zoneAreas}>{zone.description}</Text>
               </View>
-              <Text style={styles.zoneDesc}>{zone.description}</Text>
-              <Text style={styles.zoneEst}>⏱ Est. {zone.estimatedMinutes} mins</Text>
+              <Text style={styles.zoneFee}>
+                {formatPesewasToGhs(zone.feePesewas)}
+              </Text>
             </View>
           ))}
         </View>
-
-        <View style={styles.pickupHighlight}>
-          <Text style={styles.pickupHighlightText}>
-            🛍️ Collection / Pickup orders from Sika Cuisine incur GH₵ 0.00 delivery fee.
-          </Text>
-        </View>
       </View>
 
-      {/* Restaurant Contact & Support */}
-      <View style={styles.sectionCard}>
-        <Text style={styles.sectionTitle}>RESTAURANT ASSISTANCE</Text>
-
-        <TouchableOpacity
-          style={styles.contactRow}
-          onPress={() => handleCallSupport("+233 53 337 6760")}
-        >
-          <Text style={styles.contactIcon}>📞</Text>
-          <View style={styles.contactInfo}>
-            <Text style={styles.contactLabel}>Kitchen Dispatch Hotline</Text>
-            <Text style={styles.contactValue}>+233 53 337 6760</Text>
-          </View>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.contactRow}
-          onPress={() => handleCallSupport("+233 55 440 6681")}
-        >
-          <Text style={styles.contactIcon}>📱</Text>
-          <View style={styles.contactInfo}>
-            <Text style={styles.contactLabel}>Customer Care Line</Text>
-            <Text style={styles.contactValue}>+233 55 440 6681</Text>
-          </View>
-        </TouchableOpacity>
-
-        <View style={styles.hoursBox}>
-          <Text style={styles.hoursLabel}>🕒 Operating Hours</Text>
-          <Text style={styles.hoursValue}>Monday – Sunday: 8:00 AM – 10:00 PM</Text>
-        </View>
-      </View>
-
-      {/* University Project Notice */}
-      <View style={styles.projectCard}>
-        <Text style={styles.projectTitle}>SIKA CUISINE SYSTEM</Text>
-        <Text style={styles.projectDesc}>
-          Final-Year Engineering Project — A Web-Based Food Ordering and Delivery
-          Tracking System for Sika Cuisine Restaurant, Sunyani, Ghana.
-        </Text>
-        <Text style={styles.projectVersion}>Version 1.0.0 (Expo SDK 52)</Text>
-      </View>
+      <Text style={styles.footerVersion}>
+        Sika Cuisine Mobile &bull; Expo SDK 58 &bull; Sunyani, Ghana
+      </Text>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  root: {
     flex: 1,
-    backgroundColor: "#0d0e12",
+    backgroundColor: SikaColors.background,
   },
-  content: {
-    padding: 16,
-    paddingBottom: 32,
+  scrollContent: {
+    padding: SikaSpace.lg,
+    gap: SikaSpace.lg,
+    paddingBottom: 36,
   },
-  userCard: {
+  card: {
+    borderRadius: SikaRadius.xl,
+    borderWidth: 1,
+    borderColor: SikaColors.border,
+    backgroundColor: SikaColors.surface,
+    padding: SikaSpace.lg,
+  },
+  profileHeader: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#161720",
-    borderRadius: 20,
-    padding: 16,
-    borderColor: "rgba(255, 255, 255, 0.08)",
-    borderWidth: 1,
-    marginBottom: 14,
+    gap: SikaSpace.md,
   },
-  avatarCircle: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: "#e11d48",
+  guestBlock: {
+    gap: SikaSpace.lg,
+  },
+  guestRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: SikaSpace.md,
+  },
+  avatar: {
+    width: 52,
+    height: 52,
+    borderRadius: SikaRadius.lg,
+    borderWidth: 1,
+    borderColor: SikaColors.accentWash40,
+    backgroundColor: SikaColors.accentWash12,
     alignItems: "center",
     justifyContent: "center",
-    marginRight: 14,
   },
-  avatarInitials: {
-    color: "#ffffff",
+  profileInfo: {
+    flex: 1,
+  },
+  nameRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    flexWrap: "wrap",
+    gap: SikaSpace.sm,
+  },
+  name: {
+    color: SikaColors.text,
     fontSize: 18,
     fontWeight: "800",
   },
-  userInfo: {
-    flex: 1,
-  },
-  userName: {
-    color: "#ffffff",
-    fontSize: 17,
-    fontWeight: "800",
-    marginBottom: 2,
-  },
-  userSubtitle: {
-    color: "#9ca3af",
+  metaText: {
+    color: SikaColors.secondaryText,
     fontSize: 13,
+    marginTop: 3,
   },
-  trackCard: {
-    backgroundColor: "rgba(225, 29, 72, 0.12)",
-    borderColor: "rgba(225, 29, 72, 0.35)",
-    borderWidth: 1,
-    borderRadius: 16,
+  metaMono: {
+    color: SikaColors.muted,
+    fontSize: 12,
+    marginTop: 2,
+    fontWeight: "600",
+  },
+  actionRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    padding: 14,
-    marginBottom: 14,
+    paddingVertical: SikaSpace.sm + 2,
   },
-  trackCardLeft: {
+  actionLeft: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
-    flex: 1,
+    gap: SikaSpace.md,
   },
-  trackCardIcon: {
-    fontSize: 24,
-  },
-  trackCardTitle: {
-    color: "#ffffff",
+  actionText: {
+    color: SikaColors.warmWhite,
     fontSize: 14,
     fontWeight: "700",
   },
-  trackCardSubtitle: {
-    color: "#9ca3af",
+  divider: {
+    height: 1,
+    backgroundColor: SikaColors.border,
+    marginVertical: SikaSpace.xs,
+  },
+  cardHeading: {
+    color: SikaColors.text,
+    fontSize: 16,
+    fontWeight: "800",
+    marginBottom: SikaSpace.md,
+  },
+  infoItem: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: SikaSpace.md,
+    marginBottom: SikaSpace.md,
+  },
+  infoCopy: {
+    flex: 1,
+  },
+  infoTitle: {
+    color: SikaColors.warmWhite,
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  infoSub: {
+    color: SikaColors.secondaryText,
+    fontSize: 12,
+    marginTop: 2,
+    lineHeight: 17,
+  },
+  phoneBtnsRow: {
+    flexDirection: "row",
+    gap: SikaSpace.sm,
+    marginTop: SikaSpace.xs,
+  },
+  phoneChip: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    borderRadius: SikaRadius.md,
+    borderWidth: 1,
+    borderColor: SikaColors.border,
+    backgroundColor: SikaColors.elevated,
+    paddingVertical: 10,
+  },
+  phoneChipText: {
+    color: SikaColors.warmWhite,
+    fontSize: 12,
+    fontWeight: "800",
+  },
+  zoneHint: {
+    color: SikaColors.secondaryText,
+    fontSize: 12,
+    marginBottom: SikaSpace.md,
+  },
+  zonesList: {
+    gap: SikaSpace.sm,
+  },
+  zoneRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderRadius: SikaRadius.md,
+    borderWidth: 1,
+    borderColor: SikaColors.border,
+    backgroundColor: SikaColors.elevated,
+    padding: SikaSpace.md,
+  },
+  zoneLeft: {
+    flex: 1,
+    paddingRight: SikaSpace.md,
+  },
+  zoneName: {
+    color: SikaColors.warmWhite,
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  zoneAreas: {
+    color: SikaColors.secondaryText,
     fontSize: 11,
     marginTop: 2,
   },
-  trackCardArrow: {
-    color: "#e11d48",
-    fontSize: 18,
-    fontWeight: "800",
-  },
-  sectionCard: {
-    backgroundColor: "#161720",
-    borderRadius: 20,
-    borderColor: "rgba(255, 255, 255, 0.08)",
-    borderWidth: 1,
-    padding: 16,
-    marginBottom: 14,
-  },
-  sectionTitle: {
-    color: "#9ca3af",
-    fontSize: 11,
-    fontWeight: "700",
-    letterSpacing: 1,
-    marginBottom: 4,
-  },
-  sectionSubtitle: {
-    color: "#d1d5db",
-    fontSize: 12,
-    marginBottom: 12,
-  },
-  zoneList: {
-    gap: 10,
-    marginBottom: 10,
-  },
-  zoneItem: {
-    backgroundColor: "#1c1e29",
-    borderRadius: 12,
-    padding: 12,
-  },
-  zoneHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 4,
-  },
-  zoneName: {
-    color: "#ffffff",
-    fontSize: 13,
-    fontWeight: "700",
-  },
   zoneFee: {
-    color: "#e11d48",
+    color: SikaColors.accentLight,
     fontSize: 13,
     fontWeight: "800",
+    fontVariant: ["tabular-nums"],
   },
-  zoneDesc: {
-    color: "#9ca3af",
-    fontSize: 11,
-    lineHeight: 16,
-  },
-  zoneEst: {
-    color: "#6b7280",
-    fontSize: 11,
-    marginTop: 4,
-  },
-  pickupHighlight: {
-    backgroundColor: "rgba(16, 185, 129, 0.1)",
-    borderRadius: 10,
-    padding: 10,
-    borderLeftWidth: 3,
-    borderLeftColor: "#10b981",
-  },
-  pickupHighlightText: {
-    color: "#6ee7b7",
-    fontSize: 12,
-    fontWeight: "600",
-  },
-  contactRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#1c1e29",
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 8,
-  },
-  contactIcon: {
-    fontSize: 18,
-    marginRight: 12,
-  },
-  contactInfo: {
-    flex: 1,
-  },
-  contactLabel: {
-    color: "#9ca3af",
-    fontSize: 11,
-  },
-  contactValue: {
-    color: "#ffffff",
-    fontSize: 13,
-    fontWeight: "700",
-    marginTop: 1,
-  },
-  hoursBox: {
-    paddingTop: 8,
-  },
-  hoursLabel: {
-    color: "#d1d5db",
-    fontSize: 12,
-    fontWeight: "600",
-    marginBottom: 2,
-  },
-  hoursValue: {
-    color: "#9ca3af",
-    fontSize: 12,
-  },
-  projectCard: {
-    backgroundColor: "rgba(255, 255, 255, 0.03)",
-    borderRadius: 16,
-    padding: 14,
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.05)",
-  },
-  projectTitle: {
-    color: "#6b7280",
-    fontSize: 10,
-    fontWeight: "800",
-    letterSpacing: 1.2,
-    marginBottom: 4,
-  },
-  projectDesc: {
-    color: "#9ca3af",
+  footerVersion: {
+    color: SikaColors.muted,
     fontSize: 11,
     textAlign: "center",
-    lineHeight: 16,
-    marginBottom: 6,
-  },
-  projectVersion: {
-    color: "#6b7280",
-    fontSize: 10,
-    fontWeight: "600",
+    marginTop: SikaSpace.xs,
   },
 });

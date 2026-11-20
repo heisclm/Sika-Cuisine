@@ -1,385 +1,464 @@
-/**
- * @file apps/mobile/src/screens/MenuScreen.tsx
- * @description Customer menu catalog screen with real-time search, category filtering, and offline resilience.
- *
- * CATALOG ARCHITECTURE:
- * 1. Hybrid Data Fetching: Queries GET /api/v1/menu/items on mount and pull-to-refresh; falls back to DEFAULT_MENU_ITEMS if offline.
- * 2. Multi-Criteria Filtering: Combines category pill selection with real-time case-insensitive search queries.
- * 3. Reactive Cart Bar: Sticky bottom banner indicates active portion count and pesewas subtotal with instant checkout routing.
- */
-
-import React, { useState, useMemo, useEffect, useCallback } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  View,
-  Text,
-  StyleSheet,
   FlatList,
-  TextInput,
-  TouchableOpacity,
-  ScrollView,
+  Pressable,
   RefreshControl,
-  ActivityIndicator,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  useWindowDimensions,
+  View,
 } from "react-native";
-import { MenuItemDTO, formatPesewasToGhs } from "@sika/shared";
-import { DishCard } from "../components/DishCard";
+import { Search, SlidersHorizontal, X } from "lucide-react-native";
+import { formatPesewasToGhs } from "@sika/shared";
+import { DishCard, EnrichedMenuItem } from "../components/DishCard";
 import { DishDetailModal } from "../components/DishDetailModal";
+import { RestaurantClocheIcon } from "../components/icons/RestaurantClocheIcon";
 import { OfflineBanner } from "../components/OfflineBanner";
-import { useCart, SelectedOptionChoice } from "../context/CartContext";
+import { EmptyState } from "../components/ui/EmptyState";
+import {
+  DEFAULT_MENU_FILTERS,
+  FilterSheet,
+  MenuFilterState,
+} from "../components/ui/FilterSheet";
+import { DishCardSkeleton } from "../components/ui/Skeleton";
+import { useCart } from "../context/CartContext";
+import { useToast } from "../context/ToastContext";
 import { DEFAULT_MENU_CATEGORIES, DEFAULT_MENU_ITEMS } from "../data/default-menu";
 import { apiRequest } from "../services/api-client";
+import { SikaColors, SikaRadius, SikaSpace } from "../theme";
 
 interface MenuScreenProps {
+  initialCategoryId?: string;
+  initialSearch?: string;
   onNavigateToCart: () => void;
 }
 
-export function MenuScreen({ onNavigateToCart }: MenuScreenProps) {
+/**
+ * Searchable 2-column menu catalog synchronized with live `/menu/items` API
+ * and seamless offline fallback to Sika Cuisine's bundled Sunyani dishes.
+ */
+export function MenuScreen({
+  initialCategoryId = "all",
+  initialSearch = "",
+  onNavigateToCart,
+}: MenuScreenProps) {
+  const { width } = useWindowDimensions();
+  const cardWidth = Math.floor((width - SikaSpace.md * 2 - 10) / 2);
+
   const { addItem, cartSubtotalPesewas, totalItemCount } = useCart();
+  const { success } = useToast();
 
-  const [menuItems, setMenuItems] = useState<MenuItemDTO[]>(DEFAULT_MENU_ITEMS);
-  const [selectedCategory, setSelectedCategory] = useState<string>("all");
-  const [searchQuery, setSearchQuery] = useState<string>("");
-  const [activeModalDish, setActiveModalDish] = useState<MenuItemDTO | null>(null);
-  const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
-  const [isOffline, setIsOffline] = useState<boolean>(false);
-  const [lastSyncTime, setLastSyncTime] = useState<string | null>(null);
+  const [menuItems, setMenuItems] = useState<EnrichedMenuItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [isOffline, setIsOffline] = useState(false);
+  const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(null);
 
-  // Fetch online menu items if server is available
-  const fetchMenuFromApi = useCallback(async () => {
-    try {
-      const response = await apiRequest<{ success: boolean; items: MenuItemDTO[] }>(
-        "/menu/items"
-      );
-      if (response.success && response.data?.items && response.data.items.length > 0) {
-        setMenuItems(response.data.items);
-        setIsOffline(false);
-        setLastSyncTime(new Date().toLocaleTimeString());
-      } else {
-        setIsOffline(true);
-      }
-    } catch {
+  const [activeCategory, setActiveCategory] = useState(initialCategoryId);
+  const [searchQuery, setSearchQuery] = useState(initialSearch);
+  const [filters, setFilters] = useState<MenuFilterState>(DEFAULT_MENU_FILTERS);
+  const [filterVisible, setFilterVisible] = useState(false);
+  const [selectedDish, setSelectedDish] = useState<EnrichedMenuItem | null>(null);
+
+  useEffect(() => {
+    setActiveCategory(initialCategoryId || "all");
+  }, [initialCategoryId]);
+
+  useEffect(() => {
+    setSearchQuery(initialSearch || "");
+  }, [initialSearch]);
+
+  const fetchMenu = useCallback(async (isPull = false) => {
+    if (isPull) setRefreshing(true);
+    else setLoading(true);
+
+    const res = await apiRequest<{ success: boolean; items: EnrichedMenuItem[] }>(
+      "/menu/items?includeUnavailable=true"
+    );
+
+    if (res.success && res.data?.items?.length) {
+      setMenuItems(res.data.items);
+      setIsOffline(false);
+      setLastSyncedAt(new Date().toISOString());
+    } else {
+      setMenuItems(DEFAULT_MENU_ITEMS);
       setIsOffline(true);
     }
+
+    setLoading(false);
+    setRefreshing(false);
   }, []);
 
   useEffect(() => {
-    fetchMenuFromApi();
-  }, [fetchMenuFromApi]);
+    fetchMenu(false);
+  }, [fetchMenu]);
 
-  const onRefresh = async () => {
-    setIsRefreshing(true);
-    await fetchMenuFromApi();
-    setIsRefreshing(false);
-  };
-
-  const filteredDishes = useMemo(() => {
-    return menuItems.filter((dish) => {
-      const matchesCategory =
-        selectedCategory === "all" || dish.categoryId === selectedCategory;
-      const q = searchQuery.toLowerCase().trim();
-      const matchesSearch =
-        q === "" ||
-        dish.name.toLowerCase().includes(q) ||
-        dish.description.toLowerCase().includes(q);
-      return matchesCategory && matchesSearch;
+  const categories = useMemo(() => {
+    const map = new Map<string, string>();
+    menuItems.forEach((item) => {
+      if (item.category?.id && item.category?.name) {
+        map.set(item.category.id, item.category.name);
+      }
     });
-  }, [menuItems, selectedCategory, searchQuery]);
 
-  const handleOpenDishModal = (dish: MenuItemDTO) => {
-    setActiveModalDish(dish);
-  };
+    if (map.size > 0) {
+      return [
+        { id: "all", name: "All Dishes" },
+        ...Array.from(map.entries()).map(([id, name]) => ({ id, name })),
+      ];
+    }
+    return DEFAULT_MENU_CATEGORIES;
+  }, [menuItems]);
 
-  const handleAddToCartFromModal = (
-    dish: MenuItemDTO,
-    quantity: number,
-    selectedOptions: SelectedOptionChoice[],
-    specialInstructions?: string
-  ) => {
-    addItem(dish, quantity, selectedOptions, specialInstructions);
+  const getCategoryName = useCallback((item: EnrichedMenuItem) => {
+    if (item.category?.name) return item.category.name;
+    return (
+      DEFAULT_MENU_CATEGORIES.find((c) => c.id === item.categoryId)?.name || "Menu"
+    );
+  }, []);
+
+  const filteredItems = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    const list = menuItems.filter((item) => {
+      if (activeCategory !== "all") {
+        const matchesId = item.categoryId === activeCategory;
+        const matchesSlug = item.category?.slug === activeCategory;
+        if (!matchesId && !matchesSlug) return false;
+      }
+
+      if (filters.availableOnly && !item.isAvailable) return false;
+      if (filters.maxSpice !== "all" && item.spiceLevel > filters.maxSpice) {
+        return false;
+      }
+
+      if (q) {
+        const haystack = `${item.name} ${item.description} ${getCategoryName(item)}`.toLowerCase();
+        if (!haystack.includes(q)) return false;
+      }
+      return true;
+    });
+
+    list.sort((a, b) => {
+      if (filters.sortBy === "price-asc") return a.basePricePesewas - b.basePricePesewas;
+      if (filters.sortBy === "price-desc") return b.basePricePesewas - a.basePricePesewas;
+      if (filters.sortBy === "prep-time") {
+        return a.preparationTimeMinutes - b.preparationTimeMinutes;
+      }
+      return Number(b.isFeatured) - Number(a.isFeatured) || a.sortOrder - b.sortOrder;
+    });
+
+    return list;
+  }, [menuItems, activeCategory, searchQuery, filters, getCategoryName]);
+
+  const hasActiveFilters =
+    filters.sortBy !== "featured" ||
+    filters.maxSpice !== "all" ||
+    filters.availableOnly;
+
+  const handleQuickAdd = (dish: EnrichedMenuItem) => {
+    if (!dish.isAvailable) return;
+    addItem(dish, 1, []);
+    success("Added to Tray", `${dish.name} added to your tray.`);
   };
 
   return (
-    <View style={styles.container}>
-      {isOffline && (
-        <OfflineBanner
-          isOffline={true}
-          lastSynchronizedAt={lastSyncTime}
-        />
-      )}
+    <View style={styles.root}>
+      <OfflineBanner isOffline={isOffline} lastSynchronizedAt={lastSyncedAt} />
 
-      {/* Search Header */}
-      <View style={styles.searchContainer}>
-        <View style={styles.searchBar}>
-          <Text style={styles.searchIcon}>🔍</Text>
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search Ghanaian dishes, grills, pizzas..."
-            placeholderTextColor="#6b7280"
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            clearButtonMode="while-editing"
-          />
-          {searchQuery.length > 0 && (
-            <TouchableOpacity onPress={() => setSearchQuery("")}>
-              <Text style={styles.clearSearchText}>✕</Text>
-            </TouchableOpacity>
-          )}
+      {/* Search & Filter Toolbar */}
+      <View style={styles.toolbar}>
+        <View style={styles.searchRow}>
+          <View style={styles.searchBox}>
+            <Search size={16} color={SikaColors.muted} />
+            <TextInput
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              placeholder="Search dishes, sides, combos..."
+              placeholderTextColor={SikaColors.muted}
+              style={styles.searchInput}
+            />
+            {searchQuery.length > 0 ? (
+              <Pressable onPress={() => setSearchQuery("")} hitSlop={8}>
+                <X size={16} color={SikaColors.secondaryText} />
+              </Pressable>
+            ) : null}
+          </View>
+
+          <Pressable
+            onPress={() => setFilterVisible(true)}
+            accessibilityRole="button"
+            accessibilityLabel="Open menu filters"
+            style={[styles.filterBtn, hasActiveFilters && styles.filterBtnActive]}
+          >
+            <SlidersHorizontal
+              size={18}
+              color={hasActiveFilters ? SikaColors.accentLight : SikaColors.warmWhite}
+            />
+            {hasActiveFilters ? <View style={styles.filterDot} /> : null}
+          </Pressable>
         </View>
-      </View>
 
-      {/* Horizontal Category Selector */}
-      <View style={styles.categoryScrollWrapper}>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.categoryList}
+          contentContainerStyle={styles.chipsScroll}
         >
-          {DEFAULT_MENU_CATEGORIES.map((cat) => {
-            const isSelected = selectedCategory === cat.id;
+          {categories.map((cat) => {
+            const active = activeCategory === cat.id;
             return (
-              <TouchableOpacity
+              <Pressable
                 key={cat.id}
-                onPress={() => setSelectedCategory(cat.id)}
-                style={[
-                  styles.categoryPill,
-                  isSelected && styles.categoryPillActive,
-                ]}
+                onPress={() => setActiveCategory(cat.id)}
+                style={[styles.chip, active && styles.chipActive]}
               >
-                <Text
-                  style={[
-                    styles.categoryText,
-                    isSelected && styles.categoryTextActive,
-                  ]}
-                >
+                <Text style={[styles.chipText, active && styles.chipTextActive]}>
                   {cat.name}
                 </Text>
-              </TouchableOpacity>
+              </Pressable>
             );
           })}
         </ScrollView>
       </View>
 
-      {/* Dish List */}
-      <FlatList
-        data={filteredDishes}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <DishCard item={item} onPress={handleOpenDishModal} />
-        )}
-        contentContainerStyle={[
-          styles.listContent,
-          totalItemCount > 0 && styles.listContentWithCartBar,
-        ]}
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl
-            refreshing={isRefreshing}
-            onRefresh={onRefresh}
-            tintColor="#e11d48"
-            colors={["#e11d48"]}
-          />
-        }
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyEmoji}>🍽️</Text>
-            <Text style={styles.emptyTitle}>No dishes found</Text>
-            <Text style={styles.emptySubtitle}>
-              Try searching for another dish or choosing a different category.
-            </Text>
-          </View>
-        }
-      />
-
-      {/* Floating Bottom Cart Bar */}
-      {totalItemCount > 0 && (
-        <View style={styles.cartBarWrapper}>
-          <TouchableOpacity
-            activeOpacity={0.9}
-            style={styles.cartBar}
-            onPress={onNavigateToCart}
-          >
-            <View style={styles.cartBarLeft}>
-              <View style={styles.itemCountBadge}>
-                <Text style={styles.itemCountText}>{totalItemCount}</Text>
-              </View>
-              <View>
-                <Text style={styles.cartBarSubtotalLabel}>CART SUB-TOTAL</Text>
-                <Text style={styles.cartBarSubtotalValue}>
-                  {formatPesewasToGhs(cartSubtotalPesewas)}
-                </Text>
-              </View>
-            </View>
-
-            <View style={styles.cartBarRight}>
-              <Text style={styles.cartBarActionText}>Review Order →</Text>
-            </View>
-          </TouchableOpacity>
-        </View>
+      {/* 2-Column Catalog Grid */}
+      {loading ? (
+        <ScrollView contentContainerStyle={styles.skeletonGrid}>
+          {Array.from({ length: 6 }).map((_, idx) => (
+            <DishCardSkeleton key={idx} cardWidth={cardWidth} compact />
+          ))}
+        </ScrollView>
+      ) : (
+        <FlatList
+          key="menu-grid-2col"
+          data={filteredItems}
+          numColumns={2}
+          keyExtractor={(item) => item.id}
+          columnWrapperStyle={styles.gridRow}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={() => fetchMenu(true)}
+              tintColor={SikaColors.accent}
+            />
+          }
+          contentContainerStyle={[
+            styles.listContent,
+            totalItemCount > 0 && styles.listWithFloatingCart,
+          ]}
+          ListEmptyComponent={
+            <EmptyState
+              title="No Dishes Match"
+              description="Try clearing your search term or resetting spice and availability filters."
+              actionLabel="Reset All Filters"
+              onAction={() => {
+                setActiveCategory("all");
+                setSearchQuery("");
+                setFilters(DEFAULT_MENU_FILTERS);
+              }}
+            />
+          }
+          renderItem={({ item }) => (
+            <DishCard
+              dish={item}
+              cardWidth={cardWidth}
+              compact
+              categoryLabel={getCategoryName(item)}
+              onPress={setSelectedDish}
+              onQuickAdd={handleQuickAdd}
+            />
+          )}
+        />
       )}
 
-      {/* Customization Modal */}
+      {/* Floating Cart Bar */}
+      {totalItemCount > 0 ? (
+        <View style={styles.cartBarWrap}>
+          <Pressable onPress={onNavigateToCart} style={styles.cartBar}>
+            <View style={styles.cartBarLeft}>
+              <View style={styles.cartCountPill}>
+                <Text style={styles.cartCountText}>{totalItemCount}</Text>
+              </View>
+              <RestaurantClocheIcon size={18} color={SikaColors.text} />
+              <Text style={styles.cartLabel}>View Your Tray</Text>
+            </View>
+            <Text style={styles.cartPrice}>
+              {formatPesewasToGhs(cartSubtotalPesewas)}
+            </Text>
+          </Pressable>
+        </View>
+      ) : null}
+
       <DishDetailModal
-        visible={activeModalDish !== null}
-        dish={activeModalDish}
-        onClose={() => setActiveModalDish(null)}
-        onAddToCart={handleAddToCartFromModal}
+        visible={Boolean(selectedDish)}
+        dish={selectedDish}
+        onClose={() => setSelectedDish(null)}
+        onAddToCart={(dish, qty, opts, notes) => addItem(dish, qty, opts, notes)}
+      />
+
+      <FilterSheet
+        visible={filterVisible}
+        value={filters}
+        onClose={() => setFilterVisible(false)}
+        onApply={setFilters}
       />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  root: {
     flex: 1,
-    backgroundColor: "#0d0e12",
+    backgroundColor: SikaColors.background,
   },
-  searchContainer: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 8,
+  toolbar: {
+    borderBottomWidth: 1,
+    borderBottomColor: SikaColors.border,
+    paddingTop: SikaSpace.sm + 2,
+    paddingBottom: SikaSpace.md,
+    backgroundColor: SikaColors.background,
   },
-  searchBar: {
+  searchRow: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#161720",
-    borderRadius: 14,
-    borderColor: "rgba(255, 255, 255, 0.08)",
-    borderWidth: 1,
-    paddingHorizontal: 14,
-    height: 46,
+    gap: SikaSpace.sm,
+    paddingHorizontal: SikaSpace.md,
+    marginBottom: SikaSpace.sm + 2,
   },
-  searchIcon: {
-    fontSize: 16,
-    marginRight: 8,
+  searchBox: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: SikaSpace.sm,
+    height: 44,
+    borderRadius: SikaRadius.md,
+    borderWidth: 1,
+    borderColor: SikaColors.border,
+    backgroundColor: SikaColors.surface,
+    paddingHorizontal: SikaSpace.md,
   },
   searchInput: {
     flex: 1,
-    color: "#ffffff",
-    fontSize: 14,
+    color: SikaColors.warmWhite,
+    fontSize: 13,
   },
-  clearSearchText: {
-    color: "#9ca3af",
-    fontSize: 14,
-    paddingHorizontal: 6,
-  },
-  categoryScrollWrapper: {
-    height: 48,
-    marginBottom: 4,
-  },
-  categoryList: {
-    paddingHorizontal: 16,
-    alignItems: "center",
-    gap: 8,
-  },
-  categoryPill: {
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: 20,
-    backgroundColor: "#161720",
-    borderColor: "rgba(255, 255, 255, 0.08)",
+  filterBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: SikaRadius.md,
     borderWidth: 1,
-  },
-  categoryPillActive: {
-    backgroundColor: "#e11d48",
-    borderColor: "#e11d48",
-  },
-  categoryText: {
-    color: "#9ca3af",
-    fontSize: 12,
-    fontWeight: "600",
-  },
-  categoryTextActive: {
-    color: "#ffffff",
-    fontWeight: "700",
-  },
-  listContent: {
-    paddingHorizontal: 16,
-    paddingTop: 10,
-    paddingBottom: 24,
-  },
-  listContentWithCartBar: {
-    paddingBottom: 90,
-  },
-  emptyContainer: {
-    paddingVertical: 60,
+    borderColor: SikaColors.border,
+    backgroundColor: SikaColors.surface,
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: 32,
   },
-  emptyEmoji: {
-    fontSize: 48,
-    marginBottom: 12,
+  filterBtnActive: {
+    borderColor: SikaColors.accent,
+    backgroundColor: SikaColors.accentWash16,
   },
-  emptyTitle: {
-    color: "#ffffff",
-    fontSize: 18,
-    fontWeight: "700",
-    marginBottom: 6,
-  },
-  emptySubtitle: {
-    color: "#9ca3af",
-    fontSize: 13,
-    textAlign: "center",
-  },
-  cartBarWrapper: {
+  filterDot: {
     position: "absolute",
-    bottom: 12,
-    left: 16,
-    right: 16,
+    top: 8,
+    right: 8,
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: SikaColors.accent,
+  },
+  chipsScroll: {
+    paddingHorizontal: SikaSpace.md,
+    gap: SikaSpace.xs + 2,
+  },
+  chip: {
+    paddingHorizontal: SikaSpace.md,
+    paddingVertical: 7,
+    borderRadius: SikaRadius.pill,
+    borderWidth: 1,
+    borderColor: SikaColors.border,
+    backgroundColor: SikaColors.surface,
+  },
+  chipActive: {
+    borderColor: SikaColors.accent,
+    backgroundColor: SikaColors.accent,
+  },
+  chipText: {
+    color: SikaColors.secondaryText,
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  chipTextActive: {
+    color: SikaColors.text,
+  },
+  skeletonGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    paddingHorizontal: SikaSpace.md,
+    paddingTop: SikaSpace.md,
+    gap: 10,
+  },
+  gridRow: {
+    justifyContent: "space-between",
+    gap: 10,
+  },
+  listContent: {
+    paddingHorizontal: SikaSpace.md,
+    paddingTop: SikaSpace.md,
+    paddingBottom: 24,
+  },
+  listWithFloatingCart: {
+    paddingBottom: 92,
+  },
+  cartBarWrap: {
+    position: "absolute",
+    left: SikaSpace.md,
+    right: SikaSpace.md,
+    bottom: SikaSpace.md,
   },
   cartBar: {
-    backgroundColor: "#161720",
-    borderRadius: 18,
-    borderColor: "rgba(225, 29, 72, 0.5)",
-    borderWidth: 1.5,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.4,
+    borderRadius: SikaRadius.xl,
+    backgroundColor: SikaColors.accent,
+    paddingHorizontal: SikaSpace.lg,
+    paddingVertical: 13,
+    shadowColor: "#000000",
+    shadowOpacity: 0.45,
     shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
     elevation: 8,
   },
   cartBarLeft: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
+    gap: SikaSpace.sm,
   },
-  itemCountBadge: {
-    backgroundColor: "#e11d48",
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+  cartCountPill: {
+    minWidth: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: "rgba(16,16,16,0.3)",
     alignItems: "center",
     justifyContent: "center",
+    paddingHorizontal: 6,
   },
-  itemCountText: {
-    color: "#ffffff",
+  cartCountText: {
+    color: SikaColors.text,
+    fontSize: 12,
+    fontWeight: "800",
+    fontVariant: ["tabular-nums"],
+  },
+  cartLabel: {
+    color: SikaColors.text,
     fontSize: 14,
     fontWeight: "800",
   },
-  cartBarSubtotalLabel: {
-    color: "#9ca3af",
-    fontSize: 10,
-    fontWeight: "700",
-    letterSpacing: 0.8,
-  },
-  cartBarSubtotalValue: {
-    color: "#ffffff",
+  cartPrice: {
+    color: SikaColors.text,
     fontSize: 15,
-    fontWeight: "800",
-  },
-  cartBarRight: {
-    backgroundColor: "#e11d48",
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-    borderRadius: 12,
-  },
-  cartBarActionText: {
-    color: "#ffffff",
-    fontSize: 13,
-    fontWeight: "700",
+    fontWeight: "900",
+    fontVariant: ["tabular-nums"],
   },
 });

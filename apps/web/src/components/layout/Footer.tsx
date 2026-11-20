@@ -8,343 +8,216 @@ import {
   ShieldCheck,
   MessageCircle,
   Banknote,
+  CreditCard,
+  Smartphone,
   Navigation,
 } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
+import { CUSTOMER_NAV_LINKS, RESTAURANT_INFO } from "@/lib/navigation";
 
 export function Footer() {
   const [isKitchenOpen, setIsKitchenOpen] = useState(true);
 
-  // Calculate live kitchen operating status according to Sunyani, Ghana time (GMT / UTC+0)
+  // Compute Sunyani operating status cleanly against GMT / UTC+0
   useEffect(() => {
     const checkKitchenStatus = () => {
       const now = new Date();
       const utcHours = now.getUTCHours();
-      const utcDay = now.getUTCDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
-
+      const utcDay = now.getUTCDay();
       if (utcDay === 0) {
-        // Sunday: 12:00 PM (noon) to 9:00 PM GMT
         setIsKitchenOpen(utcHours >= 12 && utcHours < 21);
       } else {
-        // Monday - Saturday: 10:00 AM to 10:00 PM GMT
         setIsKitchenOpen(utcHours >= 10 && utcHours < 22);
       }
     };
 
     checkKitchenStatus();
-    const interval = setInterval(checkKitchenStatus, 60000);
-    return () => clearInterval(interval);
+    const interval = window.setInterval(checkKitchenStatus, 60000);
+    return () => window.clearInterval(interval);
   }, []);
 
   return (
-    <footer className="w-full border-t border-white/[0.06] bg-[#111215] text-gray-400 pt-16 pb-12 relative overflow-hidden select-none">
+    <footer className="w-full border-t border-[#333333] bg-[#101010] text-[#A3A3A3] pt-14 pb-10">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        
-        {/* MAIN NAVIGATION GRID */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-10 lg:gap-8 mb-12">
-          
-          {/* Brand Identity Column */}
-          <div className="sm:col-span-2 lg:col-span-5 space-y-4">
+        <div className="grid grid-cols-2 lg:grid-cols-12 gap-x-6 gap-y-10 lg:gap-8 mb-12">
+          {/* Brand Column */}
+          <div className="col-span-2 lg:col-span-5 space-y-4">
             <Link href="/" className="inline-flex items-center gap-3 group">
-              <Logo size={44} className="shadow-sm group-hover:scale-105 transition-all duration-300" />
-              <div className="flex flex-col">
-                <span className="font-serif text-2xl font-black tracking-tight text-white flex items-center leading-none">
-                  Sika Cuisine<span className="text-brand-red ml-0.5">.</span>
+              <Logo size={42} className="transition-transform duration-300 group-hover:scale-105" />
+              <div>
+                <span className="font-serif text-2xl font-black tracking-tight text-white block leading-none">
+                  {RESTAURANT_INFO.brandName}
+                  <span className="text-[#D71920] ml-0.5">.</span>
                 </span>
-                <span className="text-[10px] tracking-[0.2em] uppercase font-semibold text-gray-400 mt-1 flex items-center gap-1 font-mono">
-                  <MapPin className="h-2.5 w-2.5 text-brand-red" /> Sunyani Central, Ghana
+                <span className="mt-1 flex items-center gap-1 font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-[#A3A3A3]">
+                  <MapPin className="h-3 w-3 text-[#F0444A]" aria-hidden="true" />
+                  {RESTAURANT_INFO.city}
                 </span>
               </div>
             </Link>
 
-            <p className="text-xs sm:text-sm leading-relaxed text-gray-400 font-light max-w-md pr-2">
-              Authentic slow-simmered Ghanaian gastronomy and vibrant lounge dining. Whole charcoal-grilled tilapia with banku, rich smoky jollof, traditional swallows with light soup, and stone-baked pizzas delivered fresh across Sunyani.
+            <p className="max-w-md text-xs sm:text-sm leading-relaxed text-[#A3A3A3]">
+              Authentic Ghanaian delicacies prepared fresh to order in Sunyani. Charcoal-grilled tilapia with banku, slow-simmered jollof, traditional swallows, fruit rice, and stone-baked pizza for pickup or delivery.
             </p>
 
-            <div className="pt-1 flex items-center gap-2 text-xs">
-              <div className="flex items-center gap-1.5 text-emerald-400 bg-emerald-950/30 border border-emerald-800/40 px-3 py-1.5 rounded-full">
-                <ShieldCheck className="h-3.5 w-3.5" />
-                <span className="font-medium text-[11px]">Prepared Fresh to Order &bull; Sunyani</span>
-              </div>
+            <div className="inline-flex items-center gap-2 rounded-full border border-[#22C55E]/35 bg-[#22C55E]/10 px-3 py-1.5 text-[11px] font-semibold text-[#4ADE80]">
+              <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />
+              <span>Freshly cooked in Sunyani Central</span>
             </div>
           </div>
 
-          {/* Column 2: Culinary Highlights */}
-          <div className="lg:col-span-3 space-y-3">
-            <h4 className="text-xs font-bold text-white uppercase tracking-[0.2em] font-serif border-l-2 border-brand-red pl-2.5">
-              Explore Our Menu
+          {/* Navigation Column (Same shared destinations) */}
+          <div className="col-span-1 lg:col-span-2 space-y-3">
+            <h4 className="border-l-2 border-[#D71920] pl-2.5 font-serif text-xs font-bold uppercase tracking-[0.18em] text-white">
+              Navigate
             </h4>
             <ul className="space-y-2.5 text-xs sm:text-sm">
+              {CUSTOMER_NAV_LINKS.map((link) => (
+                <li key={link.href}>
+                  <Link href={link.href} className="text-[#A3A3A3] hover:text-[#F5F1EA] transition-colors">
+                    {link.name}
+                  </Link>
+                </li>
+              ))}
               <li>
-                <Link href="/menu" className="text-gray-300 hover:text-white transition-colors">
-                  Charcoal-Grilled Tilapia & Banku
-                </Link>
-              </li>
-              <li>
-                <Link href="/menu" className="text-gray-300 hover:text-white transition-colors">
-                  Smoky Jollof & Grilled Chicken
-                </Link>
-              </li>
-              <li>
-                <Link href="/menu" className="text-gray-300 hover:text-white transition-colors">
-                  Pounded Fufu & Goat Light Soup
-                </Link>
-              </li>
-              <li>
-                <Link href="/menu" className="text-gray-300 hover:text-white transition-colors">
-                  Sunyani Pineapple Fruit Rice
-                </Link>
-              </li>
-              <li>
-                <Link href="/menu" className="text-gray-300 hover:text-white transition-colors">
-                  SIKA Special Combo (De Mixture)
-                </Link>
-              </li>
-              <li>
-                <Link href="/menu" className="text-gray-300 hover:text-white transition-colors">
-                  Artisan Stone-Baked Pizza
+                <Link href="/account" className="text-[#A3A3A3] hover:text-[#F5F1EA] transition-colors">
+                  Customer Account
                 </Link>
               </li>
             </ul>
           </div>
 
-          {/* Column 3: Guest Service */}
-          <div className="lg:col-span-2 space-y-3">
-            <h4 className="text-xs font-bold text-white uppercase tracking-[0.2em] font-serif border-l-2 border-brand-red pl-2.5">
-              Guest Service
+          {/* Ordering & Support */}
+          <div className="col-span-1 lg:col-span-2 space-y-3">
+            <h4 className="border-l-2 border-[#D71920] pl-2.5 font-serif text-xs font-bold uppercase tracking-[0.18em] text-white">
+              Service
             </h4>
             <ul className="space-y-2.5 text-xs sm:text-sm">
               <li>
-                <Link href="/orders" className="text-gray-300 hover:text-white transition-colors flex items-center gap-1.5">
-                  <Navigation className="h-3.5 w-3.5 text-brand-red flex-shrink-0" />
-                  <span>Track Active Order</span>
+                <Link
+                  href="/orders"
+                  className="inline-flex items-center gap-1.5 text-[#A3A3A3] hover:text-[#F5F1EA] transition-colors"
+                >
+                  <Navigation className="h-3.5 w-3.5 text-[#F0444A]" aria-hidden="true" />
+                  <span>Track an Order</span>
                 </Link>
               </li>
               <li>
-                <Link href="/about" className="text-gray-300 hover:text-white transition-colors">
-                  Our Culinary Story
+                <Link href="/checkout" className="text-[#A3A3A3] hover:text-[#F5F1EA] transition-colors">
+                  Checkout
                 </Link>
               </li>
               <li>
-                <Link href="/contact" className="text-gray-300 hover:text-white transition-colors">
-                  Table Reservations & Inquiries
+                <Link href="/terms" className="text-[#737373] hover:text-[#F5F1EA] transition-colors">
+                  Delivery Zones &amp; Terms
                 </Link>
               </li>
               <li>
-                <Link href="/terms" className="text-gray-400 hover:text-white transition-colors">
-                  Delivery Zones & Terms
-                </Link>
-              </li>
-              <li>
-                <Link href="/privacy" className="text-gray-400 hover:text-white transition-colors">
+                <Link href="/privacy" className="text-[#737373] hover:text-[#F5F1EA] transition-colors">
                   Privacy Policy
                 </Link>
               </li>
             </ul>
           </div>
 
-          {/* Column 4: Hours & Sunyani Dispatch */}
-          <div className="sm:col-span-2 lg:col-span-2 space-y-4">
-            <div className="space-y-3">
+          {/* Hours & Contact */}
+          <div className="col-span-2 lg:col-span-3 space-y-4">
+            <div className="space-y-2.5">
               <div className="flex items-center justify-between">
-                <h4 className="text-xs font-bold text-white uppercase tracking-[0.2em] font-serif border-l-2 border-brand-red pl-2.5">
-                  Hours
+                <h4 className="border-l-2 border-[#D71920] pl-2.5 font-serif text-xs font-bold uppercase tracking-[0.18em] text-white">
+                  Kitchen Hours
                 </h4>
-                {/* Dynamic Live Kitchen Status Pill */}
-                <div
-                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold border ${
+                <span
+                  className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[10px] font-bold ${
                     isKitchenOpen
-                      ? "bg-emerald-950/60 border-emerald-700/60 text-emerald-400"
-                      : "bg-[#1c1d22] border-white/10 text-gray-400"
+                      ? "border-[#22C55E]/35 bg-[#22C55E]/15 text-[#4ADE80]"
+                      : "border-[#333333] bg-[#1C1C1C] text-[#A3A3A3]"
                   }`}
                 >
                   <span
                     className={`h-1.5 w-1.5 rounded-full ${
-                      isKitchenOpen ? "bg-emerald-400 animate-pulse" : "bg-gray-500"
+                      isKitchenOpen ? "bg-[#22C55E]" : "bg-[#737373]"
                     }`}
                   />
-                  <span>{isKitchenOpen ? "Open" : "Closed"}</span>
-                </div>
+                  {isKitchenOpen ? "Open" : "Closed"}
+                </span>
               </div>
 
-              <div className="rounded-xl bg-[#1a1b20] p-2.5 border border-white/5 space-y-1 text-xs">
-                <div className="flex justify-between font-semibold text-white">
-                  <span>Mon — Sat</span>
-                  <span className="font-mono text-gray-300">10am — 10pm</span>
+              <div className="rounded-2xl border border-[#333333] bg-[#1C1C1C] p-3 text-xs space-y-1.5">
+                <div className="flex justify-between text-[#F5F1EA]">
+                  <span className="font-medium">Mon — Sat</span>
+                  <span className="font-mono text-[#A3A3A3]">10:00 AM – 10:00 PM</span>
                 </div>
-                <div className="flex justify-between font-semibold text-white pt-1 border-t border-white/5">
-                  <span>Sunday</span>
-                  <span className="font-mono text-gray-300">12pm — 9pm</span>
+                <div className="flex justify-between border-t border-[#333333] pt-1.5 text-[#F5F1EA]">
+                  <span className="font-medium">Sunday</span>
+                  <span className="font-mono text-[#A3A3A3]">12:00 PM – 9:00 PM</span>
                 </div>
               </div>
             </div>
 
-            <div className="space-y-2 text-xs">
-              <span className="text-gray-400 font-semibold uppercase tracking-wider text-[10px] block">
-                Direct Kitchen Hotline
-              </span>
-              <div className="flex flex-col gap-2">
-                <a
-                  href="tel:+233533376760"
-                  className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-[#1a1b20] hover:bg-[#25272e] text-white font-mono text-xs border border-white/10 transition-colors"
-                >
-                  <Phone className="h-3.5 w-3.5 text-brand-red" />
-                  <span>0533376760</span>
-                </a>
-                <a
-                  href="https://wa.me/233533376760?text=Hello%20Sika%20Cuisine,%20I%20would%20like%20to%20order%20food"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-950/60 hover:bg-emerald-900/60 text-emerald-300 font-semibold text-xs border border-emerald-800/60 transition-colors"
-                >
-                  <MessageCircle className="h-3.5 w-3.5 text-emerald-400" />
-                  <span>WhatsApp Kitchen</span>
-                </a>
-              </div>
-            </div>
-
-            <div className="text-[11px] text-gray-400 pt-1">
-              <div className="flex items-start gap-1.5">
-                <MapPin className="h-3.5 w-3.5 text-brand-red mt-0.5 flex-shrink-0" />
-                <span>Commercial Rd, Sunyani Central (Opposite Total)</span>
-              </div>
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <a
+                href={`tel:${RESTAURANT_INFO.primaryPhoneIntl}`}
+                className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-[#333333] bg-[#1C1C1C] hover:border-[#D71920]/50 px-3 py-2.5 font-mono font-semibold text-[#F5F1EA] transition-colors"
+              >
+                <Phone className="h-3.5 w-3.5 text-[#F0444A]" aria-hidden="true" />
+                <span>{RESTAURANT_INFO.primaryPhone}</span>
+              </a>
+              <a
+                href={`${RESTAURANT_INFO.whatsappBaseUrl}?text=Hello%20Sika%20Cuisine,%20I%20would%20like%20to%20order`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-[#22C55E]/35 bg-[#22C55E]/10 hover:bg-[#22C55E]/20 px-3 py-2.5 font-semibold text-[#4ADE80] transition-colors"
+              >
+                <MessageCircle className="h-3.5 w-3.5" aria-hidden="true" />
+                <span>WhatsApp</span>
+              </a>
             </div>
           </div>
         </div>
 
-        {/* AUTHENTIC PAYMENT METHODS STRIP */}
-        <div className="pt-6 pb-6 border-t border-white/[0.06] space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+        {/* Supported Payment Methods (Cohesive Charcoal & Red Surface) */}
+        <div className="border-t border-[#333333] pt-6 pb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
             <span className="text-xs font-bold uppercase tracking-wider text-white font-serif block">
-              Payment Methods Accepted
+              Supported Payment Options
             </span>
-            <div className="flex items-center gap-2 text-[11px] text-gray-400">
-              <ShieldCheck className="h-4 w-4 text-emerald-400 flex-shrink-0" />
-              <span>Encrypted via Paystack with instant Mobile Money prompt</span>
-            </div>
+            <span className="text-[11px] text-[#737373]">
+              Configured for Paystack (MoMo &amp; Cards), Cash on Delivery, and Cash on Collection.
+            </span>
           </div>
 
-          {/* Payment Badges */}
-          <div className="flex flex-wrap items-center gap-2">
-            {/* Paystack Official Logo Badge */}
-            <div
-              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#081524] border border-[#00C3F7]/30 shadow-sm"
-              title="Official Paystack Gateway Integration"
-            >
-              <svg width="20" height="18" viewBox="0 0 20 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect y="1" width="20" height="3" rx="1.5" fill="#00C3F7" />
-                <rect y="7.5" width="13" height="3" rx="1.5" fill="#00C3F7" />
-                <rect y="14" width="20" height="3" rx="1.5" fill="#00C3F7" />
-              </svg>
-              <span className="font-sans font-bold text-xs tracking-tight text-white">paystack</span>
-            </div>
-
-            {/* MTN Mobile Money Official Badge */}
-            <div
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#FFCC00] text-black shadow-sm"
-              title="MTN Mobile Money Ghana"
-            >
-              <div className="w-5 h-3 rounded-full border border-black flex items-center justify-center text-[7px] font-black leading-none tracking-tighter">
-                MTN
-              </div>
-              <span className="font-sans font-black text-xs tracking-tight">MoMo</span>
-            </div>
-
-            {/* Telecel Cash Official Badge */}
-            <div
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#E60000] text-white shadow-sm"
-              title="Telecel Cash Ghana (formerly Vodafone Cash)"
-            >
-              <div className="w-3.5 h-3.5 rounded-full bg-white flex items-center justify-center text-[#E60000] font-black text-[9px] leading-none">
-                t
-              </div>
-              <span className="font-sans font-bold text-xs tracking-tight">telecel cash</span>
-            </div>
-
-            {/* AT Money Official Badge */}
-            <div
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#002D62] text-white border border-blue-400/30 shadow-sm"
-              title="AT Money (AirtelTigo)"
-            >
-              <span className="text-[#FF6600] font-black text-xs">at</span>
-              <span className="font-sans font-bold text-xs tracking-tight text-white">money</span>
-            </div>
-
-            {/* Visa Badge */}
-            <div
-              className="inline-flex items-center px-3 py-1.5 rounded-xl bg-[#1A1F71] text-white font-sans font-black italic text-xs tracking-wider border border-blue-400/30 shadow-sm"
-              title="Visa Debit & Credit Cards"
-            >
-              VISA
-            </div>
-
-            {/* Mastercard Badge */}
-            <div
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#1d1f27] border border-white/10 shadow-sm"
-              title="Mastercard Global Payments"
-            >
-              <div className="flex -space-x-1.5">
-                <span className="w-3.5 h-3.5 rounded-full bg-[#EB001B] inline-block" />
-                <span className="w-3.5 h-3.5 rounded-full bg-[#F79E1B]/95 inline-block" />
-              </div>
-              <span className="text-[11px] text-gray-200 font-semibold tracking-tight">mastercard</span>
-            </div>
-
-            {/* Cash on Delivery Badge */}
-            <div
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-950/60 border border-emerald-700/50 text-emerald-300 text-xs font-semibold shadow-sm"
-              title="Cash on Delivery available across Sunyani"
-            >
-              <Banknote className="h-3.5 w-3.5 text-emerald-400" />
-              <span>Cash on Handover</span>
-            </div>
+          <div className="flex flex-wrap items-center gap-2 text-xs">
+            <span className="inline-flex items-center gap-1.5 rounded-xl border border-[#333333] bg-[#1C1C1C] px-3 py-1.5 font-semibold text-[#F5F1EA]">
+              <CreditCard className="h-3.5 w-3.5 text-[#F0444A]" aria-hidden="true" />
+              Paystack
+            </span>
+            <span className="inline-flex items-center gap-1.5 rounded-xl border border-[#333333] bg-[#1C1C1C] px-3 py-1.5 font-semibold text-[#F5F1EA]">
+              <Smartphone className="h-3.5 w-3.5 text-[#F0444A]" aria-hidden="true" />
+              Mobile Money
+            </span>
+            <span className="inline-flex items-center gap-1.5 rounded-xl border border-[#333333] bg-[#1C1C1C] px-3 py-1.5 font-semibold text-[#F5F1EA]">
+              <Banknote className="h-3.5 w-3.5 text-[#4ADE80]" aria-hidden="true" />
+              Cash on Handover
+            </span>
           </div>
         </div>
 
-        {/* BOTTOM LEGAL & COPYRIGHT ROW */}
-        <div className="pt-6 border-t border-white/[0.06] flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-gray-500">
-          <div className="flex flex-wrap items-center justify-center md:justify-start gap-x-3 gap-y-1 text-center md:text-left">
-            <span>&copy; {new Date().getFullYear()} Sika Cuisine Restaurant. All rights reserved.</span>
-            <span className="hidden sm:inline">&bull;</span>
-            <span>Commercial Road, Sunyani Central, Bono Region, Ghana</span>
-            <span className="hidden sm:inline">&bull;</span>
-            <Link href="/terms" className="hover:text-gray-300 transition-colors underline-offset-2 hover:underline">
+        {/* Legal Row */}
+        <div className="border-t border-[#333333] pt-6 flex flex-col md:flex-row items-center justify-between gap-3 text-xs text-[#737373]">
+          <p className="text-center md:text-left">
+            &copy; {new Date().getFullYear()} {RESTAURANT_INFO.brandName} &bull; {RESTAURANT_INFO.address}
+          </p>
+          <div className="flex items-center gap-4">
+            <Link href="/terms" className="hover:text-[#F5F1EA] transition-colors">
               Terms
             </Link>
-            <span>&bull;</span>
-            <Link href="/privacy" className="hover:text-gray-300 transition-colors underline-offset-2 hover:underline">
+            <Link href="/privacy" className="hover:text-[#F5F1EA] transition-colors">
               Privacy
             </Link>
-          </div>
-
-          <div className="flex items-center gap-4 text-gray-400 text-xs">
-            <span className="text-gray-500">Connect:</span>
-            <a
-              href="https://wa.me/233533376760"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hover:text-emerald-400 transition-colors font-medium"
-            >
-              WhatsApp
-            </a>
-            <span>&bull;</span>
-            <a
-              href="https://instagram.com/sikacuisine.restaurant"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hover:text-pink-400 transition-colors font-medium"
-            >
-              Instagram
-            </a>
-            <span>&bull;</span>
-            <a
-              href="https://facebook.com/sikacuisine"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hover:text-blue-400 transition-colors font-medium"
-            >
-              Facebook
-            </a>
+            <Link href="/admin/login" className="hover:text-[#F5F1EA] transition-colors">
+              Staff Terminal
+            </Link>
           </div>
         </div>
       </div>

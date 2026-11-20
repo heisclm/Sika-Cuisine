@@ -1,183 +1,409 @@
-import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity, Image } from "react-native";
+import React, { useRef } from "react";
+import { Animated, Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { Clock, Flame, Plus, SlidersHorizontal } from "lucide-react-native";
 import { MenuItemDTO, formatPesewasToGhs } from "@sika/shared";
+import { resolveDishImageSource } from "../data/dish-images";
+import { SikaColors, SikaRadius, SikaSpace } from "../theme";
+import { Badge } from "./ui/Badge";
+
+export type EnrichedMenuItem = MenuItemDTO & {
+  category?: { id: string; name: string; slug: string };
+  categoryName?: string;
+};
 
 interface DishCardProps {
-  item: MenuItemDTO;
-  onPress: (item: MenuItemDTO) => void;
+  dish: EnrichedMenuItem;
+  categoryLabel?: string;
+  cardWidth?: number;
+  compact?: boolean;
+  onPress: (dish: EnrichedMenuItem) => void;
+  onQuickAdd: (dish: EnrichedMenuItem) => void;
 }
 
-export function DishCard({ item, onPress }: DishCardProps) {
-  const isAvailable = item.isAvailable;
+const SPICE_NAMES = ["No Spice", "Mild", "Medium", "Hot", "Fiery"];
+
+/**
+ * Photographic Sika menu card supporting both compact 2-column mobile grid tiles
+ * and full-width featured layout with tactile spring press feedback.
+ */
+export function DishCard({
+  dish,
+  categoryLabel,
+  cardWidth,
+  compact = true,
+  onPress,
+  onQuickAdd,
+}: DishCardProps) {
+  const scale = useRef(new Animated.Value(1)).current;
+  const hasOptions = Boolean(dish.optionGroups && dish.optionGroups.length > 0);
+  const spiceLabel =
+    dish.spiceLevel > 0 ? SPICE_NAMES[Math.min(dish.spiceLevel, 4)] : null;
+
+  const animateScale = (toValue: number) => {
+    Animated.spring(scale, {
+      toValue,
+      damping: 22,
+      stiffness: 300,
+      useNativeDriver: true,
+    }).start();
+  };
 
   return (
-    <TouchableOpacity
-      activeOpacity={isAvailable ? 0.85 : 1}
-      onPress={() => isAvailable && onPress(item)}
-      style={[styles.card, !isAvailable && styles.cardDisabled]}
+    <Animated.View
+      style={[
+        compact ? styles.wrapperCompact : styles.wrapper,
+        cardWidth ? { width: cardWidth } : undefined,
+        { transform: [{ scale }] },
+      ]}
     >
-      <View style={styles.cardHeader}>
-        {/* Availability / Tag */}
-        <View style={styles.tagRow}>
-          {item.isFeatured && (
-            <View style={styles.featuredBadge}>
-              <Text style={styles.featuredBadgeText}>CHEF SPECIAL</Text>
-            </View>
-          )}
-          <View style={styles.timeBadge}>
-            <Text style={styles.timeBadgeText}>{item.preparationTimeMinutes} MIN</Text>
+      <Pressable
+        onPress={() => onPress(dish)}
+        onPressIn={() => animateScale(0.985)}
+        onPressOut={() => animateScale(1)}
+        accessibilityRole="button"
+        accessibilityLabel={`${dish.name}, ${formatPesewasToGhs(dish.basePricePesewas)}`}
+        style={[
+          styles.card,
+          compact && styles.cardCompact,
+          !dish.isAvailable && styles.cardDimmed,
+        ]}
+      >
+        <View style={[styles.imageContainer, compact && styles.imageContainerCompact]}>
+          <Image
+            source={resolveDishImageSource(dish.imageUrl)}
+            style={[styles.image, !dish.isAvailable && styles.imageSoldOut]}
+            resizeMode="cover"
+          />
+          <LinearGradient
+            colors={["rgba(16,16,16,0.12)", "rgba(16,16,16,0.35)", "rgba(16,16,16,0.92)"]}
+            locations={[0, 0.55, 1]}
+            style={StyleSheet.absoluteFill}
+          />
+
+          {/* Top Badges */}
+          <View style={[styles.topBadgeRow, compact && styles.topBadgeRowCompact]}>
+            {!dish.isAvailable ? (
+              <Badge label="Sold Out" variant="error" />
+            ) : dish.isFeatured ? (
+              <Badge label={compact ? "Top" : "Signature"} variant="brand" />
+            ) : null}
           </View>
-          {!isAvailable && (
-            <View style={styles.soldOutBadge}>
-              <Text style={styles.soldOutBadgeText}>SOLD OUT</Text>
+
+          {/* Bottom Scrim Overlay Meta */}
+          <View style={[styles.imageFooterRow, compact && styles.imageFooterRowCompact]}>
+            {!compact && categoryLabel ? (
+              <Text style={styles.categoryEyebrow}>{categoryLabel}</Text>
+            ) : (
+              <View />
+            )}
+            <View style={[styles.prepPill, compact && styles.prepPillCompact]}>
+              <Clock size={compact ? 10 : 12} color={SikaColors.warmWhite} />
+              <Text style={[styles.prepText, compact && styles.prepTextCompact]}>
+                {dish.preparationTimeMinutes}m
+              </Text>
             </View>
-          )}
+          </View>
         </View>
 
-        {/* Dish Name */}
-        <Text style={styles.dishName} numberOfLines={2}>
-          {item.name}
-        </Text>
+        <View style={[styles.content, compact && styles.contentCompact]}>
+          <View>
+            <View style={styles.metaTopRow}>
+              <Text
+                style={[styles.categoryLine, compact && styles.categoryLineCompact]}
+                numberOfLines={1}
+              >
+                {categoryLabel || "Sika Kitchen"}
+              </Text>
+              {spiceLabel ? (
+                <View style={styles.spiceRowInline}>
+                  <Flame size={compact ? 10 : 12} color={SikaColors.accentLight} />
+                  {!compact ? <Text style={styles.spiceText}>{spiceLabel}</Text> : null}
+                </View>
+              ) : null}
+            </View>
 
-        {/* Description */}
-        <Text style={styles.dishDescription} numberOfLines={2}>
-          {item.description}
-        </Text>
-      </View>
+            <Text
+              style={[styles.title, compact && styles.titleCompact]}
+              numberOfLines={2}
+            >
+              {dish.name}
+            </Text>
+            <Text
+              style={[styles.description, compact && styles.descriptionCompact]}
+              numberOfLines={2}
+            >
+              {dish.description}
+            </Text>
+          </View>
 
-      {/* Footer: Price & Add Button */}
-      <View style={styles.cardFooter}>
-        <View>
-          <Text style={styles.priceLabel}>PRICE</Text>
-          <Text style={styles.priceValue}>
-            {formatPesewasToGhs(item.basePricePesewas)}
-          </Text>
+          <View style={[styles.footerRow, compact && styles.footerRowCompact]}>
+            <Text
+              style={[styles.price, compact && styles.priceCompact]}
+              numberOfLines={1}
+            >
+              {formatPesewasToGhs(dish.basePricePesewas)}
+            </Text>
+
+            <Pressable
+              onPress={(e) => {
+                e.stopPropagation();
+                if (!dish.isAvailable) {
+                  onPress(dish);
+                  return;
+                }
+                if (hasOptions) {
+                  onPress(dish);
+                } else {
+                  onQuickAdd(dish);
+                }
+              }}
+              accessibilityRole="button"
+              accessibilityLabel={
+                !dish.isAvailable
+                  ? `${dish.name} unavailable`
+                  : hasOptions
+                  ? `Customize ${dish.name}`
+                  : `Add ${dish.name} to cart`
+              }
+              style={[
+                styles.actionBtn,
+                compact && styles.actionBtnCompact,
+                !dish.isAvailable && styles.actionBtnDisabled,
+              ]}
+            >
+              {!dish.isAvailable ? (
+                <Text style={styles.actionBtnDisabledText}>
+                  {compact ? "Out" : "Sold Out"}
+                </Text>
+              ) : hasOptions ? (
+                <>
+                  <SlidersHorizontal size={compact ? 12 : 14} color={SikaColors.text} />
+                  <Text style={[styles.actionBtnText, compact && styles.actionBtnTextCompact]}>
+                    Select
+                  </Text>
+                </>
+              ) : (
+                <>
+                  <Plus size={compact ? 13 : 15} color={SikaColors.text} />
+                  <Text style={[styles.actionBtnText, compact && styles.actionBtnTextCompact]}>
+                    Add
+                  </Text>
+                </>
+              )}
+            </Pressable>
+          </View>
         </View>
-
-        <TouchableOpacity
-          disabled={!isAvailable}
-          onPress={() => onPress(item)}
-          style={[styles.addButton, !isAvailable && styles.addButtonDisabled]}
-        >
-          <Text style={styles.addButtonText}>
-            {isAvailable ? "+ Add to Cart" : "Unavailable"}
-          </Text>
-        </TouchableOpacity>
-      </View>
-    </TouchableOpacity>
+      </Pressable>
+    </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
+  wrapper: {
+    marginBottom: SikaSpace.lg,
+  },
+  wrapperCompact: {
+    marginBottom: 10,
+  },
   card: {
-    backgroundColor: "#161720",
-    borderRadius: 24,
-    borderColor: "rgba(255, 255, 255, 0.08)",
+    flex: 1,
+    backgroundColor: SikaColors.surface,
+    borderRadius: SikaRadius.xl,
     borderWidth: 1,
-    padding: 18,
-    marginBottom: 14,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 3,
+    borderColor: SikaColors.border,
+    overflow: "hidden",
   },
-  cardDisabled: {
-    opacity: 0.55,
+  cardCompact: {
+    borderRadius: SikaRadius.lg,
   },
-  cardHeader: {
-    marginBottom: 14,
+  cardDimmed: {
+    borderColor: SikaColors.borderSubtle,
   },
-  tagRow: {
+  imageContainer: {
+    height: 185,
+    width: "100%",
+    backgroundColor: SikaColors.elevated,
+  },
+  imageContainerCompact: {
+    height: 118,
+  },
+  image: {
+    width: "100%",
+    height: "100%",
+  },
+  imageSoldOut: {
+    opacity: 0.45,
+  },
+  topBadgeRow: {
+    position: "absolute",
+    top: SikaSpace.md,
+    left: SikaSpace.md,
     flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginBottom: 8,
+    gap: SikaSpace.sm,
   },
-  featuredBadge: {
-    backgroundColor: "rgba(225, 29, 72, 0.15)",
-    borderColor: "rgba(225, 29, 72, 0.4)",
-    borderWidth: 1,
-    borderRadius: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
+  topBadgeRowCompact: {
+    top: SikaSpace.xs,
+    left: SikaSpace.xs,
   },
-  featuredBadgeText: {
-    color: "#e11d48",
-    fontSize: 10,
-    fontWeight: "700",
-    letterSpacing: 0.5,
-  },
-  timeBadge: {
-    backgroundColor: "rgba(255, 255, 255, 0.05)",
-    borderColor: "rgba(255, 255, 255, 0.1)",
-    borderWidth: 1,
-    borderRadius: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-  },
-  timeBadgeText: {
-    color: "#9ca3af",
-    fontSize: 10,
-    fontWeight: "600",
-  },
-  soldOutBadge: {
-    backgroundColor: "rgba(185, 28, 28, 0.2)",
-    borderColor: "rgba(220, 38, 38, 0.4)",
-    borderWidth: 1,
-    borderRadius: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-  },
-  soldOutBadgeText: {
-    color: "#ef4444",
-    fontSize: 10,
-    fontWeight: "700",
-  },
-  dishName: {
-    color: "#ffffff",
-    fontSize: 17,
-    fontWeight: "800",
-    lineHeight: 22,
-    marginBottom: 6,
-    textAlign: "left",
-  },
-  dishDescription: {
-    color: "#9ca3af",
-    fontSize: 13,
-    lineHeight: 18,
-  },
-  cardFooter: {
+  imageFooterRow: {
+    position: "absolute",
+    bottom: SikaSpace.md,
+    left: SikaSpace.md,
+    right: SikaSpace.md,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    borderTopColor: "rgba(255, 255, 255, 0.06)",
-    borderTopWidth: 1,
-    paddingTop: 12,
   },
-  priceLabel: {
-    color: "#6b7280",
-    fontSize: 10,
+  imageFooterRowCompact: {
+    bottom: SikaSpace.xs,
+    left: SikaSpace.xs,
+    right: SikaSpace.xs,
+  },
+  categoryEyebrow: {
+    color: SikaColors.warmWhite,
+    fontSize: 11,
     fontWeight: "700",
-    letterSpacing: 0.8,
+    textTransform: "uppercase",
+    letterSpacing: 1.2,
   },
-  priceValue: {
-    color: "#e11d48",
+  prepPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: "rgba(28, 28, 28, 0.88)",
+    borderWidth: 1,
+    borderColor: SikaColors.border,
+    paddingHorizontal: SikaSpace.sm + 2,
+    paddingVertical: 4,
+    borderRadius: SikaRadius.pill,
+  },
+  prepPillCompact: {
+    paddingHorizontal: 7,
+    paddingVertical: 2.5,
+  },
+  prepText: {
+    color: SikaColors.warmWhite,
+    fontSize: 11,
+    fontWeight: "700",
+  },
+  prepTextCompact: {
+    fontSize: 10,
+  },
+  content: {
+    flex: 1,
+    justifyContent: "space-between",
+    padding: SikaSpace.lg,
+  },
+  contentCompact: {
+    padding: 10,
+  },
+  metaTopRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 4,
+    marginBottom: 3,
+  },
+  categoryLine: {
+    flex: 1,
+    color: SikaColors.accentLight,
+    fontSize: 11,
+    fontWeight: "800",
+    textTransform: "uppercase",
+    letterSpacing: 0.9,
+  },
+  categoryLineCompact: {
+    fontSize: 9.5,
+    letterSpacing: 0.7,
+  },
+  spiceRowInline: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+  },
+  title: {
+    color: SikaColors.text,
     fontSize: 18,
-    fontWeight: "900",
+    fontWeight: "800",
+    letterSpacing: -0.2,
   },
-  addButton: {
-    backgroundColor: "#e11d48",
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 14,
+  titleCompact: {
+    fontSize: 13.5,
+    lineHeight: 17,
   },
-  addButtonDisabled: {
-    backgroundColor: "#374151",
-  },
-  addButtonText: {
-    color: "#ffffff",
+  description: {
+    color: SikaColors.secondaryText,
     fontSize: 13,
+    lineHeight: 19,
+    marginTop: SikaSpace.xs + 2,
+  },
+  descriptionCompact: {
+    fontSize: 11,
+    lineHeight: 15,
+    marginTop: 4,
+  },
+  footerRow: {
+    marginTop: SikaSpace.lg,
+    paddingTop: SikaSpace.md,
+    borderTopWidth: 1,
+    borderTopColor: SikaColors.border,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 6,
+  },
+  footerRowCompact: {
+    marginTop: 10,
+    paddingTop: 8,
+  },
+  price: {
+    color: SikaColors.accentLight,
+    fontSize: 17,
+    fontWeight: "900",
+    fontVariant: ["tabular-nums"],
+  },
+  priceCompact: {
+    fontSize: 13.5,
+    flexShrink: 1,
+  },
+  spiceText: {
+    color: SikaColors.secondaryText,
+    fontSize: 11,
+    fontWeight: "600",
+  },
+  actionBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: SikaColors.accent,
+    paddingHorizontal: SikaSpace.lg,
+    paddingVertical: 10,
+    borderRadius: SikaRadius.md,
+  },
+  actionBtnCompact: {
+    height: 30,
+    paddingHorizontal: 10,
+    paddingVertical: 0,
+    borderRadius: SikaRadius.sm,
+    gap: 4,
+  },
+  actionBtnDisabled: {
+    backgroundColor: SikaColors.elevated,
+    borderWidth: 1,
+    borderColor: SikaColors.border,
+  },
+  actionBtnText: {
+    color: SikaColors.text,
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  actionBtnTextCompact: {
+    fontSize: 11,
+  },
+  actionBtnDisabledText: {
+    color: SikaColors.muted,
+    fontSize: 11,
     fontWeight: "700",
   },
 });

@@ -1,322 +1,494 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
-  MapPin,
-  CreditCard,
-  Truck,
-  Store,
-  ShieldCheck,
-  AlertCircle,
-  Loader2,
   ArrowLeft,
+  Banknote,
+  Bike,
+  CheckCircle2,
+  CreditCard,
+  MapPin,
+  Phone,
+  ShieldCheck,
+  Store,
+  User,
 } from "lucide-react";
-import { RestaurantClocheIcon } from "@/components/icons/RestaurantClocheIcon";
+import { createOrderAction } from "@/app/actions/order";
 import { useCart } from "@/context/CartContext";
+import { useToast } from "@/context/ToastContext";
 import { formatPesewasToGhs } from "@/lib/currency";
 import { SUNYANI_DELIVERY_ZONES, getZoneFeePesewas } from "@/lib/delivery-zones";
-import { createOrderAction } from "@/app/actions/order";
-import { FulfilmentType, PaymentMethod } from "@/types/order";
+import { RESTAURANT_INFO } from "@/lib/navigation";
 import { formatGhanaPhone, isValidGhanaPhone } from "@/lib/phone";
+import { FulfilmentType, PaymentMethod } from "@/types/order";
+import { Button } from "@/components/ui/Button";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { PageReveal } from "@/components/ui/MotionPrimitives";
+import { Select } from "@/components/ui/Select";
 
+/**
+ * Checkout flow supporting Delivery (Sunyani zone tariffs) and Restaurant Pickup.
+ * Auto-synchronizes Cash payment methods (`CASH_ON_DELIVERY` <-> `CASH_ON_COLLECTION`)
+ * whenever fulfilment type changes so client payloads strictly match Zod schema invariants.
+ */
 export default function CheckoutPage() {
   const router = useRouter();
   const { items, subtotalPesewas, clearCart } = useCart();
+  const { error: toastError, success: toastSuccess } = useToast();
 
   const [fulfilmentType, setFulfilmentType] = useState<FulfilmentType>("DELIVERY");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("PAYSTACK");
+  const [selectedZoneId, setSelectedZoneId] = useState<string>(SUNYANI_DELIVERY_ZONES[0].id);
 
+  // Customer identity fields (prefilled from active session when available)
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
-  const [notes, setNotes] = useState("");
 
-  const [areaLocality, setAreaLocality] = useState(SUNYANI_DELIVERY_ZONES[0].name);
+  // Delivery destination fields
   const [streetAddress, setStreetAddress] = useState("");
   const [landmark, setLandmark] = useState("");
+  const [customerNotes, setCustomerNotes] = useState("");
 
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
 
-  const deliveryFeePesewas =
-    fulfilmentType === "DELIVERY" ? getZoneFeePesewas(areaLocality) : 0;
-  const grandTotalPesewas = subtotalPesewas + deliveryFeePesewas;
+  // Prefill contact information when a customer is already signed in
+  useEffect(() => {
+    let active = true;
+    fetch("/api/v1/auth/me")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!active || !data?.success || !data.user) return;
+        setFullName((prev) => prev || data.user.fullName || "");
+        setEmail((prev) => prev || data.user.email || "");
+        setPhone((prev) =>
+          prev || (data.user.phone ? formatGhanaPhone(data.user.phone) : "")
+        );
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, []);
 
-  const handleSubmitOrder = async (e: React.FormEvent) => {
+  const selectedZone = useMemo(
+    () =>
+      SUNYANI_DELIVERY_ZONES.find((z) => z.id === selectedZoneId) ??
+      SUNYANI_DELIVERY_ZONES[0],
+    [selectedZoneId]
+  );
+
+  const deliveryFeePesewas = useMemo(
+    () => (fulfilmentType === "DELIVERY" ? getZoneFeePesewas(selectedZoneId) : 0),
+    [fulfilmentType, selectedZoneId]
+  );
+
+  const totalPesewas = subtotalPesewas + deliveryFeePesewas;
+
+  const handleFulfilmentChange = (nextType: FulfilmentType) => {
+    setFulfilmentType(nextType);
+    // Keep cash payment variant aligned with the chosen fulfilment mode
+    if (nextType === "COLLECTION" && paymentMethod === "CASH_ON_DELIVERY") {
+      setPaymentMethod("CASH_ON_COLLECTION");
+    } else if (nextType === "DELIVERY" && paymentMethod === "CASH_ON_COLLECTION") {
+      setPaymentMethod("CASH_ON_DELIVERY");
+    }
+  };
+
+  const cashMethodValue: PaymentMethod =
+    fulfilmentType === "DELIVERY" ? "CASH_ON_DELIVERY" : "CASH_ON_COLLECTION";
+
+  const handlePlaceOrder = async (e: React.FormEvent) => {
     e.preventDefault();
-    setErrorMessage(null);
+    setFormError(null);
 
     if (items.length === 0) {
-      setErrorMessage("Your cart is empty. Please add delicious dishes first!");
+      setFormError("Your cart is empty.");
       return;
     }
 
-    if (!isValidGhanaPhone(phone)) {
-      setErrorMessage("Please enter a valid 10-digit Ghanaian mobile number (e.g. 053 337 6760) for courier dispatch.");
+    const compactPhone = phone.replace(/\s+/g, "");
+    if (fullName.trim().length < 2) {
+      setFormError("Please enter your full name (at least 2 characters).");
+      return;
+    }
+    if (!isValidGhanaPhone(compactPhone)) {
+      setFormError("Please enter a valid 10-digit Ghanaian mobile number (e.g. 0244123456).");
+      return;
+    }
+    if (!email.trim() || !email.includes("@")) {
+      setFormError("Please enter a valid email address for receipt and order confirmation.");
       return;
     }
 
-    setIsSubmitting(true);
+    if (fulfilmentType === "DELIVERY" && streetAddress.trim().length < 3) {
+      setFormError("Please provide your Sunyani street address, hostel, or house number.");
+      return;
+    }
 
+    setSubmitting(true);
     try {
-      const payload = {
+      const normalizedMethod: PaymentMethod =
+        paymentMethod === "PAYSTACK" ? "PAYSTACK" : cashMethodValue;
+
+      const result = await createOrderAction({
         fulfilmentType,
-        paymentMethod,
+        paymentMethod: normalizedMethod,
         customerInfo: {
-          fullName,
-          phone,
-          email,
+          fullName: fullName.trim(),
+          email: email.trim(),
+          phone: compactPhone,
         },
         deliveryAddress:
           fulfilmentType === "DELIVERY"
             ? {
-                recipientName: fullName,
-                recipientPhone: phone,
-                streetAddress,
-                areaLocality,
-                landmark,
+                recipientName: fullName.trim(),
+                recipientPhone: compactPhone,
+                streetAddress: streetAddress.trim(),
+                areaLocality: selectedZone.name,
+                landmark: landmark.trim() || undefined,
                 city: "Sunyani",
+                deliveryNotes: customerNotes.trim() || undefined,
               }
             : undefined,
-        items: items.map((i) => ({
-          menuItemId: i.menuItemId,
-          quantity: i.quantity,
-          selectedOptionIds: i.selectedOptions.map((o) => o.optionId),
-          specialInstructions: i.specialInstructions,
+        items: items.map((item) => ({
+          menuItemId: item.menuItemId,
+          quantity: item.quantity,
+          selectedOptionIds: item.selectedOptions.map((o) => o.optionId),
+          specialInstructions: item.specialInstructions || undefined,
         })),
-        customerNotes: notes,
-      };
-
-      const result = await createOrderAction(payload);
+        customerNotes: customerNotes.trim() || undefined,
+      });
 
       if (!result.success) {
-        setErrorMessage(result.error || "Failed to process order.");
-        setIsSubmitting(false);
+        const message = result.error || "Unable to complete checkout right now.";
+        setFormError(message);
+        toastError("Checkout Failed", message);
+        setSubmitting(false);
         return;
       }
 
       clearCart();
 
       if (result.authorizationUrl) {
+        toastSuccess("Redirecting to Paystack", "Complete payment to notify our kitchen.");
         window.location.href = result.authorizationUrl;
-      } else if (result.redirectUrl) {
-        router.push(result.redirectUrl);
-      } else {
-        router.push(`/orders/${result.orderNumber}`);
+        return;
       }
-    } catch (err: any) {
-      setErrorMessage(err.message || "An unexpected error occurred.");
-      setIsSubmitting(false);
+
+      const nextUrl =
+        result.redirectUrl || (result.orderNumber ? `/orders/${result.orderNumber}` : "/orders");
+      toastSuccess("Order Placed", `Reference ${result.orderNumber || "confirmed"}`);
+      router.push(nextUrl);
+    } catch {
+      const msg = "Unexpected network error placing your order. Please retry.";
+      setFormError(msg);
+      toastError("Order Error", msg);
+      setSubmitting(false);
     }
   };
 
   if (items.length === 0) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <div className="max-w-md w-full rounded-3xl bg-surface-300 border border-border-subtle p-8 text-center">
-          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-surface-100 text-gray-400 mx-auto mb-4">
-            <RestaurantClocheIcon className="h-8 w-8 text-brand-red" />
-          </div>
-          <h1 className="font-serif text-2xl font-bold text-white mb-2">
-            Your Dining Tray is Empty
-          </h1>
-          <p className="text-sm text-gray-400 mb-6">
-            You cannot proceed to checkout without adding dishes to your order.
-          </p>
-          <Link
-            href="/menu"
-            className="btn-red-gradient inline-flex items-center gap-2 px-6 py-3 rounded-full text-sm font-semibold text-white"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            <span>Browse Full Menu</span>
-          </Link>
+      <div className="min-h-[calc(100vh-80px)] bg-[#101010] px-4 py-16 flex items-center justify-center">
+        <div className="w-full max-w-lg">
+          <EmptyState
+            title="Your Checkout Tray is Empty"
+            description="Select freshly prepared Ghanaian dishes, grills, swallows, or pizza from the Sika Cuisine Sunyani menu first."
+            action={
+              <Link
+                href="/menu"
+                className="inline-flex h-11 items-center gap-2 rounded-xl bg-[#D71920] hover:bg-[#A91017] px-6 text-sm font-semibold text-white transition-colors"
+              >
+                <span>Explore Full Menu</span>
+              </Link>
+            }
+          />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background py-12 px-4 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-6xl">
-        <div className="mb-8">
-          <Link
-            href="/menu"
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-400 hover:text-white transition-colors mb-2"
-          >
-            <ArrowLeft className="h-4 w-4" /> Back to Menu
-          </Link>
-          <h1 className="font-serif text-3xl sm:text-4xl font-bold text-white">
-            Secure Checkout
-          </h1>
-          <p className="text-sm text-gray-400 mt-1">
-            Deliveries powered across Sunyani, Bono Region. Payments secured by Paystack.
-          </p>
-        </div>
-
-        {errorMessage && (
-          <div className="mb-8 flex items-center gap-3 rounded-2xl bg-red-950/50 border border-red-800 p-4 text-sm text-red-200">
-            <AlertCircle className="h-5 w-5 text-brand-red flex-shrink-0" />
-            <span>{errorMessage}</span>
+    <div className="min-h-screen bg-[#101010] py-10 sm:py-12 pb-20">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-8">
+        <PageReveal className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-[#333333] pb-6">
+          <div>
+            <Link
+              href="/menu"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#A3A3A3] hover:text-white transition-colors mb-3"
+            >
+              <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
+              <span>Add more dishes</span>
+            </Link>
+            <h1 className="font-serif text-3xl sm:text-4xl font-black tracking-tight text-white">
+              Checkout &amp; Fulfilment
+            </h1>
+            <p className="mt-1 text-sm text-[#A3A3A3]">
+              Confirm delivery or counter pickup in Sunyani and select how you want to pay.
+            </p>
           </div>
-        )}
+          <div className="inline-flex items-center gap-2 rounded-full border border-[#333333] bg-[#1C1C1C] px-3.5 py-1.5 text-xs text-[#F5F1EA]">
+            <ShieldCheck className="h-4 w-4 text-[#4ADE80]" aria-hidden="true" />
+            <span>Server-verified pricing in GHS</span>
+          </div>
+        </PageReveal>
 
-        <form onSubmit={handleSubmitOrder} className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <form onSubmit={handlePlaceOrder} className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          {/* Left Checkout Column */}
           <div className="lg:col-span-7 space-y-6">
-            <div className="rounded-3xl bg-surface-300 border border-border-subtle p-6">
-              <h2 className="text-base font-bold text-white font-serif mb-4 flex items-center gap-2">
-                <Truck className="h-5 w-5 text-brand-red" />
-                1. Select Fulfilment Type
-              </h2>
+            {formError && (
+              <div
+                role="alert"
+                className="rounded-2xl border border-[#FB7185]/40 bg-[#FB7185]/10 px-4 py-3.5 text-sm text-[#FDA4AF]"
+              >
+                {formError}
+              </div>
+            )}
 
-              <div className="grid grid-cols-2 gap-4">
+            {/* 1. Fulfilment Selector */}
+            <section className="rounded-3xl border border-[#333333] bg-[#1C1C1C] p-6 space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="font-serif text-lg font-bold text-[#F5F1EA]">
+                  1. Fulfilment Method
+                </h2>
+                <span className="font-mono text-[11px] uppercase tracking-wider text-[#A3A3A3]">
+                  Required
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <button
                   type="button"
-                  onClick={() => setFulfilmentType("DELIVERY")}
-                  className={`flex flex-col items-center justify-center p-4 rounded-2xl border text-center transition-all ${
+                  onClick={() => handleFulfilmentChange("DELIVERY")}
+                  className={`flex items-start gap-3 rounded-2xl border p-4 text-left transition-colors ${
                     fulfilmentType === "DELIVERY"
-                      ? "border-brand-red bg-brand-red/10 text-white"
-                      : "border-border-subtle bg-surface-200 text-gray-400 hover:text-white"
+                      ? "border-[#D71920] bg-[#D71920]/10"
+                      : "border-[#333333] bg-[#262626] hover:border-[#4A4A4A]"
                   }`}
                 >
-                  <Truck className="h-6 w-6 mb-2 text-brand-red" />
-                  <span className="font-bold text-sm">Sunyani Delivery</span>
-                  <span className="text-xs text-gray-400 mt-0.5">25-45 mins</span>
+                  <Bike
+                    className={`h-5 w-5 flex-shrink-0 mt-0.5 ${
+                      fulfilmentType === "DELIVERY" ? "text-[#F0444A]" : "text-[#A3A3A3]"
+                    }`}
+                    aria-hidden="true"
+                  />
+                  <div>
+                    <p className="text-sm font-bold text-[#F5F1EA]">Sunyani Delivery</p>
+                    <p className="text-xs text-[#A3A3A3] mt-0.5">
+                      Dispatched by rider ({formatPesewasToGhs(selectedZone.feePesewas)})
+                    </p>
+                  </div>
                 </button>
 
                 <button
                   type="button"
-                  onClick={() => setFulfilmentType("COLLECTION")}
-                  className={`flex flex-col items-center justify-center p-4 rounded-2xl border text-center transition-all ${
+                  onClick={() => handleFulfilmentChange("COLLECTION")}
+                  className={`flex items-start gap-3 rounded-2xl border p-4 text-left transition-colors ${
                     fulfilmentType === "COLLECTION"
-                      ? "border-brand-red bg-brand-red/10 text-white"
-                      : "border-border-subtle bg-surface-200 text-gray-400 hover:text-white"
+                      ? "border-[#D71920] bg-[#D71920]/10"
+                      : "border-[#333333] bg-[#262626] hover:border-[#4A4A4A]"
                   }`}
                 >
-                  <Store className="h-6 w-6 mb-2 text-brand-red" />
-                  <span className="font-bold text-sm">Kitchen Collection</span>
-                  <span className="text-xs text-gray-400 mt-0.5">Pick up in Sunyani Central</span>
+                  <Store
+                    className={`h-5 w-5 flex-shrink-0 mt-0.5 ${
+                      fulfilmentType === "COLLECTION" ? "text-[#F0444A]" : "text-[#A3A3A3]"
+                    }`}
+                    aria-hidden="true"
+                  />
+                  <div>
+                    <p className="text-sm font-bold text-[#F5F1EA]">Restaurant Pickup</p>
+                    <p className="text-xs text-[#4ADE80] mt-0.5 font-semibold">
+                      GHS 0.00 fee &bull; {RESTAURANT_INFO.address}
+                    </p>
+                  </div>
                 </button>
               </div>
-            </div>
+            </section>
 
-            <div className="rounded-3xl bg-surface-300 border border-border-subtle p-6 space-y-4">
-              <h2 className="text-base font-bold text-white font-serif mb-2">
-                2. Contact Information
+            {/* 2. Customer Contact */}
+            <section className="rounded-3xl border border-[#333333] bg-[#1C1C1C] p-6 space-y-4">
+              <h2 className="font-serif text-lg font-bold text-[#F5F1EA]">
+                2. Contact Details
               </h2>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">
+                  <label
+                    htmlFor="checkout-name"
+                    className="block text-xs font-semibold uppercase tracking-wider text-[#A3A3A3] mb-1.5"
+                  >
                     Full Name *
                   </label>
-                  <input
-                    type="text"
-                    required
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    placeholder="e.g. Kwame Mensah"
-                    className="w-full rounded-xl bg-surface-200 border border-border-subtle p-3 text-sm text-white focus:outline-none focus:border-brand-red"
-                  />
+                  <div className="relative">
+                    <User
+                      className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#737373]"
+                      aria-hidden="true"
+                    />
+                    <input
+                      id="checkout-name"
+                      type="text"
+                      required
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      placeholder="Kwame Mensah"
+                      className="w-full rounded-xl border border-[#333333] bg-[#262626] pl-10 pr-4 py-3 text-sm text-[#F5F1EA] placeholder-[#737373] focus:outline-none focus:border-[#D71920]"
+                    />
+                  </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">
-                    Phone Number (MoMo Enabled) *
+                  <label
+                    htmlFor="checkout-phone"
+                    className="block text-xs font-semibold uppercase tracking-wider text-[#A3A3A3] mb-1.5"
+                  >
+                    Ghana Mobile Number *
                   </label>
-                  <input
-                    type="tel"
-                    required
-                    value={phone}
-                    onChange={(e) => setPhone(formatGhanaPhone(e.target.value))}
-                    placeholder="053 337 6760"
-                    maxLength={12}
-                    className="w-full rounded-xl bg-surface-200 border border-border-subtle p-3 text-sm text-white focus:outline-none focus:border-brand-red font-mono"
-                  />
+                  <div className="relative">
+                    <Phone
+                      className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#737373]"
+                      aria-hidden="true"
+                    />
+                    <input
+                      id="checkout-phone"
+                      type="tel"
+                      required
+                      value={phone}
+                      onChange={(e) => setPhone(formatGhanaPhone(e.target.value))}
+                      placeholder="024 412 3456"
+                      className="w-full rounded-xl border border-[#333333] bg-[#262626] pl-10 pr-4 py-3 text-sm text-[#F5F1EA] placeholder-[#737373] focus:outline-none focus:border-[#D71920] font-mono"
+                    />
+                  </div>
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">
-                  Email Address (For Receipt & Tracking) *
+                <label
+                  htmlFor="checkout-email"
+                  className="block text-xs font-semibold uppercase tracking-wider text-[#A3A3A3] mb-1.5"
+                >
+                  Email Address *
                 </label>
                 <input
+                  id="checkout-email"
                   type="email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="kwame@example.com"
-                  className="w-full rounded-xl bg-surface-200 border border-border-subtle p-3 text-sm text-white focus:outline-none focus:border-brand-red"
+                  className="w-full rounded-xl border border-[#333333] bg-[#262626] px-4 py-3 text-sm text-[#F5F1EA] placeholder-[#737373] focus:outline-none focus:border-[#D71920]"
                 />
               </div>
-            </div>
+            </section>
 
-            {fulfilmentType === "DELIVERY" && (
-              <div className="rounded-3xl bg-surface-300 border border-border-subtle p-6 space-y-4">
-                <h2 className="text-base font-bold text-white font-serif mb-2 flex items-center gap-2">
-                  <MapPin className="h-5 w-5 text-brand-red" />
-                  3. Sunyani Delivery Address
-                </h2>
+            {/* 3. Conditional Delivery Address OR Pickup Point Info */}
+            {fulfilmentType === "DELIVERY" ? (
+              <section className="rounded-3xl border border-[#333333] bg-[#1C1C1C] p-6 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h2 className="font-serif text-lg font-bold text-[#F5F1EA]">
+                    3. Sunyani Delivery Destination
+                  </h2>
+                  <span className="font-mono text-xs text-[#F0444A] font-semibold">
+                    Est. {selectedZone.estimatedMinutes} mins
+                  </span>
+                </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">
-                    Sunyani Locality / Zone *
-                  </label>
-                  <select
-                    value={areaLocality}
-                    onChange={(e) => setAreaLocality(e.target.value)}
-                    className="w-full rounded-xl bg-surface-200 border border-border-subtle p-3 text-sm text-white focus:outline-none focus:border-brand-red"
+                  <label
+                    htmlFor="checkout-zone"
+                    className="block text-xs font-semibold uppercase tracking-wider text-[#A3A3A3] mb-1.5"
                   >
-                    {SUNYANI_DELIVERY_ZONES.map((zone) => (
-                      <option key={zone.id} value={zone.name} className="bg-surface-300">
-                        {zone.name} — {formatPesewasToGhs(zone.feePesewas)} ({zone.estimatedMinutes} mins)
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">
-                    Street Address / House Description *
+                    Delivery Zone *
                   </label>
-                  <input
-                    type="text"
-                    required
-                    value={streetAddress}
-                    onChange={(e) => setStreetAddress(e.target.value)}
-                    placeholder="e.g. House No. 24, UENR Main Road"
-                    className="w-full rounded-xl bg-surface-200 border border-border-subtle p-3 text-sm text-white focus:outline-none focus:border-brand-red"
+                  <Select
+                    id="checkout-zone"
+                    ariaLabel="Delivery Zone"
+                    value={selectedZoneId}
+                    onChange={setSelectedZoneId}
+                    variant="elevated"
+                    size="md"
+                    fullWidth
+                    leadingIcon={<MapPin className="h-4 w-4" />}
+                    options={SUNYANI_DELIVERY_ZONES.map((zone) => ({
+                      value: zone.id,
+                      label: zone.name,
+                      description: `Est. ~${zone.estimatedMinutes} mins \u2022 ${zone.description}`,
+                      meta: formatPesewasToGhs(zone.feePesewas),
+                    }))}
                   />
+                  <p className="mt-1.5 text-xs text-[#737373]">{selectedZone.description}</p>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">
-                    Prominent Landmark
+                  <label
+                    htmlFor="checkout-street"
+                    className="block text-xs font-semibold uppercase tracking-wider text-[#A3A3A3] mb-1.5"
+                  >
+                    Street, Hostel, or House Number *
+                  </label>
+                  <div className="relative">
+                    <MapPin
+                      className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#737373]"
+                      aria-hidden="true"
+                    />
+                    <input
+                      id="checkout-street"
+                      type="text"
+                      required
+                      value={streetAddress}
+                      onChange={(e) => setStreetAddress(e.target.value)}
+                      placeholder="e.g. Plot 14, UENR Main Gate Road"
+                      className="w-full rounded-xl border border-[#333333] bg-[#262626] pl-10 pr-4 py-3 text-sm text-[#F5F1EA] placeholder-[#737373] focus:outline-none focus:border-[#D71920]"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="checkout-landmark"
+                    className="block text-xs font-semibold uppercase tracking-wider text-[#A3A3A3] mb-1.5"
+                  >
+                    Nearby Landmark (Optional)
                   </label>
                   <input
+                    id="checkout-landmark"
                     type="text"
                     value={landmark}
                     onChange={(e) => setLandmark(e.target.value)}
-                    placeholder="e.g. Opposite UENR Gate, Near Total Station"
-                    className="w-full rounded-xl bg-surface-200 border border-border-subtle p-3 text-sm text-white focus:outline-none focus:border-brand-red"
+                    placeholder="e.g. Opposite Goil Station"
+                    className="w-full rounded-xl border border-[#333333] bg-[#262626] px-4 py-3 text-sm text-[#F5F1EA] placeholder-[#737373] focus:outline-none focus:border-[#D71920]"
                   />
                 </div>
-              </div>
+              </section>
+            ) : (
+              <section className="rounded-3xl border border-[#22C55E]/30 bg-[#22C55E]/5 p-6 flex items-start gap-4">
+                <Store className="h-6 w-6 text-[#4ADE80] flex-shrink-0 mt-0.5" aria-hidden="true" />
+                <div>
+                  <h2 className="font-serif text-lg font-bold text-[#F5F1EA]">
+                    Counter Pickup in Sunyani Central
+                  </h2>
+                  <p className="mt-1 text-xs sm:text-sm text-[#A3A3A3]">
+                    Collect hot from Sika Cuisine counter at <strong className="text-white">{RESTAURANT_INFO.address}</strong>. No delivery fee applies.
+                  </p>
+                </div>
+              </section>
             )}
 
-            <div className="rounded-3xl bg-surface-300 border border-border-subtle p-6 space-y-4">
-              <h2 className="text-base font-bold text-white font-serif mb-2 flex items-center gap-2">
-                <CreditCard className="h-5 w-5 text-brand-red" />
-                4. Payment Method
+            {/* 4. Payment & Notes */}
+            <section className="rounded-3xl border border-[#333333] bg-[#1C1C1C] p-6 space-y-4">
+              <h2 className="font-serif text-lg font-bold text-[#F5F1EA]">
+                4. Payment Method &amp; Kitchen Note
               </h2>
 
-              <div className="space-y-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <label
-                  className={`flex items-start gap-3 p-4 rounded-2xl border cursor-pointer transition-all ${
+                  className={`flex cursor-pointer items-start gap-3 rounded-2xl border p-4 transition-colors ${
                     paymentMethod === "PAYSTACK"
-                      ? "border-brand-red bg-brand-red/10"
-                      : "border-border-subtle bg-surface-200 hover:border-gray-600"
+                      ? "border-[#D71920] bg-[#D71920]/10"
+                      : "border-[#333333] bg-[#262626] hover:border-[#4A4A4A]"
                   }`}
                 >
                   <input
@@ -325,134 +497,164 @@ export default function CheckoutPage() {
                     value="PAYSTACK"
                     checked={paymentMethod === "PAYSTACK"}
                     onChange={() => setPaymentMethod("PAYSTACK")}
-                    className="mt-1 text-brand-red focus:ring-brand-red"
+                    className="sr-only"
                   />
+                  <span
+                    aria-hidden="true"
+                    className={`mt-0.5 flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full border ${
+                      paymentMethod === "PAYSTACK"
+                        ? "border-[#D71920] bg-[#D71920]/20"
+                        : "border-[#737373] bg-[#1C1C1C]"
+                    }`}
+                  >
+                    {paymentMethod === "PAYSTACK" && (
+                      <span className="h-2 w-2 rounded-full bg-[#D71920]" />
+                    )}
+                  </span>
                   <div>
-                    <span className="font-bold text-sm text-white block">
-                      Paystack (Mobile Money & Cards)
+                    <span className="flex items-center gap-1.5 text-sm font-bold text-[#F5F1EA]">
+                      <CreditCard className="h-4 w-4 text-[#F0444A]" aria-hidden="true" />
+                      Paystack (MoMo / Card)
                     </span>
-                    <span className="text-xs text-gray-400">
-                      MTN Mobile Money, Telecel Cash, AT Money, Visa, & Mastercard. Instant verification.
+                    <span className="mt-0.5 block text-xs text-[#A3A3A3]">
+                      MTN MoMo, Telecel Cash, or Visa/Mastercard
                     </span>
                   </div>
                 </label>
 
                 <label
-                  className={`flex items-start gap-3 p-4 rounded-2xl border cursor-pointer transition-all ${
-                    paymentMethod === "CASH_ON_DELIVERY"
-                      ? "border-brand-red bg-brand-red/10"
-                      : "border-border-subtle bg-surface-200 hover:border-gray-600"
+                  className={`flex cursor-pointer items-start gap-3 rounded-2xl border p-4 transition-colors ${
+                    paymentMethod !== "PAYSTACK"
+                      ? "border-[#D71920] bg-[#D71920]/10"
+                      : "border-[#333333] bg-[#262626] hover:border-[#4A4A4A]"
                   }`}
                 >
                   <input
                     type="radio"
                     name="paymentMethod"
-                    value="CASH_ON_DELIVERY"
-                    checked={paymentMethod === "CASH_ON_DELIVERY"}
-                    onChange={() => setPaymentMethod("CASH_ON_DELIVERY")}
-                    className="mt-1 text-brand-red focus:ring-brand-red"
+                    value={cashMethodValue}
+                    checked={paymentMethod !== "PAYSTACK"}
+                    onChange={() => setPaymentMethod(cashMethodValue)}
+                    className="sr-only"
                   />
+                  <span
+                    aria-hidden="true"
+                    className={`mt-0.5 flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full border ${
+                      paymentMethod !== "PAYSTACK"
+                        ? "border-[#D71920] bg-[#D71920]/20"
+                        : "border-[#737373] bg-[#1C1C1C]"
+                    }`}
+                  >
+                    {paymentMethod !== "PAYSTACK" && (
+                      <span className="h-2 w-2 rounded-full bg-[#D71920]" />
+                    )}
+                  </span>
                   <div>
-                    <span className="font-bold text-sm text-white block">
-                      Cash on {fulfilmentType === "DELIVERY" ? "Delivery" : "Collection"}
+                    <span className="flex items-center gap-1.5 text-sm font-bold text-[#F5F1EA]">
+                      <Banknote className="h-4 w-4 text-[#4ADE80]" aria-hidden="true" />
+                      {fulfilmentType === "DELIVERY" ? "Cash on Delivery" : "Cash on Collection"}
                     </span>
-                    <span className="text-xs text-gray-400">
-                      Pay in cash directly to our delivery courier or kitchen counter upon receipt.
+                    <span className="mt-0.5 block text-xs text-[#A3A3A3]">
+                      {fulfilmentType === "DELIVERY"
+                        ? "Pay our rider in Ghana Cedis upon arrival"
+                        : "Settle at the restaurant counter during pickup"}
                     </span>
                   </div>
                 </label>
               </div>
-            </div>
 
-            <div className="rounded-3xl bg-surface-300 border border-border-subtle p-6">
-              <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
-                Order Notes / Special Requests (Optional)
-              </label>
-              <textarea
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="e.g. Please call before arriving, extra pepper on the side..."
-                rows={2}
-                className="w-full rounded-xl bg-surface-200 border border-border-subtle p-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-brand-red"
-              />
-            </div>
+              <div>
+                <label
+                  htmlFor="checkout-notes"
+                  className="block text-xs font-semibold uppercase tracking-wider text-[#A3A3A3] mb-1.5"
+                >
+                  Order / Kitchen Notes (Optional)
+                </label>
+                <textarea
+                  id="checkout-notes"
+                  rows={2}
+                  maxLength={500}
+                  value={customerNotes}
+                  onChange={(e) => setCustomerNotes(e.target.value)}
+                  placeholder="Call on arrival, extra shito on the side, etc."
+                  className="w-full rounded-xl border border-[#333333] bg-[#262626] p-3 text-sm text-[#F5F1EA] placeholder-[#737373] focus:outline-none focus:border-[#D71920]"
+                />
+              </div>
+            </section>
           </div>
 
+          {/* Right Order Summary Column */}
           <div className="lg:col-span-5">
-            <div className="sticky top-28 rounded-3xl bg-surface-300 border border-border-subtle p-6 space-y-6">
-              <h2 className="font-serif text-xl font-bold text-white border-b border-border-subtle pb-4">
-                Order Summary
-              </h2>
+            <div className="sticky top-24 rounded-3xl border border-[#333333] bg-[#1C1C1C] p-6 space-y-5 shadow-2xl">
+              <div className="flex items-center justify-between border-b border-[#333333] pb-4">
+                <h2 className="font-serif text-xl font-bold text-[#F5F1EA]">Order Summary</h2>
+                <span className="font-mono text-xs text-[#A3A3A3]">
+                  {items.reduce((acc, item) => acc + item.quantity, 0)} items
+                </span>
+              </div>
 
-              <div className="space-y-4 max-h-64 overflow-y-auto pr-1">
+              <div className="max-h-72 overflow-y-auto space-y-3 pr-1">
                 {items.map((item) => (
-                  <div key={item.id} className="flex justify-between items-start text-sm">
-                    <div className="flex gap-2">
-                      <span className="font-bold text-brand-red">{item.quantity}x</span>
-                      <div>
-                        <p className="font-semibold text-white leading-tight">{item.name}</p>
-                        {item.selectedOptions.length > 0 && (
-                          <p className="text-xs text-gray-400 mt-0.5">
-                            {item.selectedOptions.map((o) => o.optionName).join(", ")}
-                          </p>
-                        )}
-                      </div>
+                  <div
+                    key={item.id}
+                    className="flex items-start justify-between gap-3 rounded-2xl border border-[#333333] bg-[#262626] p-3"
+                  >
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-[#F5F1EA]">
+                        <span className="font-mono text-[#F0444A] mr-1.5">{item.quantity}x</span>
+                        {item.name}
+                      </p>
+                      {item.selectedOptions.length > 0 && (
+                        <p className="mt-0.5 text-[11px] text-[#A3A3A3]">
+                          {item.selectedOptions.map((o) => o.optionName).join(", ")}
+                        </p>
+                      )}
+                      {item.specialInstructions && (
+                        <p className="mt-0.5 text-[11px] italic text-[#737373]">
+                          Note: {item.specialInstructions}
+                        </p>
+                      )}
                     </div>
-                    <span className="font-semibold text-white ml-2">
+                    <span className="font-mono text-sm font-bold text-[#F5F1EA] tabular-nums flex-shrink-0">
                       {formatPesewasToGhs(item.lineTotalPesewas)}
                     </span>
                   </div>
                 ))}
               </div>
 
-              <div className="border-t border-border-subtle pt-4 space-y-2.5 text-sm">
-                <div className="flex justify-between text-gray-400">
-                  <span>Subtotal</span>
-                  <span className="font-semibold text-white">
+              <div className="space-y-2 border-t border-[#333333] pt-4 text-sm">
+                <div className="flex justify-between text-[#A3A3A3]">
+                  <span>Food Subtotal</span>
+                  <span className="font-mono font-semibold text-[#F5F1EA] tabular-nums">
                     {formatPesewasToGhs(subtotalPesewas)}
                   </span>
                 </div>
-
-                <div className="flex justify-between text-gray-400">
-                  <span>Delivery ({fulfilmentType === "DELIVERY" ? areaLocality : "Collection"})</span>
-                  <span className="font-semibold text-white">
-                    {fulfilmentType === "DELIVERY"
-                      ? formatPesewasToGhs(deliveryFeePesewas)
-                      : "FREE"}
-                  </span>
-                </div>
-
-                <div className="border-t border-border-subtle pt-3 flex justify-between items-baseline">
-                  <span className="font-serif text-base font-bold text-white">Total</span>
-                  <span className="font-serif text-2xl font-black text-brand-red">
-                    {formatPesewasToGhs(grandTotalPesewas)}
-                  </span>
-                </div>
-              </div>
-
-              <div className="rounded-2xl bg-surface-200 p-3 flex items-center gap-3 border border-border-subtle text-xs text-gray-400">
-                <ShieldCheck className="h-5 w-5 text-emerald-400 flex-shrink-0" />
-                <span>
-                  All transactions encrypted. Official Paystack API integration for Ghana.
-                </span>
-              </div>
-
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="btn-red-gradient flex w-full items-center justify-center gap-2 py-4 rounded-full text-base font-semibold text-white shadow-glow disabled:opacity-50"
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                    <span>Processing Order...</span>
-                  </>
-                ) : (
+                <div className="flex justify-between text-[#A3A3A3]">
                   <span>
-                    Confirm & {paymentMethod === "PAYSTACK" ? "Pay Online" : "Place Order"}
+                    {fulfilmentType === "DELIVERY"
+                      ? `Delivery (${selectedZone.name})`
+                      : "Counter Pickup"}
                   </span>
-                )}
-              </button>
+                  <span className="font-mono font-semibold text-[#F5F1EA] tabular-nums">
+                    {formatPesewasToGhs(deliveryFeePesewas)}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between border-t border-[#333333] pt-3">
+                  <span className="font-serif text-base font-bold text-white">Total Due</span>
+                  <span className="font-mono text-2xl font-black text-[#F0444A] tabular-nums">
+                    {formatPesewasToGhs(totalPesewas)}
+                  </span>
+                </div>
+              </div>
+
+              <Button type="submit" variant="primary" size="lg" fullWidth loading={submitting}>
+                <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
+                <span>
+                  {paymentMethod === "PAYSTACK"
+                    ? `Proceed to Paystack (${formatPesewasToGhs(totalPesewas)})`
+                    : `Place Order (${formatPesewasToGhs(totalPesewas)})`}
+                </span>
+              </Button>
             </div>
           </div>
         </form>

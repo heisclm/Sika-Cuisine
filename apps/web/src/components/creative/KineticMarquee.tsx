@@ -27,17 +27,17 @@ export function KineticMarquee({
 }: KineticMarqueeProps) {
   const content = items.map((text, i) => (
     <span key={i} className="inline-flex items-center gap-6 px-4">
-      <span className="font-display tracking-[0.22em] uppercase text-xs sm:text-sm font-bold text-gray-300 transition-colors group-hover:text-white">
+      <span className="font-display tracking-[0.22em] uppercase text-xs sm:text-sm font-bold text-[#A3A3A3] transition-colors group-hover:text-[#F5F1EA]">
         {text}
       </span>
-      <span className="h-1.5 w-1.5 rounded-full bg-brand-red/80 flex-shrink-0" />
+      <span className="h-1.5 w-1.5 rounded-full bg-[#D71920] flex-shrink-0" />
     </span>
   ));
 
   return (
     <div
       aria-hidden="true"
-      className={`group w-full overflow-hidden border-y border-border-subtle/70 bg-[#0c0d12]/60 backdrop-blur-md py-4 select-none ${className}`}
+      className={`group w-full overflow-hidden border-y border-[#333333] bg-[#101010]/90 backdrop-blur-md py-4 select-none ${className}`}
     >
       <div
         className="flex w-max animate-marquee group-hover:[animation-play-state:paused]"

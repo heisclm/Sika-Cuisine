@@ -26,9 +26,9 @@ export function SteamAroma({
         />
         <defs>
           <linearGradient id="steam-gradient" x1="0" y1="110" x2="0" y2="5" gradientUnits="userSpaceOnUse">
-            <stop offset="0%" stopColor="#ffffff" stopOpacity="0.8" />
-            <stop offset="50%" stopColor="#e11d48" stopOpacity="0.4" />
-            <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
+            <stop offset="0%" stopColor="#F5F1EA" stopOpacity="0.8" />
+            <stop offset="50%" stopColor="#D71920" stopOpacity="0.4" />
+            <stop offset="100%" stopColor="#F5F1EA" stopOpacity="0" />
           </linearGradient>
         </defs>
       </svg>
@@ -47,9 +47,9 @@ export function SteamAroma({
         />
         <defs>
           <linearGradient id="steam-gradient-2" x1="0" y1="115" x2="0" y2="8" gradientUnits="userSpaceOnUse">
-            <stop offset="0%" stopColor="#ffffff" stopOpacity="0.7" />
-            <stop offset="60%" stopColor="#f59e0b" stopOpacity="0.35" />
-            <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
+            <stop offset="0%" stopColor="#F5F1EA" stopOpacity="0.7" />
+            <stop offset="60%" stopColor="#F0444A" stopOpacity="0.35" />
+            <stop offset="100%" stopColor="#F5F1EA" stopOpacity="0" />
           </linearGradient>
         </defs>
       </svg>

@@ -1,26 +1,25 @@
-/**
- * @file apps/mobile/src/components/DishDetailModal.tsx
- * @description Modal bottom sheet for dish customization, option group selection, and portion calculation.
- *
- * MODAL DESIGN & FINANCIAL INVARIANTS:
- * 1. Dynamic Option Deltas: Computes running portion totals in integer pesewas as the user toggles option radios.
- * 2. Pre-selection Default: Automatically pre-selects the first available option in each required group.
- * 3. Step Control Boundaries: Bounds portion quantities between 1 and 20 to prevent erroneous large submissions.
- */
-
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
+  Image,
+  KeyboardAvoidingView,
   Modal,
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
+  Platform,
+  Pressable,
   ScrollView,
+  StyleSheet,
+  Text,
   TextInput,
-  Dimensions,
+  View,
 } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { Check, Clock, Flame, Minus, Plus, X } from "lucide-react-native";
 import { MenuItemDTO, MenuItemOptionDTO, formatPesewasToGhs } from "@sika/shared";
 import { SelectedOptionChoice } from "../context/CartContext";
+import { useToast } from "../context/ToastContext";
+import { resolveDishImageSource } from "../data/dish-images";
+import { SikaColors, SikaRadius, SikaSpace } from "../theme";
+import { Badge } from "./ui/Badge";
+import { Button } from "./ui/Button";
 
 interface DishDetailModalProps {
   visible: boolean;
@@ -34,39 +33,42 @@ interface DishDetailModalProps {
   ) => void;
 }
 
+const SPICE_LABELS = ["Not Spicy", "Mild Heat", "Medium Heat", "Spicy", "Fiery"];
+
+/**
+ * Full dish customization modal with dish photography, option group selection,
+ * kitchen notes, quantity stepper (1–20), and integer pesewas price calculation.
+ */
 export function DishDetailModal({
   visible,
   dish,
   onClose,
   onAddToCart,
 }: DishDetailModalProps) {
+  const { success } = useToast();
   const [quantity, setQuantity] = useState<number>(1);
   const [selectedOptionsMap, setSelectedOptionsMap] = useState<
     Record<string, MenuItemOptionDTO>
   >({});
   const [specialInstructions, setSpecialInstructions] = useState<string>("");
 
-  // Reset state whenever a new dish is opened
   useEffect(() => {
     if (dish) {
       setQuantity(1);
       setSpecialInstructions("");
-      const initialSelections: Record<string, MenuItemOptionDTO> = {};
-
-      if (dish.optionGroups && dish.optionGroups.length > 0) {
+      const initial: Record<string, MenuItemOptionDTO> = {};
+      if (dish.optionGroups?.length) {
         dish.optionGroups.forEach((group) => {
           if (group.options.length > 0) {
-            // Default to the first available option in each group
-            const firstAvailable = group.options.find((opt) => opt.isAvailable) || group.options[0];
-            initialSelections[group.id] = firstAvailable;
+            initial[group.id] =
+              group.options.find((opt) => opt.isAvailable) || group.options[0];
           }
         });
       }
-      setSelectedOptionsMap(initialSelections);
+      setSelectedOptionsMap(initial);
     }
   }, [dish]);
 
-  // Compute total in pesewas
   const lineTotalPesewas = useMemo(() => {
     if (!dish) return 0;
     const optionsDelta = Object.values(selectedOptionsMap).reduce(
@@ -78,492 +80,418 @@ export function DishDetailModal({
 
   if (!dish) return null;
 
-  const handleSelectOption = (groupId: string, option: MenuItemOptionDTO) => {
-    setSelectedOptionsMap((prev) => ({
-      ...prev,
-      [groupId]: option,
-    }));
-  };
-
-  const handleIncrement = () => {
-    if (quantity < 20) setQuantity((prev) => prev + 1);
-  };
-
-  const handleDecrement = () => {
-    if (quantity > 1) setQuantity((prev) => prev - 1);
-  };
-
-  const handleConfirmAddToCart = () => {
-    const chosenOptions: SelectedOptionChoice[] = Object.values(
-      selectedOptionsMap
-    ).map((opt) => ({
-      optionId: opt.id,
-      optionName: opt.name,
-      priceDeltaPesewas: opt.priceDeltaPesewas,
-    }));
-
-    onAddToCart(dish, quantity, chosenOptions, specialInstructions.trim() || undefined);
+  const handleConfirm = () => {
+    if (!dish.isAvailable) return;
+    const chosen: SelectedOptionChoice[] = Object.values(selectedOptionsMap).map(
+      (opt) => ({
+        optionId: opt.id,
+        optionName: opt.name,
+        priceDeltaPesewas: opt.priceDeltaPesewas,
+      })
+    );
+    onAddToCart(dish, quantity, chosen, specialInstructions.trim() || undefined);
+    success("Added to Tray", `${quantity}x ${dish.name}`);
     onClose();
   };
 
-  const spiceLabels = ["Not Spicy", "Mild", "Medium", "Spicy 🔥", "Fiery 🔥🔥"];
-
   return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      transparent
-      onRequestClose={onClose}
-    >
-      <View style={styles.modalOverlay}>
-        <View style={styles.sheetContainer}>
-          {/* Top Bar Indicator & Close Button */}
-          <View style={styles.headerBar}>
-            <View style={styles.dragHandle} />
-            <TouchableOpacity
-              onPress={onClose}
-              style={styles.closeButton}
-              accessibilityLabel="Close dish modal"
-            >
-              <Text style={styles.closeButtonText}>✕</Text>
-            </TouchableOpacity>
-          </View>
+    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={styles.overlay}
+      >
+        <Pressable style={styles.backdrop} onPress={onClose} />
 
-          <ScrollView
-            style={styles.scrollArea}
-            contentContainerStyle={styles.scrollContent}
-            showsVerticalScrollIndicator={false}
-          >
-            {/* Dish Badges */}
-            <View style={styles.badgeRow}>
-              {dish.isFeatured && (
-                <View style={styles.featuredBadge}>
-                  <Text style={styles.featuredBadgeText}>CHEF RECOMMENDATION</Text>
-                </View>
-              )}
-              <View style={styles.metaBadge}>
-                <Text style={styles.metaBadgeText}>⏱ {dish.preparationTimeMinutes} MINS PREP</Text>
+        <View style={styles.sheet}>
+          <ScrollView showsVerticalScrollIndicator={false}>
+            {/* Photographic Banner */}
+            <View style={styles.heroWrap}>
+              <Image
+                source={resolveDishImageSource(dish.imageUrl)}
+                style={styles.heroImage}
+                resizeMode="cover"
+              />
+              <LinearGradient
+                colors={["rgba(16,16,16,0.2)", "rgba(16,16,16,0.45)", "#1C1C1C"]}
+                locations={[0, 0.6, 1]}
+                style={StyleSheet.absoluteFill}
+              />
+
+              <Pressable
+                onPress={onClose}
+                accessibilityRole="button"
+                accessibilityLabel="Close dish details"
+                style={styles.closeBtn}
+              >
+                <X size={18} color={SikaColors.warmWhite} />
+              </Pressable>
+
+              <View style={styles.heroBadges}>
+                {dish.isFeatured ? <Badge label="Signature" variant="brand" /> : null}
+                {!dish.isAvailable ? <Badge label="Sold Out" variant="error" /> : null}
               </View>
-              {dish.spiceLevel > 0 && (
-                <View style={styles.metaBadge}>
-                  <Text style={styles.metaBadgeText}>
-                    🌶️ {spiceLabels[dish.spiceLevel] || "Spicy"}
+            </View>
+
+            {/* Dish Header Info */}
+            <View style={styles.body}>
+              <Text style={styles.title}>{dish.name}</Text>
+
+              <View style={styles.metaRow}>
+                <View style={styles.metaItem}>
+                  <Clock size={14} color={SikaColors.accentLight} />
+                  <Text style={styles.metaText}>{dish.preparationTimeMinutes} mins prep</Text>
+                </View>
+                <View style={styles.metaItem}>
+                  <Flame size={14} color={SikaColors.accentLight} />
+                  <Text style={styles.metaText}>
+                    {SPICE_LABELS[Math.min(dish.spiceLevel, 4)]}
                   </Text>
                 </View>
-              )}
-            </View>
-
-            {/* Title & Description */}
-            <Text style={styles.dishTitle}>{dish.name}</Text>
-            <Text style={styles.dishDescription}>{dish.description}</Text>
-
-            {/* Option Groups */}
-            {dish.optionGroups && dish.optionGroups.length > 0 && (
-              <View style={styles.optionsSection}>
-                {dish.optionGroups.map((group) => (
-                  <View key={group.id} style={styles.groupContainer}>
-                    <View style={styles.groupHeader}>
-                      <Text style={styles.groupTitle}>{group.name}</Text>
-                      {group.isRequired && (
-                        <View style={styles.requiredBadge}>
-                          <Text style={styles.requiredBadgeText}>REQUIRED</Text>
-                        </View>
-                      )}
-                    </View>
-
-                    {group.options.map((opt) => {
-                      const isSelected = selectedOptionsMap[group.id]?.id === opt.id;
-                      return (
-                        <TouchableOpacity
-                          key={opt.id}
-                          activeOpacity={0.7}
-                          onPress={() => handleSelectOption(group.id, opt)}
-                          style={[
-                            styles.optionRow,
-                            isSelected && styles.optionRowSelected,
-                          ]}
-                        >
-                          <View style={styles.optionRadioWrapper}>
-                            <View
-                              style={[
-                                styles.radioCircle,
-                                isSelected && styles.radioCircleSelected,
-                              ]}
-                            >
-                              {isSelected && <View style={styles.radioInner} />}
-                            </View>
-                            <Text
-                              style={[
-                                styles.optionName,
-                                isSelected && styles.optionNameSelected,
-                              ]}
-                            >
-                              {opt.name}
-                            </Text>
-                          </View>
-
-                          <Text
-                            style={[
-                              styles.optionPrice,
-                              isSelected && styles.optionPriceSelected,
-                            ]}
-                          >
-                            {opt.priceDeltaPesewas > 0
-                              ? `+${formatPesewasToGhs(opt.priceDeltaPesewas)}`
-                              : "Included"}
-                          </Text>
-                        </TouchableOpacity>
-                      );
-                    })}
-                  </View>
-                ))}
               </View>
-            )}
 
-            {/* Special Instructions Input */}
-            <View style={styles.instructionsSection}>
-              <Text style={styles.inputLabel}>SPECIAL INSTRUCTIONS (OPTIONAL)</Text>
-              <TextInput
-                style={styles.textInput}
-                placeholder="e.g. Less spicy, pack stew separately, extra shito..."
-                placeholderTextColor="#6b7280"
-                value={specialInstructions}
-                onChangeText={setSpecialInstructions}
-                maxLength={200}
-                multiline
-                numberOfLines={2}
-              />
-            </View>
+              <Text style={styles.description}>{dish.description}</Text>
 
-            {/* Quantity Selector */}
-            <View style={styles.quantitySection}>
-              <Text style={styles.quantityLabel}>PORTION QUANTITY</Text>
-              <View style={styles.counterControl}>
-                <TouchableOpacity
-                  onPress={handleDecrement}
-                  disabled={quantity <= 1}
-                  style={[
-                    styles.counterButton,
-                    quantity <= 1 && styles.counterButtonDisabled,
-                  ]}
-                >
-                  <Text style={styles.counterButtonText}>−</Text>
-                </TouchableOpacity>
+              {/* Option Groups */}
+              {dish.optionGroups && dish.optionGroups.length > 0 ? (
+                <View style={styles.groupsSection}>
+                  {dish.optionGroups.map((group) => (
+                    <View key={group.id} style={styles.groupCard}>
+                      <View style={styles.groupHeader}>
+                        <Text style={styles.groupTitle}>{group.name}</Text>
+                        <Badge
+                          label={group.isRequired ? "Required" : "Optional"}
+                          variant={group.isRequired ? "brand" : "neutral"}
+                        />
+                      </View>
+                      {group.description ? (
+                        <Text style={styles.groupDesc}>{group.description}</Text>
+                      ) : null}
 
-                <View style={styles.quantityDisplay}>
-                  <Text style={styles.quantityValueText}>{quantity}</Text>
+                      <View style={styles.optionsList}>
+                        {group.options.map((opt) => {
+                          const selected = selectedOptionsMap[group.id]?.id === opt.id;
+                          return (
+                            <Pressable
+                              key={opt.id}
+                              disabled={!opt.isAvailable}
+                              onPress={() =>
+                                setSelectedOptionsMap((prev) => ({
+                                  ...prev,
+                                  [group.id]: opt,
+                                }))
+                              }
+                              style={[
+                                styles.optionRow,
+                                selected && styles.optionRowSelected,
+                                !opt.isAvailable && styles.optionDisabled,
+                              ]}
+                            >
+                              <View style={styles.optionLeft}>
+                                <View
+                                  style={[
+                                    styles.radioCircle,
+                                    selected && styles.radioCircleSelected,
+                                  ]}
+                                >
+                                  {selected ? (
+                                    <Check size={12} color={SikaColors.text} />
+                                  ) : null}
+                                </View>
+                                <Text style={styles.optionName}>
+                                  {opt.name}
+                                  {!opt.isAvailable ? " (Out)" : ""}
+                                </Text>
+                              </View>
+                              <Text style={styles.optionDelta}>
+                                {opt.priceDeltaPesewas > 0
+                                  ? `+${formatPesewasToGhs(opt.priceDeltaPesewas)}`
+                                  : "Included"}
+                              </Text>
+                            </Pressable>
+                          );
+                        })}
+                      </View>
+                    </View>
+                  ))}
                 </View>
+              ) : null}
 
-                <TouchableOpacity
-                  onPress={handleIncrement}
-                  disabled={quantity >= 20}
-                  style={[
-                    styles.counterButton,
-                    quantity >= 20 && styles.counterButtonDisabled,
-                  ]}
-                >
-                  <Text style={styles.counterButtonText}>+</Text>
-                </TouchableOpacity>
+              {/* Kitchen Instructions */}
+              <View style={styles.notesWrap}>
+                <Text style={styles.sectionLabel}>Kitchen Instructions (Optional)</Text>
+                <TextInput
+                  value={specialInstructions}
+                  onChangeText={setSpecialInstructions}
+                  maxLength={250}
+                  multiline
+                  numberOfLines={2}
+                  placeholder="Less pepper, separate shito, well-done fish..."
+                  placeholderTextColor={SikaColors.muted}
+                  style={styles.notesInput}
+                />
               </View>
             </View>
           </ScrollView>
 
-          {/* Sticky Modal Bottom Action */}
-          <View style={styles.footerAction}>
-            <TouchableOpacity
-              activeOpacity={0.85}
-              onPress={handleConfirmAddToCart}
-              style={styles.addToCartButton}
-            >
-              <Text style={styles.addToCartButtonText}>
-                Add to Cart • {formatPesewasToGhs(lineTotalPesewas)}
-              </Text>
-            </TouchableOpacity>
+          {/* Sticky Bottom Stepper & CTA */}
+          <View style={styles.footer}>
+            <View style={styles.stepper}>
+              <Pressable
+                onPress={() => setQuantity((q) => Math.max(1, q - 1))}
+                accessibilityRole="button"
+                accessibilityLabel="Decrease quantity"
+                style={styles.stepBtn}
+              >
+                <Minus size={16} color={SikaColors.warmWhite} />
+              </Pressable>
+              <Text style={styles.qtyValue}>{quantity}</Text>
+              <Pressable
+                onPress={() => setQuantity((q) => Math.min(20, q + 1))}
+                accessibilityRole="button"
+                accessibilityLabel="Increase quantity"
+                style={styles.stepBtn}
+              >
+                <Plus size={16} color={SikaColors.warmWhite} />
+              </Pressable>
+            </View>
+
+            <Button
+              title={
+                dish.isAvailable
+                  ? `Add ${formatPesewasToGhs(lineTotalPesewas)}`
+                  : "Currently Sold Out"
+              }
+              variant="primary"
+              size="lg"
+              disabled={!dish.isAvailable}
+              onPress={handleConfirm}
+              style={styles.addBtn}
+            />
           </View>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
 
-const { height: SCREEN_HEIGHT } = Dimensions.get("window");
-
 const styles = StyleSheet.create({
-  modalOverlay: {
+  overlay: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.75)",
     justifyContent: "flex-end",
   },
-  sheetContainer: {
-    backgroundColor: "#13141b",
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
+  backdrop: {
+    position: "absolute",
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    backgroundColor: "rgba(0,0,0,0.75)",
+  },
+  sheet: {
+    backgroundColor: SikaColors.surface,
+    borderTopLeftRadius: SikaRadius.xl,
+    borderTopRightRadius: SikaRadius.xl,
     borderTopWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.12)",
-    maxHeight: SCREEN_HEIGHT * 0.88,
-    paddingBottom: 24,
+    borderColor: SikaColors.border,
+    maxHeight: "90%",
+    overflow: "hidden",
   },
-  headerBar: {
-    paddingTop: 12,
-    paddingHorizontal: 20,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+  heroWrap: {
+    height: 220,
+    width: "100%",
+    backgroundColor: SikaColors.elevated,
   },
-  dragHandle: {
-    width: 44,
-    height: 5,
-    borderRadius: 3,
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
-    alignSelf: "center",
-    marginLeft: "auto",
-    marginRight: "auto",
+  heroImage: {
+    width: "100%",
+    height: "100%",
   },
-  closeButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: "rgba(255, 255, 255, 0.08)",
+  closeBtn: {
+    position: "absolute",
+    top: SikaSpace.lg,
+    right: SikaSpace.lg,
+    width: 38,
+    height: 38,
+    borderRadius: SikaRadius.pill,
+    backgroundColor: "rgba(16,16,16,0.75)",
+    borderWidth: 1,
+    borderColor: SikaColors.border,
     alignItems: "center",
     justifyContent: "center",
   },
-  closeButtonText: {
-    color: "#9ca3af",
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  scrollArea: {
-    flexShrink: 1,
-  },
-  scrollContent: {
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 20,
-  },
-  badgeRow: {
+  heroBadges: {
+    position: "absolute",
+    bottom: SikaSpace.md,
+    left: SikaSpace.lg,
     flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-    marginBottom: 10,
+    gap: SikaSpace.sm,
   },
-  featuredBadge: {
-    backgroundColor: "rgba(225, 29, 72, 0.15)",
-    borderColor: "rgba(225, 29, 72, 0.4)",
-    borderWidth: 1,
-    borderRadius: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
+  body: {
+    paddingHorizontal: SikaSpace.xl,
+    paddingBottom: SikaSpace.xl,
   },
-  featuredBadgeText: {
-    color: "#e11d48",
-    fontSize: 10,
-    fontWeight: "700",
+  title: {
+    color: SikaColors.text,
+    fontSize: 24,
+    fontWeight: "900",
+    letterSpacing: -0.4,
   },
-  metaBadge: {
-    backgroundColor: "rgba(255, 255, 255, 0.06)",
-    borderColor: "rgba(255, 255, 255, 0.1)",
-    borderWidth: 1,
-    borderRadius: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
+  metaRow: {
+    flexDirection: "row",
+    gap: SikaSpace.lg,
+    marginTop: SikaSpace.sm,
   },
-  metaBadgeText: {
-    color: "#d1d5db",
-    fontSize: 10,
+  metaItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+  },
+  metaText: {
+    color: SikaColors.secondaryText,
+    fontSize: 12,
     fontWeight: "600",
   },
-  dishTitle: {
-    color: "#ffffff",
-    fontSize: 22,
-    fontWeight: "800",
-    marginBottom: 6,
-    lineHeight: 28,
-  },
-  dishDescription: {
-    color: "#9ca3af",
+  description: {
+    color: SikaColors.secondaryText,
     fontSize: 14,
-    lineHeight: 20,
-    marginBottom: 18,
+    lineHeight: 21,
+    marginTop: SikaSpace.md,
   },
-  optionsSection: {
-    marginBottom: 18,
+  groupsSection: {
+    marginTop: SikaSpace.xl,
+    gap: SikaSpace.lg,
   },
-  groupContainer: {
-    marginBottom: 16,
-    backgroundColor: "#1a1b24",
-    borderRadius: 16,
-    padding: 14,
+  groupCard: {
+    borderRadius: SikaRadius.lg,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.06)",
+    borderColor: SikaColors.border,
+    backgroundColor: SikaColors.background,
+    padding: SikaSpace.md,
   },
   groupHeader: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 10,
+    justifyContent: "space-between",
+    marginBottom: 4,
   },
   groupTitle: {
-    color: "#f3f4f6",
+    color: SikaColors.warmWhite,
     fontSize: 14,
     fontWeight: "700",
   },
-  requiredBadge: {
-    backgroundColor: "rgba(225, 29, 72, 0.12)",
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
+  groupDesc: {
+    color: SikaColors.muted,
+    fontSize: 12,
+    marginBottom: SikaSpace.sm,
   },
-  requiredBadgeText: {
-    color: "#e11d48",
-    fontSize: 9,
-    fontWeight: "800",
+  optionsList: {
+    gap: SikaSpace.sm,
+    marginTop: SikaSpace.sm,
   },
   optionRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: 10,
-    paddingHorizontal: 10,
-    borderRadius: 10,
-    marginVertical: 2,
+    justifyContent: "space-between",
+    borderRadius: SikaRadius.md,
+    borderWidth: 1,
+    borderColor: SikaColors.border,
+    backgroundColor: SikaColors.surface,
+    paddingHorizontal: SikaSpace.md,
+    paddingVertical: SikaSpace.md,
   },
   optionRowSelected: {
-    backgroundColor: "rgba(225, 29, 72, 0.1)",
+    borderColor: SikaColors.accent,
+    backgroundColor: SikaColors.accentWash12,
   },
-  optionRadioWrapper: {
+  optionDisabled: {
+    opacity: 0.45,
+  },
+  optionLeft: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
+    gap: SikaSpace.sm,
     flex: 1,
   },
   radioCircle: {
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    borderWidth: 2,
-    borderColor: "#4b5563",
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    borderColor: SikaColors.muted,
     alignItems: "center",
     justifyContent: "center",
   },
   radioCircleSelected: {
-    borderColor: "#e11d48",
-  },
-  radioInner: {
-    width: 9,
-    height: 9,
-    borderRadius: 4.5,
-    backgroundColor: "#e11d48",
+    borderColor: SikaColors.accent,
+    backgroundColor: SikaColors.accent,
   },
   optionName: {
-    color: "#d1d5db",
-    fontSize: 14,
-    fontWeight: "500",
-  },
-  optionNameSelected: {
-    color: "#ffffff",
-    fontWeight: "700",
-  },
-  optionPrice: {
-    color: "#9ca3af",
+    color: SikaColors.warmWhite,
     fontSize: 13,
+    fontWeight: "600",
   },
-  optionPriceSelected: {
-    color: "#e11d48",
-    fontWeight: "700",
-  },
-  instructionsSection: {
-    marginBottom: 18,
-  },
-  inputLabel: {
-    color: "#9ca3af",
-    fontSize: 11,
-    fontWeight: "700",
-    letterSpacing: 0.8,
-    marginBottom: 8,
-  },
-  textInput: {
-    backgroundColor: "#1a1b24",
-    borderColor: "rgba(255, 255, 255, 0.1)",
-    borderWidth: 1,
-    borderRadius: 12,
-    color: "#ffffff",
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    fontSize: 13,
-    minHeight: 58,
-    textAlignVertical: "top",
-  },
-  quantitySection: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 12,
-    borderTopWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.08)",
-  },
-  quantityLabel: {
-    color: "#9ca3af",
+  optionDelta: {
+    color: SikaColors.accentLight,
     fontSize: 12,
     fontWeight: "700",
-    letterSpacing: 0.8,
+    fontVariant: ["tabular-nums"],
   },
-  counterControl: {
+  notesWrap: {
+    marginTop: SikaSpace.xl,
+  },
+  sectionLabel: {
+    color: SikaColors.secondaryText,
+    fontSize: 12,
+    fontWeight: "700",
+    textTransform: "uppercase",
+    letterSpacing: 0.8,
+    marginBottom: SikaSpace.sm,
+  },
+  notesInput: {
+    borderRadius: SikaRadius.md,
+    borderWidth: 1,
+    borderColor: SikaColors.border,
+    backgroundColor: SikaColors.elevated,
+    color: SikaColors.warmWhite,
+    padding: SikaSpace.md,
+    fontSize: 13,
+    minHeight: 68,
+    textAlignVertical: "top",
+  },
+  footer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#1a1b24",
-    borderRadius: 12,
-    padding: 3,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.1)",
+    gap: SikaSpace.md,
+    paddingHorizontal: SikaSpace.xl,
+    paddingVertical: SikaSpace.lg,
+    borderTopWidth: 1,
+    borderTopColor: SikaColors.border,
+    backgroundColor: SikaColors.background,
   },
-  counterButton: {
+  stepper: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderRadius: SikaRadius.md,
+    borderWidth: 1,
+    borderColor: SikaColors.border,
+    backgroundColor: SikaColors.surface,
+    height: 50,
+    paddingHorizontal: 6,
+  },
+  stepBtn: {
     width: 36,
     height: 36,
-    borderRadius: 9,
-    backgroundColor: "#252733",
     alignItems: "center",
     justifyContent: "center",
   },
-  counterButtonDisabled: {
-    opacity: 0.4,
-  },
-  counterButtonText: {
-    color: "#ffffff",
-    fontSize: 18,
-    fontWeight: "700",
-  },
-  quantityDisplay: {
-    paddingHorizontal: 16,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  quantityValueText: {
-    color: "#ffffff",
-    fontSize: 16,
-    fontWeight: "800",
-  },
-  footerAction: {
-    paddingHorizontal: 20,
-    paddingTop: 10,
-    borderTopWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.08)",
-  },
-  addToCartButton: {
-    backgroundColor: "#e11d48",
-    paddingVertical: 14,
-    borderRadius: 16,
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#e11d48",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
-    shadowRadius: 10,
-    elevation: 4,
-  },
-  addToCartButtonText: {
-    color: "#ffffff",
+  qtyValue: {
+    color: SikaColors.text,
     fontSize: 15,
     fontWeight: "800",
-    letterSpacing: 0.5,
+    minWidth: 26,
+    textAlign: "center",
+    fontVariant: ["tabular-nums"],
+  },
+  addBtn: {
+    flex: 1,
   },
 });

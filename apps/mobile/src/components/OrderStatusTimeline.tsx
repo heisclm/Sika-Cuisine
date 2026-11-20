@@ -1,49 +1,76 @@
-/**
- * @file apps/mobile/src/components/OrderStatusTimeline.tsx
- * @description Graphical stepper timeline visualizing order progress across Delivery and Pickup lifecycles.
- *
- * STEPPER DESIGN:
- * 1. Dual-Workflow Sequences: Maps out 6 steps for Delivery (ending in DELIVERED) vs 5 steps for Pickup (ending in COLLECTED).
- * 2. Visual Progress Graph: Completed steps render with vibrant emerald checkmarks, active steps with glowing crimson rings,
- *    and pending future steps in muted carbon tones.
- * 3. Abort Handling: Renders explicit rejection or cancellation banners when an order enters an aborted terminal state.
- */
-
 import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
+import {
+  Bike,
+  CheckCircle2,
+  ChefHat,
+  Clock,
+  PackageCheck,
+  XCircle,
+} from "lucide-react-native";
 import { FulfilmentStatus, FulfilmentType } from "@sika/shared";
+import { SikaColors, SikaRadius, SikaSpace } from "../theme";
+
+export interface OrderTimelineHistoryEntry {
+  status: FulfilmentStatus;
+  timestamp: string;
+  note?: string | null;
+}
 
 interface TimelineStep {
   status: FulfilmentStatus;
   label: string;
   subtext: string;
+  iconKey: "clock" | "confirm" | "prep" | "pack" | "bike" | "done";
 }
 
 const DELIVERY_STEPS: TimelineStep[] = [
-  { status: "PENDING", label: "Order Received", subtext: "Sent to kitchen" },
-  { status: "CONFIRMED", label: "Confirmed", subtext: "Chef acknowledged ticket" },
-  { status: "PREPARING", label: "Cooking on Grill", subtext: "Freshly sizzling" },
-  { status: "READY_FOR_DISPATCH", label: "Packed & Ready", subtext: "Awaiting courier pickup" },
-  { status: "OUT_FOR_DELIVERY", label: "Out for Delivery", subtext: "En route across Sunyani" },
-  { status: "DELIVERED", label: "Delivered", subtext: "Enjoy your culinary feast" },
+  { status: "PENDING", label: "Order Received", subtext: "Sent to Sunyani kitchen", iconKey: "clock" },
+  { status: "CONFIRMED", label: "Confirmed", subtext: "Kitchen accepted ticket", iconKey: "confirm" },
+  { status: "PREPARING", label: "Preparing Meal", subtext: "Cooked fresh to order", iconKey: "prep" },
+  { status: "READY_FOR_DISPATCH", label: "Packed", subtext: "Awaiting rider dispatch", iconKey: "pack" },
+  { status: "OUT_FOR_DELIVERY", label: "Out for Delivery", subtext: "Courier en route", iconKey: "bike" },
+  { status: "DELIVERED", label: "Delivered", subtext: "Completed handover", iconKey: "done" },
 ];
 
 const PICKUP_STEPS: TimelineStep[] = [
-  { status: "PENDING", label: "Order Received", subtext: "Sent to kitchen" },
-  { status: "CONFIRMED", label: "Confirmed", subtext: "Chef acknowledged ticket" },
-  { status: "PREPARING", label: "Cooking on Grill", subtext: "Freshly sizzling" },
-  { status: "READY_FOR_PICKUP", label: "Ready at Counter", subtext: "Available for pickup" },
-  { status: "COLLECTED", label: "Collected", subtext: "Enjoy your feast" },
+  { status: "PENDING", label: "Order Received", subtext: "Sent to Sunyani kitchen", iconKey: "clock" },
+  { status: "CONFIRMED", label: "Confirmed", subtext: "Kitchen accepted ticket", iconKey: "confirm" },
+  { status: "PREPARING", label: "Preparing Meal", subtext: "Cooked fresh to order", iconKey: "prep" },
+  { status: "READY_FOR_PICKUP", label: "Ready at Counter", subtext: "Available on Commercial Rd", iconKey: "pack" },
+  { status: "COLLECTED", label: "Collected", subtext: "Picked up by customer", iconKey: "done" },
 ];
 
 interface OrderStatusTimelineProps {
   fulfilmentType: FulfilmentType;
   currentStatus: FulfilmentStatus;
+  history?: OrderTimelineHistoryEntry[];
 }
 
+function renderStepIcon(key: TimelineStep["iconKey"], color: string) {
+  switch (key) {
+    case "clock":
+      return <Clock size={14} color={color} />;
+    case "confirm":
+    case "done":
+      return <CheckCircle2 size={14} color={color} />;
+    case "prep":
+      return <ChefHat size={14} color={color} />;
+    case "pack":
+      return <PackageCheck size={14} color={color} />;
+    case "bike":
+      return <Bike size={14} color={color} />;
+  }
+}
+
+/**
+ * Vertical milestone stepper mapping Delivery vs Pickup trajectories
+ * alongside recorded milestone timestamps when supplied by the API or cache.
+ */
 export function OrderStatusTimeline({
   fulfilmentType,
   currentStatus,
+  history = [],
 }: OrderStatusTimelineProps) {
   const steps = fulfilmentType === "COLLECTION" ? PICKUP_STEPS : DELIVERY_STEPS;
   const currentIndex = steps.findIndex((s) => s.status === currentStatus);
@@ -51,14 +78,17 @@ export function OrderStatusTimeline({
   if (currentStatus === "CANCELLED" || currentStatus === "REJECTED") {
     return (
       <View style={styles.cancelledBox}>
-        <Text style={styles.cancelledTitle}>
-          {currentStatus === "CANCELLED" ? "Order Cancelled" : "Order Declined"}
-        </Text>
-        <Text style={styles.cancelledDesc}>
-          {currentStatus === "CANCELLED"
-            ? "This order was cancelled prior to preparation."
-            : "The kitchen was unable to fulfil this order. Any payment will be refunded."}
-        </Text>
+        <XCircle size={22} color={SikaColors.error} />
+        <View style={styles.cancelledCopy}>
+          <Text style={styles.cancelledTitle}>
+            {currentStatus === "CANCELLED" ? "Order Cancelled" : "Order Declined"}
+          </Text>
+          <Text style={styles.cancelledDesc}>
+            {currentStatus === "CANCELLED"
+              ? "This order was cancelled prior to preparation."
+              : "The kitchen was unable to fulfil this order. Contact us on 0533376760 if payment was made."}
+          </Text>
+        </View>
       </View>
     );
   }
@@ -66,49 +96,59 @@ export function OrderStatusTimeline({
   return (
     <View style={styles.container}>
       {steps.map((step, index) => {
-        const isCompleted = currentIndex > index || (currentIndex === index && index === steps.length - 1);
-        const isCurrent = currentIndex === index && index !== steps.length - 1;
-        const isLast = index === steps.length - 1;
+        const isFinalStep = index === steps.length - 1;
+        const isCompleted =
+          currentIndex > index || (currentIndex === index && isFinalStep);
+        const isCurrent = currentIndex === index && !isFinalStep;
+        const recorded = history.find((h) => h.status === step.status);
+
+        const badgeColor = isCompleted
+          ? SikaColors.success
+          : isCurrent
+          ? SikaColors.text
+          : SikaColors.muted;
 
         return (
           <View key={step.status} style={styles.stepRow}>
-            {/* Step Icon & Line */}
             <View style={styles.indicatorCol}>
               <View
                 style={[
-                  styles.circle,
-                  isCompleted && styles.circleCompleted,
-                  isCurrent && styles.circleCurrent,
+                  styles.node,
+                  isCompleted && styles.nodeCompleted,
+                  isCurrent && styles.nodeCurrent,
                 ]}
               >
-                <View
-                  style={[
-                    styles.innerDot,
-                    (isCompleted || isCurrent) && styles.innerDotActive,
-                  ]}
-                />
+                {renderStepIcon(step.iconKey, badgeColor)}
               </View>
-              {!isLast && (
+              {!isFinalStep ? (
                 <View
-                  style={[
-                    styles.line,
-                    currentIndex > index && styles.lineCompleted,
-                  ]}
+                  style={[styles.line, currentIndex > index && styles.lineCompleted]}
                 />
-              )}
+              ) : null}
             </View>
 
-            {/* Step Content */}
             <View style={styles.contentCol}>
-              <Text
-                style={[
-                  styles.stepLabel,
-                  (isCompleted || isCurrent) && styles.stepLabelActive,
-                ]}
-              >
-                {step.label}
+              <View style={styles.labelRow}>
+                <Text
+                  style={[
+                    styles.stepLabel,
+                    (isCompleted || isCurrent) && styles.stepLabelActive,
+                  ]}
+                >
+                  {step.label}
+                </Text>
+                {recorded ? (
+                  <Text style={styles.timeText}>
+                    {new Date(recorded.timestamp).toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </Text>
+                ) : null}
+              </View>
+              <Text style={styles.stepSubtext}>
+                {recorded?.note || step.subtext}
               </Text>
-              <Text style={styles.stepSubtext}>{step.subtext}</Text>
             </View>
           </View>
         );
@@ -119,87 +159,96 @@ export function OrderStatusTimeline({
 
 const styles = StyleSheet.create({
   container: {
-    paddingVertical: 16,
-    paddingHorizontal: 8,
+    paddingVertical: SikaSpace.xs,
   },
   stepRow: {
     flexDirection: "row",
-    minHeight: 56,
   },
   indicatorCol: {
     alignItems: "center",
-    width: 32,
+    width: 34,
+    marginRight: SikaSpace.md,
   },
-  circle: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    borderWidth: 2,
-    borderColor: "#374151",
+  node: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    borderWidth: 1.5,
+    borderColor: SikaColors.border,
+    backgroundColor: SikaColors.elevated,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#111827",
   },
-  circleCompleted: {
-    borderColor: "#10b981",
-    backgroundColor: "#064e3b",
+  nodeCompleted: {
+    borderColor: SikaColors.successBorder,
+    backgroundColor: SikaColors.successBg,
   },
-  circleCurrent: {
-    borderColor: "#e11d48", // Brand Red
-    backgroundColor: "#4c0519",
-  },
-  innerDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: "transparent",
-  },
-  innerDotActive: {
-    backgroundColor: "#ffffff",
+  nodeCurrent: {
+    borderColor: SikaColors.accent,
+    backgroundColor: SikaColors.accent,
   },
   line: {
-    flex: 1,
     width: 2,
-    backgroundColor: "#374151",
+    flex: 1,
+    minHeight: 24,
+    backgroundColor: SikaColors.border,
     marginVertical: 4,
   },
   lineCompleted: {
-    backgroundColor: "#10b981",
+    backgroundColor: SikaColors.success,
   },
   contentCol: {
     flex: 1,
-    paddingLeft: 12,
-    paddingBottom: 20,
+    paddingBottom: SikaSpace.lg,
+  },
+  labelRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: SikaSpace.sm,
   },
   stepLabel: {
+    color: SikaColors.muted,
     fontSize: 14,
-    fontWeight: "600",
-    color: "#9ca3af",
+    fontWeight: "700",
   },
   stepLabelActive: {
-    color: "#ffffff",
+    color: SikaColors.warmWhite,
+  },
+  timeText: {
+    color: SikaColors.secondaryText,
+    fontSize: 11,
+    fontWeight: "700",
+    fontVariant: ["tabular-nums"],
   },
   stepSubtext: {
+    color: SikaColors.secondaryText,
     fontSize: 12,
-    color: "#6b7280",
     marginTop: 2,
+    lineHeight: 17,
   },
   cancelledBox: {
-    backgroundColor: "rgba(127, 29, 29, 0.4)",
-    borderColor: "#991b1b",
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: SikaSpace.md,
+    borderRadius: SikaRadius.lg,
     borderWidth: 1,
-    borderRadius: 12,
-    padding: 16,
-    marginVertical: 16,
+    borderColor: SikaColors.errorBorder,
+    backgroundColor: SikaColors.errorBg,
+    padding: SikaSpace.lg,
+  },
+  cancelledCopy: {
+    flex: 1,
   },
   cancelledTitle: {
-    color: "#fca5a5",
+    color: "#FDA4AF",
     fontSize: 15,
-    fontWeight: "700",
-    marginBottom: 4,
+    fontWeight: "800",
   },
   cancelledDesc: {
-    color: "#fecaca",
+    color: SikaColors.warmWhite,
     fontSize: 13,
+    lineHeight: 19,
+    marginTop: 4,
   },
 });

@@ -150,10 +150,10 @@ export function FloatingGarnishes() {
 
           <defs>
             <radialGradient id="tomato-body" cx="32" cy="34" r="34" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stopColor="#ff4d4d" />
-              <stop offset="35%" stopColor="#e50914" />
-              <stop offset="75%" stopColor="#ad030a" />
-              <stop offset="100%" stopColor="#660005" />
+              <stop offset="0%" stopColor="#F0444A" />
+              <stop offset="35%" stopColor="#D71920" />
+              <stop offset="75%" stopColor="#A91017" />
+              <stop offset="100%" stopColor="#860B11" />
             </radialGradient>
           </defs>
         </svg>

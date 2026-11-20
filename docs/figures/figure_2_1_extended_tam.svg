@@ -1,0 +1,108 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1800 1050" width="100%" height="100%" style="background-color: #ffffff; font-family: Segoe UI, Arial, Helvetica, sans-serif;">
+
+    <defs>
+      <filter id="shadow" x="-5%" y="-5%" width="112%" height="112%">
+        <feDropShadow dx="2" dy="3" stdDeviation="3" flood-color="#64748b" flood-opacity="0.15"/>
+      </filter>
+      <marker id="arr-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M 0 1 L 10 5 L 0 9 z" fill="#2563eb" />
+      </marker>
+      <marker id="arr-red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M 0 1 L 10 5 L 0 9 z" fill="#dc2626" />
+      </marker>
+      <marker id="arr-amber" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M 0 1 L 10 5 L 0 9 z" fill="#d97706" />
+      </marker>
+      <marker id="arr-green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M 0 1 L 10 5 L 0 9 z" fill="#16a34a" />
+      </marker>
+    </defs>
+    
+
+    <text x="900.0" y="45" font-size="28" font-weight="bold" fill="#0f172a" text-anchor="middle">SIKA CUISINE MULTI-PLATFORM FOOD ORDERING SYSTEM</text>
+    <text x="900.0" y="82" font-size="16" fill="#475569" text-anchor="middle">Figure 2.1: Extended Technology Acceptance Model (TAM) for Localized Mobile &amp; Web Commerce</text>
+    <line x1="60" y1="112" x2="1740" y2="112" stroke="#cbd5e1" stroke-width="2" />
+    
+<rect x="60" y="135" width="510" height="660" rx="12" fill="#f8fafc" stroke="#bfdbfe" stroke-width="2" />
+<path d="M 60 147 A 12 12 0 0 1 72 135 L 558 135 A 12 12 0 0 1 570 147 L 570 181 L 60 181 Z" fill="#1e3a8a" />
+<text x="315.0" y="164" font-size="18" font-weight="bold" fill="#ffffff" text-anchor="middle">1. EXTERNAL SYSTEM ANTECEDENTS</text>
+<rect x="630" y="135" width="560" height="660" rx="12" fill="#fffbeb" stroke="#fde68a" stroke-width="2" />
+<path d="M 630 147 A 12 12 0 0 1 642 135 L 1178 135 A 12 12 0 0 1 1190 147 L 1190 181 L 630 181 Z" fill="#b45309" />
+<text x="910.0" y="164" font-size="18" font-weight="bold" fill="#ffffff" text-anchor="middle">2. CORE COGNITIVE BELIEFS (TAM)</text>
+<rect x="1250" y="135" width="490" height="660" rx="12" fill="#f0fdf4" stroke="#86efac" stroke-width="2" />
+<path d="M 1250 147 A 12 12 0 0 1 1262 135 L 1728 135 A 12 12 0 0 1 1740 147 L 1740 181 L 1250 181 Z" fill="#15803d" />
+<text x="1495.0" y="164" font-size="18" font-weight="bold" fill="#ffffff" text-anchor="middle">3. ADOPTION &amp; USAGE OUTCOMES</text>
+<rect x="85.0" y="210.0" width="460" height="200" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2" filter="url(#shadow)" />
+<text x="315" y="270.0" font-size="17" font-weight="bold" fill="#1e3a8a" text-anchor="middle">External System Enablers</text>
+<text x="315" y="294.0" font-size="13.5" fill="#475569" text-anchor="middle">• Mobile Money (MoMo) Wallet Integration</text>
+<text x="315" y="316.0" font-size="13.5" fill="#475569" text-anchor="middle">• Pre-Computed Sunyani Locality Matrix</text>
+<text x="315" y="338.0" font-size="13.5" fill="#475569" text-anchor="middle">• Zero-Drift Integer Pesewas Standard</text>
+<text x="315" y="360.0" font-size="13.5" fill="#475569" text-anchor="middle">• Cross-Platform Web &amp; Mobile Parity</text>
+<rect x="85.0" y="497.5" width="460" height="185" rx="8" fill="#fef2f2" stroke="#dc2626" stroke-width="2" filter="url(#shadow)" />
+<text x="315" y="550.0" font-size="17" font-weight="bold" fill="#991b1b" text-anchor="middle">Perceived Security &amp; Risk Mitigation</text>
+<text x="315" y="574.0" font-size="13.5" fill="#475569" text-anchor="middle">• Cryptographic HMAC SHA512 Webhooks</text>
+<text x="315" y="596.0" font-size="13.5" fill="#475569" text-anchor="middle">• Server-Authoritative Price Validation</text>
+<text x="315" y="618.0" font-size="13.5" fill="#475569" text-anchor="middle">• Unidirectional Kitchen State Machine</text>
+<text x="315" y="640.0" font-size="13.5" fill="#475569" text-anchor="middle">• Eliminates Fake SMS Reversal Fraud</text>
+<rect x="670.0" y="215.0" width="480" height="190" rx="8" fill="#ffffff" stroke="#d97706" stroke-width="2" filter="url(#shadow)" />
+<text x="910" y="270.0" font-size="17" font-weight="bold" fill="#b45309" text-anchor="middle">Perceived Ease of Use (PEOU)</text>
+<text x="910" y="294.0" font-size="13.5" fill="#475569" text-anchor="middle">• Frictionless Thumb-Zone Navigation</text>
+<text x="910" y="316.0" font-size="13.5" fill="#475569" text-anchor="middle">• Instant Menu Discovery &amp; Micro-Cart</text>
+<text x="910" y="338.0" font-size="13.5" fill="#475569" text-anchor="middle">• Zero-Install Web / Offline Mobile Cache</text>
+<text x="910" y="360.0" font-size="13.5" fill="#475569" text-anchor="middle">• Simple Single-Tap Checkout in GHS</text>
+<rect x="670.0" y="495.0" width="480" height="190" rx="8" fill="#ffffff" stroke="#d97706" stroke-width="2" filter="url(#shadow)" />
+<text x="910" y="550.0" font-size="17" font-weight="bold" fill="#b45309" text-anchor="middle">Perceived Usefulness (PU)</text>
+<text x="910" y="574.0" font-size="13.5" fill="#475569" text-anchor="middle">• Eliminates WhatsApp Busy-Line Queueing</text>
+<text x="910" y="596.0" font-size="13.5" fill="#475569" text-anchor="middle">• Accurate Customization (No Meal Mix-ups)</text>
+<text x="910" y="618.0" font-size="13.5" fill="#475569" text-anchor="middle">• Transparent Real-Time Kitchen Timelines</text>
+<text x="910" y="640.0" font-size="13.5" fill="#475569" text-anchor="middle">• Tamper-Proof Auditability &amp; Billing</text>
+<rect x="1280.0" y="270.0" width="430" height="160" rx="8" fill="#ecfdf5" stroke="#16a34a" stroke-width="2" filter="url(#shadow)" />
+<text x="1495" y="321.0" font-size="17" font-weight="bold" fill="#15803d" text-anchor="middle">Behavioral Intention (BI)</text>
+<text x="1495" y="345.0" font-size="13.5" fill="#475569" text-anchor="middle">• Intention to Order Online Regularly</text>
+<text x="1495" y="367.0" font-size="13.5" fill="#475569" text-anchor="middle">• Preference Over Phone/WhatsApp</text>
+<text x="1495" y="389.0" font-size="13.5" fill="#475569" text-anchor="middle">• Willingness to Recommend to Peers</text>
+<rect x="1280.0" y="510.0" width="430" height="160" rx="8" fill="#f0fdf4" stroke="#10b981" stroke-width="2" filter="url(#shadow)" />
+<text x="1495" y="561.0" font-size="17" font-weight="bold" fill="#15803d" text-anchor="middle">Actual System Usage (ASU)</text>
+<text x="1495" y="585.0" font-size="13.5" fill="#475569" text-anchor="middle">• High-Frequency Daily Orders Placed</text>
+<text x="1495" y="607.0" font-size="13.5" fill="#475569" text-anchor="middle">• Sustained Patronage via Web App</text>
+<text x="1495" y="629.0" font-size="13.5" fill="#475569" text-anchor="middle">• Long-Term Mobile App Engagement</text>
+<line x1="545" y1="310" x2="670" y2="310" stroke="#2563eb" stroke-width="2" marker-end="url(#arr-blue)" />
+<rect x="529.5" y="286.0" width="156" height="20" rx="4" fill="#ffffff" stroke="#cbd5e1" stroke-width="1" />
+<text x="607.5" y="300.0" font-size="12" font-weight="bold" fill="#2563eb" text-anchor="middle">Enhances Usability</text>
+<path d="M 545 355 L 600 355 L 670 545" fill="none" stroke="#2563eb" stroke-width="2" marker-end="url(#arr-blue)" />
+<rect x="546" y="430" width="106" height="20" rx="4" fill="#ffffff" stroke="#cbd5e1" stroke-width="1" />
+<text x="550" y="444" font-size="12" font-weight="bold" fill="#2563eb">Direct Value</text>
+<line x1="545" y1="590" x2="670" y2="590" stroke="#dc2626" stroke-width="2" marker-end="url(#arr-red)" />
+<rect x="553.5" y="566.0" width="108" height="20" rx="4" fill="#ffffff" stroke="#cbd5e1" stroke-width="1" />
+<text x="607.5" y="580.0" font-size="12" font-weight="bold" fill="#dc2626" text-anchor="middle">Reduces Risk</text>
+<path d="M 545 545 L 600 545 L 670 355" fill="none" stroke="#dc2626" stroke-width="2" marker-end="url(#arr-red)" />
+<rect x="546" y="465" width="106" height="20" rx="4" fill="#ffffff" stroke="#cbd5e1" stroke-width="1" />
+<text x="550" y="479" font-size="12" font-weight="bold" fill="#dc2626">Builds Trust</text>
+<line x1="910" y1="405" x2="910" y2="495" stroke="#d97706" stroke-width="2" marker-end="url(#arr-amber)" />
+<rect x="816.0" y="454.0" width="188" height="20" rx="4" fill="#ffffff" stroke="#cbd5e1" stroke-width="1" />
+<text x="910.0" y="468.0" font-size="12" font-weight="bold" fill="#d97706" text-anchor="middle">H1: Positive Influence</text>
+<path d="M 1150 310 L 1220 310 L 1280 320" fill="none" stroke="#d97706" stroke-width="2" marker-end="url(#arr-amber)" />
+<rect x="1156" y="265" width="146" height="20" rx="4" fill="#ffffff" stroke="#cbd5e1" stroke-width="1" />
+<text x="1160" y="279" font-size="12" font-weight="bold" fill="#d97706">H2: Direct Impact</text>
+<line x1="1150" y1="545" x2="1280" y2="395" stroke="#d97706" stroke-width="2" marker-end="url(#arr-amber)" />
+<rect x="1137.0" y="446.0" width="156" height="20" rx="4" fill="#ffffff" stroke="#cbd5e1" stroke-width="1" />
+<text x="1215.0" y="460.0" font-size="12" font-weight="bold" fill="#d97706" text-anchor="middle">H3: Primary Driver</text>
+<line x1="1495" y1="430" x2="1495" y2="510" stroke="#16a34a" stroke-width="2" marker-end="url(#arr-green)" />
+<rect x="1401.0" y="474.0" width="188" height="20" rx="4" fill="#ffffff" stroke="#cbd5e1" stroke-width="1" />
+<text x="1495.0" y="488.0" font-size="12" font-weight="bold" fill="#16a34a" text-anchor="middle">H4: Action Realization</text>
+<rect x="60" y="815" width="1680" height="185" rx="12" fill="#ffffff" stroke="#cbd5e1" stroke-width="2" />
+<text x="90" y="847" font-size="18" font-weight="bold" fill="#0f172a">THEORETICAL CONSTRUCT HYPOTHESES &amp; OPERATIONAL CORRELATIONS</text>
+<rect x="90" y="870" width="165" height="28" rx="5" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1" />
+<text x="98" y="889" font-size="13.5" font-weight="bold" fill="#1e3a8a">H1 (PEOU -> PU):</text>
+<text x="265" y="889" font-size="13" fill="#475569">A fluid, responsive interface with intuitive dish options directly increases perceived culinary utility by reducing effort.</text>
+<rect x="930" y="870" width="165" height="28" rx="5" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1" />
+<text x="938" y="889" font-size="13.5" font-weight="bold" fill="#1e3a8a">H2 (PEOU -> BI):</text>
+<text x="1105" y="889" font-size="13" fill="#475569">High interface usability (thumb-zone layouts, instant cart micro-interactions) directly motivates consumer intention to order.</text>
+<rect x="90" y="925" width="165" height="28" rx="5" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1" />
+<text x="98" y="944" font-size="13.5" font-weight="bold" fill="#1e3a8a">H3 (PU -> BI):</text>
+<text x="265" y="944" font-size="13" fill="#475569">Perceived time savings, menu clarity, and zero-error food dispatch represent the primary determinant of customer platform adoption.</text>
+<rect x="930" y="925" width="165" height="28" rx="5" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1" />
+<text x="938" y="944" font-size="13.5" font-weight="bold" fill="#1e3a8a">H4 (BI -> ASU):</text>
+<text x="1105" y="944" font-size="13" fill="#475569">Strong behavioral intention systematically converts casual campus diners into sustained daily patrons across web and mobile.</text>
+<text x="900.0" y="1028" font-size="13.5" font-style="italic" fill="#64748b" text-anchor="middle">* Catholic University of Ghana, Faculty of Computing, Engineering &amp; Mathematical Sciences (CEMS) — Adapted from Davis [19] and Ofori et al. [5]</text>
+</svg>

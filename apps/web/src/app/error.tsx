@@ -2,7 +2,8 @@
 
 import React, { useEffect } from "react";
 import Link from "next/link";
-import { AlertTriangle, RotateCcw, Home } from "lucide-react";
+import { AlertTriangle, Home, RefreshCw } from "lucide-react";
+import { Button } from "@/components/ui/Button";
 
 export default function GlobalError({
   error,
@@ -12,50 +13,36 @@ export default function GlobalError({
   reset: () => void;
 }) {
   useEffect(() => {
-    // Log the error for internal audit
+    console.error("[Sika Cuisine Error Boundary]:", error);
   }, [error]);
 
   return (
-    <div className="relative min-h-[75vh] flex items-center justify-center py-20 px-4 sm:px-6 lg:px-8 overflow-hidden bg-background text-gray-200">
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[350px] studio-vignette pointer-events-none -z-10" />
-
-      <div className="relative z-10 max-w-md w-full text-center space-y-6 rounded-3xl bg-[#1a1b20] border border-white/10 p-8 sm:p-10 shadow-2xl">
-        <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-red/15 text-brand-red border border-brand-red/30 mx-auto">
-          <AlertTriangle className="h-7 w-7" />
+    <div className="min-h-[calc(100vh-80px)] bg-[#101010] px-4 py-16 flex items-center justify-center">
+      <div className="w-full max-w-md rounded-3xl border border-[#333333] bg-[#1C1C1C] p-8 text-center space-y-5 shadow-2xl">
+        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-[#FB7185]/35 bg-[#FB7185]/15 text-[#FDA4AF]">
+          <AlertTriangle className="h-7 w-7" aria-hidden="true" />
         </div>
-
-        <div>
-          <span className="text-[11px] font-semibold uppercase tracking-[0.25em] text-brand-gold block mb-1">
-            System Notice
-          </span>
-          <h1 className="font-serif text-2xl sm:text-3xl font-bold text-white">
-            Kitchen Ticket Interrupted
+        <div className="space-y-2">
+          <h1 className="font-serif text-2xl font-bold text-[#F5F1EA]">
+            Something Interrupted Your Request
           </h1>
-          <p className="mt-3 text-xs sm:text-sm text-gray-400 font-light leading-relaxed">
-            An unexpected error occurred while preparing this view. Your saved orders and cart items remain safely stored.
+          <p className="text-sm text-[#A3A3A3] leading-relaxed">
+            An unexpected error occurred while loading this page. Your cart items remain safely stored.
           </p>
         </div>
 
         <div className="flex flex-col sm:flex-row gap-3 pt-2">
-          <button
-            onClick={() => reset()}
-            className="flex-1 inline-flex items-center justify-center gap-2 py-3 rounded-full text-xs font-semibold text-white bg-brand-red hover:bg-brand-red-hover active:scale-95 transition-all shadow-sm"
-          >
-            <RotateCcw className="h-4 w-4" />
+          <Button variant="primary" size="md" fullWidth onClick={reset}>
+            <RefreshCw className="h-4 w-4" aria-hidden="true" />
             <span>Try Again</span>
-          </button>
-
+          </Button>
           <Link
             href="/"
-            className="flex-1 inline-flex items-center justify-center gap-2 py-3 rounded-full bg-[#202228] border border-white/10 text-xs font-semibold text-gray-300 hover:text-white transition-colors"
+            className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-[#333333] bg-[#262626] hover:bg-[#2F2F2F] px-5 text-sm font-semibold text-[#F5F1EA] transition-colors"
           >
-            <Home className="h-4 w-4" />
+            <Home className="h-4 w-4" aria-hidden="true" />
             <span>Return Home</span>
           </Link>
-        </div>
-
-        <div className="text-[11px] text-gray-500 font-mono">
-          Incident ID: {error.digest || "SYS-KITCHEN-OK"}
         </div>
       </div>
     </div>

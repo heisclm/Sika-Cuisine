@@ -4,7 +4,7 @@ import React from "react";
 
 export function SvgFlourish({
   className = "",
-  color = "#e11d48",
+  color = "#D71920",
   width = 240,
   height = 20,
 }: {

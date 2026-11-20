@@ -3,272 +3,296 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Lock, Mail, User, Phone, MapPin, ArrowRight, AlertCircle, Loader2, CheckCircle2, Eye, EyeOff } from "lucide-react";
+import { ArrowRight, CheckCircle2, Eye, EyeOff, Lock, Mail, Phone, User } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
-import { SUNYANI_DELIVERY_ZONES } from "@/lib/delivery-zones";
-import { formatGhanaPhone, isValidGhanaPhone } from "@/lib/phone";
+import { Button } from "@/components/ui/Button";
+import { PageReveal } from "@/components/ui/MotionPrimitives";
 
+/**
+ * Customer account registration page calling `POST /api/v1/auth/register`.
+ * Validates password confirmation client-side and redirects directly to `/account`.
+ */
 export default function RegisterPage() {
   const router = useRouter();
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
-  const [preferredArea, setPreferredArea] = useState(SUNYANI_DELIVERY_ZONES[0].name);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [agreedToTerms, setAgreedToTerms] = useState(false);
-
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
-  const handleRegister = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters.");
+      return;
+    }
+
     if (password !== confirmPassword) {
-      setError("Passwords do not match. Please re-enter.");
-      return;
-    }
-
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters long.");
-      return;
-    }
-
-    if (!isValidGhanaPhone(phone)) {
-      setError("Please enter a valid 10-digit Ghanaian mobile number (e.g. 053 337 6760).");
-      return;
-    }
-
-    if (!agreedToTerms) {
-      setError("Please accept the terms of service and privacy policy to continue.");
+      setError("Passwords do not match.");
       return;
     }
 
     setLoading(true);
+    try {
+      const res = await fetch("/api/v1/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fullName: fullName.trim(),
+          phone: phone.trim(),
+          email: email.trim(),
+          password,
+        }),
+      });
 
-    setTimeout(() => {
-      setLoading(false);
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        const firstFieldError =
+          data.details && typeof data.details === "object"
+            ? (Object.values(data.details).flat()[0] as string | undefined)
+            : undefined;
+        setError(firstFieldError || data.error || "Unable to create your account.");
+        setLoading(false);
+        return;
+      }
+
       setSuccess(true);
       setTimeout(() => {
-        router.push("/menu");
-      }, 1200);
-    }, 700);
+        router.push("/account");
+        router.refresh();
+      }, 900);
+    } catch {
+      setError("Network connection error. Please check your internet and try again.");
+      setLoading(false);
+    }
   };
 
+  if (success) {
+    return (
+      <div className="min-h-[calc(100vh-80px)] bg-[#101010] px-4 py-12 flex items-center justify-center">
+        <PageReveal className="w-full max-w-md rounded-3xl border border-[#333333] bg-[#1C1C1C] p-8 text-center space-y-4">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-[#22C55E]/35 bg-[#22C55E]/15 text-[#4ADE80]">
+            <CheckCircle2 className="h-7 w-7" aria-hidden="true" />
+          </div>
+          <h1 className="font-serif text-2xl font-bold text-[#F5F1EA]">
+            Account Created
+          </h1>
+          <p className="text-sm text-[#A3A3A3]">
+            Welcome to Sika Cuisine Sunyani. Opening your customer account...
+          </p>
+        </PageReveal>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center py-16 px-4 sm:px-6 lg:px-8">
-      <div className="w-full max-w-lg space-y-8 rounded-3xl bg-surface-300 border border-border-subtle p-8 sm:p-10 shadow-2xl">
-        <div className="text-center">
-          <Link href="/" className="inline-block group">
-            <Logo size={56} className="mx-auto mb-3 shadow-md group-hover:scale-105 transition-transform" />
-            <span className="font-serif text-3xl font-black tracking-tight text-white flex items-center justify-center">
-              Sika Cuisine<span className="text-brand-red ml-0.5">.</span>
-            </span>
+    <div className="min-h-[calc(100vh-80px)] bg-[#101010] px-4 py-12 flex items-center justify-center">
+      <PageReveal className="w-full max-w-md rounded-3xl border border-[#333333] bg-[#1C1C1C] p-6 sm:p-8 shadow-2xl space-y-6">
+        <div className="text-center space-y-2">
+          <Link href="/" className="inline-flex justify-center">
+            <Logo size={48} />
           </Link>
-          <h2 className="mt-4 font-serif text-2xl font-bold text-white">
-            Create Your Diner Account
-          </h2>
-          <p className="mt-1 text-xs text-gray-400">
-            Join Sika Cuisine to enjoy swift deliveries across Sunyani, track orders live, and save custom preferences.
+          <span className="block font-mono text-[11px] font-bold uppercase tracking-[0.22em] text-[#F0444A]">
+            New Customer
+          </span>
+          <h1 className="font-serif text-2xl sm:text-3xl font-bold text-[#F5F1EA]">
+            Create Sika Account
+          </h1>
+          <p className="text-xs sm:text-sm text-[#A3A3A3]">
+            Save your contact details for faster Sunyani delivery and pickup tracking.
           </p>
         </div>
 
         {error && (
-          <div className="flex items-center gap-2 rounded-2xl bg-red-950/50 border border-red-800 p-3 text-xs text-red-200">
-            <AlertCircle className="h-4 w-4 text-brand-red flex-shrink-0" />
-            <span>{error}</span>
+          <div
+            role="alert"
+            className="rounded-xl border border-[#FB7185]/40 bg-[#FB7185]/10 px-4 py-3 text-xs sm:text-sm text-[#FDA4AF]"
+          >
+            {error}
           </div>
         )}
 
-        {success ? (
-          <div className="rounded-2xl bg-emerald-950/50 border border-emerald-800 p-6 text-center space-y-2">
-            <CheckCircle2 className="h-10 w-10 text-emerald-400 mx-auto animate-bounce" />
-            <h3 className="font-serif text-lg font-bold text-white">
-              Account Created Successfully!
-            </h3>
-            <p className="text-xs text-gray-300">
-              Welcome to Sika Cuisine. Redirecting to our official menu...
-            </p>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label
+              htmlFor="reg-fullname"
+              className="block text-xs font-semibold uppercase tracking-wider text-[#A3A3A3] mb-1.5"
+            >
+              Full Name *
+            </label>
+            <div className="relative">
+              <User
+                className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#737373]"
+                aria-hidden="true"
+              />
+              <input
+                id="reg-fullname"
+                type="text"
+                required
+                autoComplete="name"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                placeholder="Kwame Mensah"
+                className="w-full rounded-xl border border-[#333333] bg-[#262626] pl-10 pr-4 py-3 text-sm text-[#F5F1EA] placeholder-[#737373] focus:outline-none focus:border-[#D71920]"
+              />
+            </div>
           </div>
-        ) : (
-          <form onSubmit={handleRegister} className="space-y-4">
+
+          <div>
+            <label
+              htmlFor="reg-phone"
+              className="block text-xs font-semibold uppercase tracking-wider text-[#A3A3A3] mb-1.5"
+            >
+              Ghana Mobile Number *
+            </label>
+            <div className="relative">
+              <Phone
+                className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#737373]"
+                aria-hidden="true"
+              />
+              <input
+                id="reg-phone"
+                type="tel"
+                required
+                autoComplete="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="0244123456"
+                className="w-full rounded-xl border border-[#333333] bg-[#262626] pl-10 pr-4 py-3 text-sm text-[#F5F1EA] placeholder-[#737373] focus:outline-none focus:border-[#D71920] font-mono"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label
+              htmlFor="reg-email"
+              className="block text-xs font-semibold uppercase tracking-wider text-[#A3A3A3] mb-1.5"
+            >
+              Email Address *
+            </label>
+            <div className="relative">
+              <Mail
+                className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#737373]"
+                aria-hidden="true"
+              />
+              <input
+                id="reg-email"
+                type="email"
+                required
+                autoComplete="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="kwame@example.com"
+                className="w-full rounded-xl border border-[#333333] bg-[#262626] pl-10 pr-4 py-3 text-sm text-[#F5F1EA] placeholder-[#737373] focus:outline-none focus:border-[#D71920]"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-4">
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5">
-                Full Name *
+              <label
+                htmlFor="reg-password"
+                className="block text-xs font-semibold uppercase tracking-wider text-[#A3A3A3] mb-1.5"
+              >
+                Password *
               </label>
               <div className="relative">
-                <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
-                <input
-                  type="text"
-                  required
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  placeholder="e.g. Kwame Mensah"
-                  className="w-full rounded-xl bg-surface-200 border border-border-subtle pl-10 pr-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-brand-red"
+                <Lock
+                  className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#737373]"
+                  aria-hidden="true"
                 />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5">
-                  Phone Number (Ghana) *
-                </label>
-                <div className="relative">
-                  <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
-                  <input
-                    type="tel"
-                    required
-                    value={phone}
-                    onChange={(e) => setPhone(formatGhanaPhone(e.target.value))}
-                    placeholder="053 337 6760"
-                    maxLength={12}
-                    className="w-full rounded-xl bg-surface-200 border border-border-subtle pl-10 pr-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-brand-red font-mono"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5">
-                  Email Address *
-                </label>
-                <div className="relative">
-                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
-                  <input
-                    type="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="kwame@example.com"
-                    className="w-full rounded-xl bg-surface-200 border border-border-subtle pl-10 pr-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-brand-red"
-                  />
-                </div>
+                <input
+                  id="reg-password"
+                  type={showPassword ? "text" : "password"}
+                  required
+                  autoComplete="new-password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Minimum 8 characters"
+                  className="w-full rounded-xl border border-[#333333] bg-[#262626] pl-10 pr-11 py-3 text-sm text-[#F5F1EA] placeholder-[#737373] focus:outline-none focus:border-[#D71920] font-mono"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-1 text-[#A3A3A3] hover:text-white transition-colors"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5">
-                Primary Delivery Area in Sunyani
-              </label>
-              <div className="relative">
-                <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
-                <select
-                  value={preferredArea}
-                  onChange={(e) => setPreferredArea(e.target.value)}
-                  className="w-full rounded-xl bg-surface-200 border border-border-subtle pl-10 pr-4 py-3 text-sm text-white focus:outline-none focus:border-brand-red appearance-none"
+              <div className="flex items-center justify-between mb-1.5">
+                <label
+                  htmlFor="reg-confirm"
+                  className="block text-xs font-semibold uppercase tracking-wider text-[#A3A3A3]"
                 >
-                  {SUNYANI_DELIVERY_ZONES.map((zone) => (
-                    <option key={zone.id} value={zone.name} className="bg-surface-300">
-                      {zone.name} ({zone.estimatedMinutes} mins)
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5">
-                  Password *
-                </label>
-                <div className="relative">
-                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500 pointer-events-none" />
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                    className="w-full rounded-xl bg-surface-200 border border-border-subtle pl-10 pr-10 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-brand-red font-mono"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors p-1"
-                    aria-label={showPassword ? "Hide password" : "Show password"}
-                  >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5">
                   Confirm Password *
                 </label>
-                <div className="relative">
-                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500 pointer-events-none" />
-                  <input
-                    type={showConfirmPassword ? "text" : "password"}
-                    required
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="••••••••"
-                    className="w-full rounded-xl bg-surface-200 border border-border-subtle pl-10 pr-10 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-brand-red font-mono"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors p-1"
-                    aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
+                {confirmPassword.length > 0 && (
+                  <span
+                    className={`text-[11px] font-semibold ${
+                      password === confirmPassword ? "text-[#4ADE80]" : "text-[#FDA4AF]"
+                    }`}
                   >
-                    {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
-                </div>
+                    {password === confirmPassword ? "Passwords match" : "Does not match"}
+                  </span>
+                )}
+              </div>
+              <div className="relative">
+                <Lock
+                  className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#737373]"
+                  aria-hidden="true"
+                />
+                <input
+                  id="reg-confirm"
+                  type={showConfirmPassword ? "text" : "password"}
+                  required
+                  autoComplete="new-password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Repeat your password"
+                  className="w-full rounded-xl border border-[#333333] bg-[#262626] pl-10 pr-11 py-3 text-sm text-[#F5F1EA] placeholder-[#737373] focus:outline-none focus:border-[#D71920] font-mono"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword((prev) => !prev)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-1 text-[#A3A3A3] hover:text-white transition-colors"
+                  aria-label={
+                    showConfirmPassword ? "Hide confirm password" : "Show confirm password"
+                  }
+                >
+                  {showConfirmPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </button>
               </div>
             </div>
+          </div>
 
-            <div className="flex items-start gap-2.5 pt-2">
-              <input
-                id="terms"
-                type="checkbox"
-                checked={agreedToTerms}
-                onChange={(e) => setAgreedToTerms(e.target.checked)}
-                className="mt-1 h-4 w-4 rounded border-border-subtle bg-surface-200 text-brand-red focus:ring-brand-red"
-              />
-              <label htmlFor="terms" className="text-xs text-gray-400 leading-relaxed">
-                I agree to the{" "}
-                <Link href="/terms" className="text-brand-red hover:underline">
-                  Terms of Service
-                </Link>{" "}
-                and acknowledge the{" "}
-                <Link href="/privacy" className="text-brand-red hover:underline">
-                  Privacy Policy
-                </Link>{" "}
-                of Sika Cuisine Restaurant.
-              </label>
-            </div>
+          <Button type="submit" variant="primary" size="lg" fullWidth loading={loading} className="mt-2">
+            <span>Create Sika Account</span>
+            <ArrowRight className="h-4 w-4" aria-hidden="true" />
+          </Button>
+        </form>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="btn-red-gradient flex w-full items-center justify-center gap-2 py-3.5 rounded-full text-sm font-semibold text-white shadow-glow disabled:opacity-50 mt-4"
-            >
-              {loading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <>
-                  <span>Create Account</span>
-                  <ArrowRight className="h-4 w-4" />
-                </>
-              )}
-            </button>
-          </form>
-        )}
-
-        <div className="pt-2 text-center">
-          <p className="text-xs text-gray-400">
-            Already have an account?{" "}
-            <Link href="/login" className="font-semibold text-brand-red hover:underline">
-              Sign In Here
-            </Link>
-          </p>
-        </div>
-      </div>
+        <p className="text-center text-xs text-[#A3A3A3]">
+          Already registered?{" "}
+          <Link href="/login" className="font-semibold text-[#F0444A] hover:underline">
+            Sign in instead
+          </Link>
+        </p>
+      </PageReveal>
     </div>
   );
 }

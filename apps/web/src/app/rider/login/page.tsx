@@ -3,8 +3,15 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Bike, Lock, Mail, ArrowRight, Loader2, KeyRound, Eye, EyeOff, ShieldCheck } from "lucide-react";
+import { ArrowLeft, ArrowRight, Bike, Eye, EyeOff, Lock, Mail } from "lucide-react";
+import { Logo } from "@/components/brand/Logo";
+import { Button } from "@/components/ui/Button";
+import { PageReveal } from "@/components/ui/MotionPrimitives";
 
+/**
+ * Delivery Rider Sign-In backed by `POST /api/v1/auth/login`.
+ * Verifies `DELIVERY_RIDER` role before opening the `/rider` dispatch console.
+ */
 export default function RiderLoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -13,85 +20,120 @@ export default function RiderLoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleRiderLogin = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setError(null);
+    setLoading(true);
 
-    setTimeout(() => {
-      setLoading(false);
+    try {
+      const res = await fetch("/api/v1/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim(), password }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        setError(data.error || "Invalid rider credentials.");
+        setLoading(false);
+        return;
+      }
+
+      if (data.user?.role !== "DELIVERY_RIDER") {
+        await fetch("/api/v1/auth/logout", { method: "POST" }).catch(() => {});
+        setError("Access denied. This portal requires a registered DELIVERY_RIDER account.");
+        setLoading(false);
+        return;
+      }
+
       router.push("/rider");
-    }, 600);
-  };
-
-  const handleQuickFill = () => {
-    setEmail("rider.kofi@sikacuisine.com");
-    setPassword("Rider123!@#");
+      router.refresh();
+    } catch {
+      setError("Network connection error. Unable to reach authentication server.");
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden text-gray-200">
-      <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-emerald-500 via-brand-gold to-emerald-500" />
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[450px] studio-vignette pointer-events-none -z-10" />
-
-      <div className="w-full max-w-md space-y-6 rounded-3xl bg-[#1a1b20] border border-white/10 p-7 sm:p-9 shadow-2xl">
-        <div className="text-center">
-          <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-950/60 text-emerald-400 border border-emerald-800/50 mb-3 shadow-glow">
-            <Bike className="h-7 w-7" />
+    <div className="min-h-[calc(100vh-80px)] bg-[#101010] px-4 py-12 flex items-center justify-center">
+      <PageReveal className="w-full max-w-md rounded-3xl border border-[#333333] bg-[#1C1C1C] p-6 sm:p-8 shadow-2xl space-y-6">
+        <div className="text-center space-y-2.5">
+          <div className="mx-auto inline-flex items-center gap-2 rounded-full border border-[#D71920]/40 bg-[#D71920]/10 px-3 py-1 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-[#F0444A]">
+            <Bike className="h-3.5 w-3.5" aria-hidden="true" />
+            <span>Sunyani Dispatch Portal</span>
           </div>
-          <span className="block text-[11px] font-bold uppercase tracking-widest text-emerald-400 mb-1">
-            Sunyani Courier Operations
-          </span>
-          <h1 className="font-serif text-2xl sm:text-3xl font-black text-white">
-            Rider Dispatch Terminal
+          <div className="flex justify-center pt-1">
+            <Logo size={46} />
+          </div>
+          <h1 className="font-serif text-2xl sm:text-3xl font-bold text-[#F5F1EA]">
+            Delivery Rider Sign In
           </h1>
-          <p className="mt-2 text-xs text-gray-400">
-            For registered Sika Cuisine couriers delivering across Sunyani, Fiapre, UENR, and Berlin Top.
+          <p className="text-xs sm:text-sm text-[#A3A3A3]">
+            Sign in with your assigned courier account to view and complete Sunyani drops.
           </p>
         </div>
 
         {error && (
-          <div className="rounded-xl bg-red-950/60 border border-red-800 p-3 text-xs text-red-200">
+          <div
+            role="alert"
+            className="rounded-xl border border-[#FB7185]/40 bg-[#FB7185]/10 px-4 py-3 text-xs sm:text-sm text-[#FDA4AF]"
+          >
             {error}
           </div>
         )}
 
-        <form onSubmit={handleRiderLogin} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5">
-              Rider ID / Email
+            <label
+              htmlFor="rider-email"
+              className="block text-xs font-semibold uppercase tracking-wider text-[#A3A3A3] mb-1.5"
+            >
+              Rider Email
             </label>
             <div className="relative">
-              <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
+              <Mail
+                className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#737373]"
+                aria-hidden="true"
+              />
               <input
+                id="rider-email"
                 type="email"
                 required
+                autoComplete="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="rider.kofi@sikacuisine.com"
-                className="w-full rounded-xl bg-surface-200 border border-border-subtle pl-10 pr-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500 font-mono"
+                placeholder="rider@sikacuisine.com"
+                className="w-full rounded-xl border border-[#333333] bg-[#262626] pl-10 pr-4 py-3 text-sm text-[#F5F1EA] placeholder-[#737373] focus:outline-none focus:border-[#D71920]"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5">
-              Terminal Passcode
+            <label
+              htmlFor="rider-password"
+              className="block text-xs font-semibold uppercase tracking-wider text-[#A3A3A3] mb-1.5"
+            >
+              Password
             </label>
             <div className="relative">
-              <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500 pointer-events-none" />
+              <Lock
+                className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#737373]"
+                aria-hidden="true"
+              />
               <input
+                id="rider-password"
                 type={showPassword ? "text" : "password"}
                 required
+                autoComplete="current-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••••••"
-                className="w-full rounded-xl bg-surface-200 border border-border-subtle pl-10 pr-10 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500 font-mono"
+                placeholder="••••••••"
+                className="w-full rounded-xl border border-[#333333] bg-[#262626] pl-10 pr-11 py-3 text-sm text-[#F5F1EA] placeholder-[#737373] focus:outline-none focus:border-[#D71920] font-mono"
               />
               <button
                 type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors p-1"
+                onClick={() => setShowPassword((prev) => !prev)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-[#A3A3A3] hover:text-white"
                 aria-label={showPassword ? "Hide password" : "Show password"}
               >
                 {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -99,43 +141,22 @@ export default function RiderLoginPage() {
             </div>
           </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="flex w-full items-center justify-center gap-2 py-3.5 rounded-full text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-500 transition-colors shadow-glow mt-6"
-          >
-            {loading ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <>
-                <Bike className="h-4 w-4" />
-                <span>Sign In & Start Shift</span>
-                <ArrowRight className="h-4 w-4" />
-              </>
-            )}
-          </button>
+          <Button type="submit" variant="primary" size="lg" fullWidth loading={loading}>
+            <span>Open Rider Dispatch</span>
+            <ArrowRight className="h-4 w-4" aria-hidden="true" />
+          </Button>
         </form>
 
-        <div className="pt-2 text-center space-y-3">
-          <button
-            type="button"
-            onClick={handleQuickFill}
-            className="inline-flex items-center gap-1.5 text-xs text-emerald-400 hover:text-emerald-300 font-medium transition-colors"
-          >
-            <KeyRound className="h-3.5 w-3.5" />
-            <span>Fill Demo Rider Credentials</span>
-          </button>
-
-          <div className="border-t border-border-subtle/50 pt-3 flex justify-between text-xs text-gray-500">
-            <Link href="/" className="hover:text-gray-300 transition-colors">
-              &larr; Customer Home
-            </Link>
-            <Link href="/admin/login" className="hover:text-gray-300 transition-colors">
-              Kitchen Terminal &rarr;
-            </Link>
-          </div>
+        <div className="flex items-center justify-between border-t border-[#333333] pt-4 text-xs">
+          <Link href="/" className="inline-flex items-center gap-1.5 text-[#A3A3A3] hover:text-white">
+            <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
+            <span>Back to Storefront</span>
+          </Link>
+          <Link href="/admin/login" className="font-semibold text-[#F0444A] hover:underline">
+            Staff Terminal
+          </Link>
         </div>
-      </div>
+      </PageReveal>
     </div>
   );
 }

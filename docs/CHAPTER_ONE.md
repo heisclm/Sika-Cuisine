@@ -19,7 +19,7 @@ This reliance on informal communication channels introduces critical operational
 
 Additionally, the geographical layout of Sunyani—encompassing diverse suburban localities such as Sunyani Central, Fiapre, Berlin Top, Penkwase, New Dormaa, and Abesim—presents unique logistical challenges. In the absence of an automated delivery matrix, dispatch fees are negotiated arbitrarily over the phone, leading to customer disputes, unexpected surcharges, and unpredictable delivery timelines [10]. From a software engineering and computational perspective, existing web applications deployed in regional environments often suffer from poor software architecture, such as floating-point rounding errors in currency calculations, client-side pricing tampering, and unverified third-party webhook communications [15].
 
-To address these compounding vulnerabilities, there is an urgent imperative to engineer a specialized, high-performance, and server-authoritative web-based food ordering and delivery tracking system. Such a platform must seamlessly integrate with verified Ghanaian payment gateways (Paystack), enforce zero floating-point arithmetic drift by utilizing an integer pesewas standard, provide deterministic locality-based delivery fee calculations tailored to the Sunyani municipal topography, and furnish kitchen staff with a real-time order state machine [15], [16]. This project conceptualizes, designs, and implements this comprehensive computational solution for Sika Cuisine Restaurant, setting a benchmark for localized restaurant enterprise systems in the Bono Region of Ghana.
+To address these compounding vulnerabilities, there is an urgent imperative to engineer a specialized, high-performance, and server-authoritative multi-platform food ordering and delivery tracking system. Such a platform must provide seamless customer access across both modern web browsers and dedicated cross-platform mobile applications, integrate with verified Ghanaian payment gateways (Paystack), enforce zero floating-point arithmetic drift by utilizing an integer pesewas standard, provide deterministic locality-based delivery fee calculations tailored to the Sunyani municipal topography, and furnish kitchen staff with a real-time order state machine [15], [16]. This project conceptualizes, designs, and implements this comprehensive computational solution for Sika Cuisine Restaurant, setting a benchmark for localized restaurant enterprise systems in the Bono Region of Ghana.
 
 ---
 
@@ -42,13 +42,13 @@ The food service and hospitality industry in Sunyani, Bono Region, Ghana, is exp
 5. **Client-Side Pricing Tampering and Security Vulnerabilities:**  
    Standard consumer-facing websites that compute order totals on the client browser using JavaScript are vulnerable to parameter tampering, where malicious actors manipulate price payloads before transmitting them to payment endpoints. 
 
-In the absence of a dedicated, server-authoritative, and locally grounded digital ordering platform, Sika Cuisine cannot scale its kitchen operations, secure its revenue streams, or deliver a seamless customer experience. Therefore, there is a compelling need to design and implement an enterprise-grade, web-based food ordering, automated payment, and delivery tracking platform tailored specifically to the operational context of Sunyani, Bono Region, Ghana.
+In the absence of a dedicated, server-authoritative, and locally grounded digital ordering ecosystem, Sika Cuisine cannot scale its kitchen operations, secure its revenue streams, or deliver a seamless customer experience across modern digital touchpoints. Therefore, there is a compelling need to design and implement an enterprise-grade, multi-platform food ordering, mobile application, automated payment, and delivery tracking platform tailored specifically to the operational context of Sunyani, Bono Region, Ghana.
 
 ---
 
 ## 1.3 Aim of Project
 
-The primary aim of this study is to design, develop, and deploy a secure, high-performance, and server-authoritative web-based food ordering and delivery tracking platform for Sika Cuisine Restaurant in Sunyani, Bono Region, Ghana, integrating seamless Ghanaian mobile money/card payments via Paystack, deterministic integer pesewas financial precision, and real-time kitchen state tracking.
+The primary aim of this study is to design, develop, and deploy a secure, high-performance, and server-authoritative multi-platform food ordering, mobile application, and delivery tracking platform for Sika Cuisine Restaurant in Sunyani, Bono Region, Ghana, integrating seamless Ghanaian mobile money/card payments via Paystack, deterministic integer pesewas financial precision, dedicated cross-platform mobile client capabilities, and real-time kitchen state tracking.
 
 ---
 
@@ -57,22 +57,25 @@ The primary aim of this study is to design, develop, and deploy a secure, high-p
 To realize the overarching aim of this project, the study is structured around the following specific technical and research objectives:
 
 1. **System Requirements and Architectural Modeling:**  
-   To conduct a thorough requirements analysis of food ordering and kitchen dispatch workflows within the Sunyani municipal ecosystem, establishing formal Unified Modeling Language (UML) domain diagrams, database schemas, and architectural blueprints for a server-authoritative platform.
+   To conduct a thorough requirements analysis of food ordering, mobile consumer engagement, and kitchen dispatch workflows within the Sunyani municipal ecosystem, establishing formal Unified Modeling Language (UML) domain diagrams, database schemas, and architectural blueprints for a multi-client server-authoritative platform.
 
-2. **Full-Stack Implementation with Modern Web Technologies:**  
-   To develop the Sika Cuisine platform using a modular full-stack architecture leveraging **Next.js 16 (App Router)**, **React 19**, **TypeScript**, **Tailwind CSS**, and **Prisma ORM** over a **PostgreSQL** relational database.
+2. **Multi-Client Full-Stack & Mobile Implementation:**  
+   To develop the Sika Cuisine platform using a modular monorepo architecture leveraging **Next.js 16 (App Router)**, **React 19**, **TypeScript**, and **Tailwind CSS** for the web portal, alongside a dedicated cross-platform mobile application engineered with **React Native (0.88)** and **Expo (58)**, sharing core business logic, validation schemas, and design tokens via `@sika/shared`.
 
 3. **Engineering a Zero-Drift Financial and Payment Architecture:**  
-   To design and implement a strictly typed integer pesewas currency engine ($1\text{ GHS} = 100\text{ pesewas}$) that eliminates floating-point rounding errors, integrated with the official **Paystack Payment Gateway** for automated mobile money (MTN MoMo, Telecel Cash, AT Money) and debit/credit card settlements, secured by cryptographically verified HMAC SHA512 webhooks.
+   To design and implement a strictly typed integer pesewas currency engine ($1\text{ GHS} = 100\text{ pesewas}$) that eliminates floating-point rounding errors across web and mobile clients, integrated with the official **Paystack Payment Gateway** for automated mobile money (MTN MoMo, Telecel Cash, AT Money) and debit/credit card settlements, secured by cryptographically verified HMAC SHA512 webhooks.
 
 4. **Deterministic Locality-Based Logistics Integration:**  
-   To formulate and embed a localized Sunyani delivery zone matrix (covering Sunyani Central, Fiapre/UENR, Berlin Top, Penkwase, New Dormaa, Abesim, and surrounding areas) that automatically computes authoritative delivery fees and realistic preparation timelines based on spatial parameters.
+   To formulate and embed a localized Sunyani delivery zone matrix (covering Sunyani Central, Fiapre/UENR, Berlin Top, Penkwase, New Dormaa, Abesim, and surrounding areas) that automatically computes authoritative delivery fees and realistic preparation timelines based on spatial parameters across web and mobile interfaces.
 
-5. **Real-Time Kitchen State Machine and Administrative Dashboard:**  
-   To implement a state-driven kitchen and courier dispatch dashboard (`/admin`) that manages strict, unidirectional order lifecycle transitions (`PENDING_CONFIRMATION` $\rightarrow$ `CONFIRMED` $\rightarrow$ `PREPARING` $\rightarrow$ `READY_FOR_COLLECTION` / `OUT_FOR_DELIVERY` $\rightarrow$ `COMPLETED`) with immutable audit logging and real-time menu availability toggling.
+5. **Cross-Platform State Synchronization & Mobile Offline Resilience:**  
+   To implement robust client-side caching, offline-tolerant menu viewing via AsyncStorage, and secure credential storage using Expo SecureStore, ensuring seamless mobile user experiences even during intermittent campus Wi-Fi or cellular network drops in Sunyani.
 
-6. **System Evaluation, Performance Testing, and Security Validation:**  
-   To empirically evaluate the deployed web platform through unit testing, end-to-end integration testing, cryptographic webhook verification, Core Web Vitals optimization, and User Acceptance Testing (UAT) with real restaurant staff and local customers in Sunyani.
+6. **Real-Time Kitchen State Machine and Administrative Dashboard:**  
+   To implement a state-driven kitchen and courier dispatch dashboard (`/admin` and `/rider`) that manages strict, unidirectional order lifecycle transitions (`PENDING_CONFIRMATION` $\rightarrow$ `CONFIRMED` $\rightarrow$ `PREPARING` $\rightarrow$ `READY_FOR_COLLECTION` / `OUT_FOR_DELIVERY` $\rightarrow$ `COMPLETED`) with immutable audit logging and real-time menu availability toggling.
+
+7. **System Evaluation, Performance Testing, and Security Validation:**  
+   To empirically evaluate the deployed web platform and mobile application through unit testing, end-to-end integration testing, cryptographic webhook verification, Core Web Vitals optimization, and User Acceptance Testing (UAT) with restaurant staff, dispatch couriers, and local customers in Sunyani.
 
 ---
 
@@ -80,10 +83,11 @@ To realize the overarching aim of this project, the study is structured around t
 
 To provide structured guidance throughout the investigation, design, and implementation phases, the project addresses the following research questions:
 
-1. *How can a web-based ordering architecture be engineered to eliminate client-side price tampering and ensure mathematical precision in financial calculations within a multi-channel Ghanaian mobile payment environment?*
-2. *What software design patterns and database structures are best suited for enforcing strict, unidirectional order lifecycle transitions from culinary intake to final customer dispatch without race conditions or orphaned states?*
-3. *How can a localized delivery matrix be computationally modeled to handle informal addressing structures and calculate accurate, transparent delivery fees across diverse suburban zones in Sunyani, Bono Region?*
-4. *To what extent does the transition from manual, informal phone/WhatsApp ordering to an automated, server-authoritative web platform improve operational efficiency, order accuracy, and revenue accountability for a regional restaurant enterprise?*
+1. *How can a multi-client (web and mobile) ordering architecture be engineered to eliminate client-side price tampering and ensure mathematical precision in financial calculations within a multi-channel Ghanaian mobile payment environment?*
+2. *What software design patterns and shared module abstractions best facilitate code reuse and state synchronization between a serverless Next.js web portal and a React Native/Expo mobile application?*
+3. *What architectural mechanisms enable mobile client resilience and secure credential storage under unstable cellular network conditions common to secondary urban centers in Ghana?*
+4. *How can a localized delivery matrix be computationally modeled to handle informal addressing structures and calculate accurate, transparent delivery fees across diverse suburban zones in Sunyani, Bono Region?*
+5. *To what extent does the transition from manual, informal phone/WhatsApp ordering to an automated, server-authoritative multi-platform ecosystem improve operational efficiency, order accuracy, and revenue accountability for a regional restaurant enterprise?*
 
 ---
 
@@ -116,8 +120,8 @@ The decision to design and implement a bespoke web-based ordering and delivery t
   Major on-demand delivery aggregators operating in Ghana concentrate their operational fleets, marketing capital, and API integrations almost exclusively in Accra, Tema, and Kumasi [9]. Restaurants operating in regional capitals like Sunyani are excluded from these ecosystems. Even when aggregators expand into secondary cities, their commission rates (often ranging between 20% and 35% per order) place a heavy financial burden on local culinary businesses with narrow profit margins [4].
 * **Failure of Social Messaging Platforms as Transactional Engines:**  
   While WhatsApp and voice calls offer low barriers to entry, they are fundamentally communication tools, not transactional databases. They lack database concurrency control, structured data storage, automated inventory tracking, and programmatic payment verification [12]. Attempting to run a busy kitchen using WhatsApp leads to missed messages, chaotic kitchen queues, and zero business intelligence metrics.
-* **Technological Independence and Brand Equity:**  
-  A custom, branded web platform preserves Sika Cuisine’s brand identity, provides full control over customer relationships, and retains 100% of transaction profits minus standard payment gateway processing fees. Furthermore, building the solution as a modern Progressive-friendly web application eliminates the friction of forcing customers to download heavy mobile applications from app stores, allowing immediate menu discovery and checkout directly from any standard mobile browser [15].
+* **Technological Independence and Strategic Dual-Client Synergy:**  
+  A custom, branded platform preserves Sika Cuisine’s brand identity, provides full control over customer relationships, and retains 100% of transaction profits minus standard payment gateway processing fees. Furthermore, engineering both a modern responsive web portal and a dedicated cross-platform mobile application creates a strategic operational synergy. The web application allows first-time visitors, tertiary students, and office workers to discover dishes and check out instantly without forcing an app store download. Concurrently, the React Native/Expo mobile application delivers persistent local session caching, instant launch speeds, push notifications, and reduced cellular data consumption for high-frequency patrons and dispatch personnel across Sunyani [15].
 
 ---
 
@@ -126,12 +130,16 @@ The decision to design and implement a bespoke web-based ordering and delivery t
 To ensure a rigorous and structured engineering process, the scope of this project is delineated across functional, technical, and geographical dimensions:
 
 ### 1.8.1 Functional Scope
-* **Customer Facing:** Interactive categorized culinary catalog (starters, main dishes, local soups, grilled specialties, drinks), dynamic dish customization (protein selections, starch options, spice tolerances, packaging notes), dynamic shopping cart with micro-animations, locality-based delivery fee calculations, self-collection (takeaway) options, Paystack-driven mobile money and debit card checkout, and live visual order tracking timelines.
+* **Customer-Facing Web & Mobile Interfaces:** Interactive categorized culinary catalog (starters, main dishes, local soups, grilled specialties, drinks), dynamic dish customization (protein selections, starch options, spice tolerances, packaging notes), dynamic shopping cart with micro-animations, locality-based delivery fee calculations, self-collection (takeaway) options, Paystack-driven mobile money and debit card checkout, and live visual order tracking timelines.
+* **Mobile Client Capabilities:** Persistent local cart and favorites management via `@react-native-async-storage/async-storage`, secure JWT token persistence with `expo-secure-store`, offline-tolerant menu viewing during data drops, and dedicated mobile screens (`MenuScreen`, `DishDetailModal`, `CartScreen`, `CheckoutScreen`, `OrderTrackingScreen`, and `ProfileScreen`).
 * **Administrative and Kitchen Facing:** Role-Based Access Control (RBAC) protecting `/admin` routes, real-time kitchen display board with status state machine controllers (`Confirm`, `Prepare`, `Dispatch`, `Complete`, `Reject`), real-time item availability toggles, customer order histories, and audit logging.
+* **Courier & Dispatch Portal (`/rider`):** Dedicated dispatch interface for motorbike delivery riders to accept assigned orders, review Sunyani locality destination notes, and confirm successful customer handovers.
 
 ### 1.8.2 Technical Scope
-* **Application Framework:** Next.js 16 using the App Router, React 19 Server and Client Components, and TypeScript for end-to-end type safety [15].
-* **Styling and Animation:** Tailwind CSS utility styling featuring a custom dark cinematic culinary theme, responsive Bento-style card layouts, and Framer Motion micro-interactions adhering to `prefers-reduced-motion` guidelines [17].
+* **Monorepo Architecture:** Monorepo workspace organizing `apps/web` (Next.js 16), `apps/mobile` (React Native/Expo), and `packages/shared` for shared business logic, design tokens, and currency engines.
+* **Web Application Framework:** Next.js 16 using the App Router, React 19 Server and Client Components, and TypeScript for end-to-end type safety [15].
+* **Mobile Application Framework:** React Native (0.88.1) utilizing Expo SDK (~58), TypeScript, and native mobile storage abstractions.
+* **Styling and Animation:** Tailwind CSS utility styling on the web featuring a custom dark cinematic culinary theme, responsive Bento-style card layouts, Framer Motion micro-interactions, and matching mobile StyleSheet design tokens.
 * **Data Access & Storage:** Relational database management via PostgreSQL, schema definitions and migrations managed through Prisma 6 ORM, utilizing immutable price snapshot models and referential integrity checks [18].
 * **Financial Layer:** Custom integer pesewas arithmetic engine, official Paystack API integration for transaction initialization, and server-side HMAC SHA512 webhook listeners with cryptographic timing-safe comparisons [16].
 
@@ -190,7 +198,7 @@ The Sika Cuisine framework resolves this by enforcing a **Server-Authoritative, 
 ```
 
 ### 1.10.1 Order Formulation and Server-Authoritative Calculation
-When a customer interacts with the presentation layer, the client browser maintains a local shopping state for fluid user feedback (micro-interactions, cart counters, and item additions). However, in accordance with robust web application security principles, **the client browser is treated as untrusted** [15]. When the customer proceeds to checkout, the client transmits only basic identifiers: the item IDs, selected option IDs, target Sunyani delivery zone ID, and delivery notes.
+When a customer interacts with the presentation layer—whether through the responsive Next.js 16 web application or the dedicated React Native / Expo mobile application—the client device maintains a local shopping state for fluid user feedback (micro-interactions, cart counters, and item additions). In the mobile application, this state is persistently cached using AsyncStorage to survive app restarts and connectivity fluctuations. However, in accordance with robust web and mobile application security principles, **the client is strictly treated as untrusted** [15]. When the customer proceeds to checkout, the client transmits only basic identifiers: the item IDs, selected option IDs, target Sunyani delivery zone ID, and delivery notes.
 
 Upon receipt at the server layer (`createOrderAction`), the backend:
 1. Completely discards any price, fee, or total submitted by the client browser.
@@ -242,7 +250,7 @@ This dissertation is systematically structured into five comprehensive chapters,
   Presents the background context of the study, details the problem statement within the Sunyani hospitality sector, articulates the primary aim and specific objectives, outlines the research questions, and examines the study's significance, justification, scope, motivation, target beneficiaries, and conceptual framework.
 
 * **Chapter Two: Literature Review**  
-  Provides an in-depth review of theoretical paradigms governing technology adoption (including the Technology Acceptance Model - TAM and Institutional Trust frameworks), analyzes empirical literature on e-commerce and mobile food delivery services in Ghana, critically examines existing retail and delivery platforms (such as Jumia Food, Bolt Food, Hubtel, and informal WhatsApp commerce), and identifies specific technical and operational gaps that Sika Cuisine addresses.
+  Provides an in-depth review of theoretical paradigms governing technology adoption (including the Extended Technology Acceptance Model - TAM, DeLone & McLean Information Systems Success Model, and Institutional Trust frameworks), analyzes empirical literature on e-commerce, mobile applications, and food delivery services in Ghana, evaluates native versus cross-platform mobile architectures (React Native / Expo versus PWAs and Native Android/iOS), critically examines existing commercial delivery platforms (Bolt Food, Hubtel Super-App, Glovo Ghana, and informal WhatsApp commerce), and identifies specific technical, empirical, and geographical gaps that Sika Cuisine addresses.
 
 * **Chapter Three: System Methodology and Design**  
   Outlines the software development methodology adopted (Agile Scrum framework), details comprehensive functional and non-functional requirements specifications, models the system using Unified Modeling Language (UML) diagrams (Use Case, Class, Sequence, and Activity diagrams), details the modular architecture of Next.js 16 and PostgreSQL, and formalizes core algorithmic workflows governing the integer pesewas currency engine and Paystack webhook verification.

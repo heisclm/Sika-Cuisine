@@ -60,7 +60,7 @@ export async function removeAuthToken(): Promise<void> {
  *
  * @param user - Authenticated customer DTO
  */
-export async function saveCurrentUser(user: UserDTO): Promise<void> {
+export async function saveCurrentUser(user: Omit<UserDTO, "createdAt">): Promise<void> {
   try {
     await SecureStore.setItemAsync(USER_PROFILE_KEY, JSON.stringify(user));
   } catch (err) {

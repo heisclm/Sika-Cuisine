@@ -1,25 +1,35 @@
 import { MenuItemDTO } from "@sika/shared";
 
-export const DEFAULT_MENU_CATEGORIES = [
-  { id: "all", name: "All Delicacies" },
-  { id: "packages", name: "Packages (GH₵40)" },
-  { id: "locals", name: "Locals (GH₵50 - 70)" },
-  { id: "seafood", name: "Seafood (GH₵80)" },
-  { id: "sauces", name: "Sauces (GH₵70)" },
-  { id: "sika-assorted", name: "Sika Assorted (GH₵80)" },
-  { id: "sika-fruit-rice", name: "Fruit Rice (GH₵90)" },
-  { id: "sika-specials", name: "Sika Specials (GH₵80)" },
-  { id: "pizza", name: "Pizza (GH₵110 - 180)" },
-  { id: "extras", name: "Extras & Sides" },
+export interface OfflineCategoryChip {
+  id: string;
+  name: string;
+}
+
+export const DEFAULT_MENU_CATEGORIES: OfflineCategoryChip[] = [
+  { id: "all", name: "All" },
+  { id: "packages", name: "Packages" },
+  { id: "locals", name: "Locals" },
+  { id: "seafood", name: "Seafood" },
+  { id: "sauces", name: "Sauces" },
+  { id: "sika-assorted", name: "Assorted Rice" },
+  { id: "sika-fruit-rice", name: "Fruit Rice" },
+  { id: "sika-specials", name: "Specials" },
+  { id: "pizza", name: "Pizza" },
+  { id: "extras", name: "Extras" },
 ];
 
+/**
+ * Offline fallback catalog matching Sika Cuisine's genuine Sunyani restaurant dishes.
+ * Live API data overrides this catalog whenever connectivity is active.
+ */
 export const DEFAULT_MENU_ITEMS: MenuItemDTO[] = [
   {
     id: "pkg-grilled-chicken-fried-rice",
     categoryId: "packages",
     name: "Grilled Chicken with Fried Rice",
     slug: "grilled-chicken-fried-rice",
-    description: "Tender seasoned grilled chicken quarter served over savory vegetable fried rice with house shito.",
+    description:
+      "Tender seasoned grilled chicken quarter served over savory vegetable fried rice with house shito.",
     basePricePesewas: 4000,
     imageUrl: "/images/dishes/grilled-chicken-jollof.jpg",
     isAvailable: true,
@@ -33,7 +43,8 @@ export const DEFAULT_MENU_ITEMS: MenuItemDTO[] = [
     categoryId: "packages",
     name: "Grilled Chicken with Jollof Rice",
     slug: "grilled-chicken-jollof-rice",
-    description: "Slow-simmered smoky tomato Jollof rice served with aromatic grilled chicken and spiced pepper sauce.",
+    description:
+      "Slow-simmered smoky tomato Jollof rice served with aromatic grilled chicken and spiced pepper sauce.",
     basePricePesewas: 4000,
     imageUrl: "/images/dishes/special-combo.jpg",
     isAvailable: true,
@@ -47,7 +58,8 @@ export const DEFAULT_MENU_ITEMS: MenuItemDTO[] = [
     categoryId: "packages",
     name: "Fried Chicken with Rice",
     slug: "fried-chicken-with-rice",
-    description: "Crisp golden fried chicken served with your choice of fragrant Ghanaian fried rice or smoky jollof.",
+    description:
+      "Crisp golden fried chicken served with your choice of fragrant Ghanaian fried rice or smoky jollof.",
     basePricePesewas: 4000,
     imageUrl: "/images/dishes/fried-chicken.jpg",
     isAvailable: true,
@@ -74,9 +86,10 @@ export const DEFAULT_MENU_ITEMS: MenuItemDTO[] = [
     categoryId: "locals",
     name: "Banku with Okro Soup",
     slug: "banku-with-okro-soup",
-    description: "Smooth fermented corn & cassava dough dumplings served with rich, viscous okro soup and selected protein.",
+    description:
+      "Smooth fermented corn and cassava dough dumplings served with rich okro soup and selected protein.",
     basePricePesewas: 5000,
-    imageUrl: "/images/dishes/tilapia-banku.jpg",
+    imageUrl: "/images/dishes/swallow-soup.jpg",
     isAvailable: true,
     isFeatured: true,
     spiceLevel: 2,
@@ -100,23 +113,39 @@ export const DEFAULT_MENU_ITEMS: MenuItemDTO[] = [
   {
     id: "local-fufu-goat-soup",
     categoryId: "locals",
-    name: "Fufu with Goat Light Soup",
-    slug: "fufu-goat-light-soup",
-    description: "Authentic pounded cassava and plantain fufu immersed in a fiery, aromatic goat meat light soup.",
-    basePricePesewas: 6000,
+    name: "Pounded Fufu with Light Soup",
+    slug: "pounded-fufu-light-soup",
+    description:
+      "Authentic pounded cassava and plantain fufu immersed in a fiery, aromatic Ghanaian light soup.",
+    basePricePesewas: 5000,
     imageUrl: "/images/dishes/fufu-goat-soup.jpg",
     isAvailable: true,
     isFeatured: true,
     spiceLevel: 3,
     preparationTimeMinutes: 25,
     sortOrder: 5,
+    optionGroups: [
+      {
+        id: "opt-fufu-protein",
+        name: "Select Protein",
+        minSelect: 1,
+        maxSelect: 1,
+        isRequired: true,
+        options: [
+          { id: "opt-fufu-goat", name: "Tender Local Goat Meat", priceDeltaPesewas: 0, isAvailable: true },
+          { id: "opt-fufu-tilapia", name: "Fresh Steamed Tilapia", priceDeltaPesewas: 0, isAvailable: true },
+          { id: "opt-fufu-fish", name: "Fried Red Fish", priceDeltaPesewas: 0, isAvailable: true },
+        ],
+      },
+    ],
   },
   {
     id: "seafood-tilapia-banku",
     categoryId: "seafood",
     name: "Tilapia with Banku (Chilli)",
     slug: "tilapia-with-banku-chilli",
-    description: "Whole fresh charcoal-grilled tilapia rubbed with local ginger, garlic, and spices, served with steaming banku and hot pepper.",
+    description:
+      "Whole fresh charcoal-grilled tilapia rubbed with local ginger, garlic, and spices, served with steaming banku and hot pepper.",
     basePricePesewas: 8000,
     imageUrl: "/images/dishes/tilapia-banku.jpg",
     isAvailable: true,
@@ -126,32 +155,109 @@ export const DEFAULT_MENU_ITEMS: MenuItemDTO[] = [
     sortOrder: 6,
   },
   {
+    id: "seafood-red-fish-banku",
+    categoryId: "seafood",
+    name: "Red Fish with Banku (Chilli)",
+    slug: "red-fish-with-banku-chilli",
+    description:
+      "Whole seasoned crispy fried or grilled Red Fish served with hot banku, sliced onions, and raw pepper.",
+    basePricePesewas: 8000,
+    imageUrl: "/images/dishes/red-fish.jpg",
+    isAvailable: true,
+    isFeatured: false,
+    spiceLevel: 3,
+    preparationTimeMinutes: 25,
+    sortOrder: 7,
+  },
+  {
+    id: "sauce-chicken-rice",
+    categoryId: "sauces",
+    name: "Chicken Sauce with Boiled Rice",
+    slug: "chicken-sauce-with-rice",
+    description:
+      "Slow-simmered savory vegetable chicken sauce paired cleanly with steamed jasmine or local rice.",
+    basePricePesewas: 7000,
+    imageUrl: "/images/dishes/rice-specialty.jpg",
+    isAvailable: true,
+    isFeatured: false,
+    spiceLevel: 2,
+    preparationTimeMinutes: 20,
+    sortOrder: 8,
+  },
+  {
+    id: "assorted-beef-jollof",
+    categoryId: "sika-assorted",
+    name: "Sika Assorted Beef Jollof",
+    slug: "sika-assorted-beef-jollof",
+    description:
+      "Generous signature smoky jollof rice wok-tossed with spiced diced beef, sausages, and vegetables.",
+    basePricePesewas: 8000,
+    imageUrl: "/images/dishes/signature-platter.jpg",
+    isAvailable: true,
+    isFeatured: true,
+    spiceLevel: 2,
+    preparationTimeMinutes: 25,
+    sortOrder: 9,
+  },
+  {
+    id: "fruit-pineapple-fried-rice",
+    categoryId: "sika-fruit-rice",
+    name: "Sunyani Pineapple Fried Rice",
+    slug: "sunyani-pineapple-fried-rice",
+    description:
+      "Aromatic wok-tossed fried rice finished with sweet caramelized fresh Bono pineapple cubes and chicken strips.",
+    basePricePesewas: 9000,
+    imageUrl: "/images/dishes/pineapple-rice.jpg",
+    isAvailable: true,
+    isFeatured: true,
+    spiceLevel: 1,
+    preparationTimeMinutes: 25,
+    sortOrder: 10,
+  },
+  {
     id: "special-combo-mixture",
     categoryId: "sika-specials",
     name: "SIKA Special Combo (De Mixture)",
     slug: "sika-special-combo-de-mixture",
-    description: "The ultimate chef platter: a generous blend of jollof, fried rice, crispy chicken wings, gizzard, and kelewele.",
+    description:
+      "Chef platter combining jollof, fried rice, crispy chicken wings, gizzard, and spiced kelewele.",
     basePricePesewas: 8000,
-    imageUrl: "/images/dishes/pineapple-rice.jpg",
+    imageUrl: "/images/dishes/special-combo.jpg",
     isAvailable: true,
     isFeatured: true,
     spiceLevel: 2,
     preparationTimeMinutes: 30,
-    sortOrder: 7,
+    sortOrder: 11,
+  },
+  {
+    id: "special-assorted-noodles",
+    categoryId: "sika-specials",
+    name: "SIKA Assorted Noodles",
+    slug: "sika-assorted-noodles",
+    description:
+      "Stir-fried noodles tossed in dark soy, chili flakes, eggs, chicken chunks, and crisp seasonal greens.",
+    basePricePesewas: 8000,
+    imageUrl: "/images/dishes/noodles-stir-fry.jpg",
+    isAvailable: true,
+    isFeatured: false,
+    spiceLevel: 2,
+    preparationTimeMinutes: 20,
+    sortOrder: 12,
   },
   {
     id: "pizza-sika-supreme",
     categoryId: "pizza",
-    name: "Sika Supreme Pizza (Large)",
-    slug: "sika-supreme-pizza-large",
-    description: "Stone-baked hand-tossed crust loaded with spiced beef chunks, pepperoni, sweet peppers, red onions, and mozzarella.",
+    name: "Sika Supreme Pizza (Medium)",
+    slug: "sika-supreme-pizza-medium",
+    description:
+      "Stone-baked hand-tossed crust topped with spiced beef chunks, pepperoni, sweet peppers, red onions, and mozzarella.",
     basePricePesewas: 14000,
-    imageUrl: "/images/dishes/pepperoni-pizza.jpg",
+    imageUrl: "/images/dishes/artisan-pizza.jpg",
     isAvailable: true,
     isFeatured: true,
     spiceLevel: 1,
     preparationTimeMinutes: 30,
-    sortOrder: 8,
+    sortOrder: 13,
   },
   {
     id: "extra-plantain",
@@ -160,11 +266,11 @@ export const DEFAULT_MENU_ITEMS: MenuItemDTO[] = [
     slug: "plantain-only-kelewele",
     description: "Golden fried sweet plantain cubes seasoned with ginger and mild spices.",
     basePricePesewas: 2000,
-    imageUrl: "/images/dishes/swallow-soup.jpg",
+    imageUrl: "/images/dishes/fruit-salad.jpg",
     isAvailable: true,
     isFeatured: false,
     spiceLevel: 2,
     preparationTimeMinutes: 10,
-    sortOrder: 9,
+    sortOrder: 14,
   },
 ];

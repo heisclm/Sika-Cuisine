@@ -1,19 +1,21 @@
 import type { MetadataRoute } from "next";
+import { SikaPalette } from "@sika/shared";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Sika Cuisine Lounge — Sunyani, Ghana",
+    name: "Sika Cuisine — Sunyani, Ghana",
     short_name: "Sika Cuisine",
-    description: "Authentic Ghanaian culinary delicacies, charcoal-grilled tilapia, and lounge dining in Sunyani, Bono Region.",
+    description:
+      "Authentic Ghanaian culinary delicacies, charcoal-grilled tilapia, smoky jollof, and lounge dining in Sunyani, Bono Region.",
     start_url: "/",
     display: "standalone",
-    background_color: "#0a0a0c",
-    theme_color: "#e11d48",
+    background_color: SikaPalette.deepBlack,
+    theme_color: SikaPalette.primaryRed,
     icons: [
       {
-        src: "/favicon.ico",
-        sizes: "any",
-        type: "image/x-icon",
+        src: "/images/logo.png",
+        sizes: "512x512",
+        type: "image/png",
       },
     ],
   };
