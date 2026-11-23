@@ -40,6 +40,8 @@ import { getCurrentUser, removeAuthToken } from "../services/storage";
 import { SikaColors, SikaRadius, SikaSpace } from "../theme";
 
 interface ProfileScreenProps {
+  isActive?: boolean;
+  authUserId?: string | null;
   onNavigateToAuth: () => void;
   onNavigateToOrders: () => void;
   onReplayOnboarding: () => void;
@@ -50,6 +52,8 @@ interface ProfileScreenProps {
  * Customer Account, Restaurant Details, Sunyani Delivery Rates, and Session Controls.
  */
 export function ProfileScreen({
+  isActive = true,
+  authUserId,
   onNavigateToAuth,
   onNavigateToOrders,
   onReplayOnboarding,
@@ -67,8 +71,10 @@ export function ProfileScreen({
   }, []);
 
   useEffect(() => {
-    loadUser();
-  }, [loadUser]);
+    if (isActive) {
+      loadUser();
+    }
+  }, [isActive, authUserId, loadUser]);
 
   const handleConfirmSignOut = async () => {
     setSigningOut(true);

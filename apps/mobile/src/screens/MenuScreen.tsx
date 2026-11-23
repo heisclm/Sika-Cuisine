@@ -27,7 +27,11 @@ import { useCart } from "../context/CartContext";
 import { useToast } from "../context/ToastContext";
 import { DEFAULT_MENU_CATEGORIES, DEFAULT_MENU_ITEMS } from "../data/default-menu";
 import { apiRequest } from "../services/api-client";
-import { getLiveMenuCache, saveLiveMenuCache } from "../services/offline-menu-cache";
+import {
+  fetchAndCacheMobileMenu,
+  getInMemoryMenuCache,
+  getLiveMenuCache,
+} from "../services/offline-menu-cache";
 import { SikaColors, SikaRadius, SikaSpace } from "../theme";
 import { triggerLightHaptic } from "../utils/haptics";
 
@@ -56,8 +60,12 @@ export function MenuScreen({
   const { addItem, cartSubtotalPesewas, totalItemCount } = useCart();
   const { success } = useToast();
 
-  const [menuItems, setMenuItems] = useState<EnrichedMenuItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [menuItems, setMenuItems] = useState<EnrichedMenuItem[]>(
+    () => getInMemoryMenuCache()?.items ?? []
+  );
+  const [loading, setLoading] = useState(
+    () => (getInMemoryMenuCache()?.items?.length ?? 0) === 0
+  );
   const [refreshing, setRefreshing] = useState(false);
   const [isOffline, setIsOffline] = useState(false);
   const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(null);
@@ -78,16 +86,24 @@ export function MenuScreen({
   }, [initialSearch]);
 
   const fetchMenu = useCallback(async (isPull = false) => {
-    if (isPull) setRefreshing(true);
-    else setLoading(true);
+    const syncMem = getInMemoryMenuCache();
+    if (isPull) {
+      setRefreshing(true);
+    } else if (!syncMem?.items?.length) {
+      const diskCached = await getLiveMenuCache();
+      if (diskCached?.items?.length) {
+        setMenuItems(diskCached.items);
+        setLastSyncedAt(diskCached.savedAt);
+        setLoading(false);
+      } else {
+        setLoading(true);
+      }
+    }
 
-    const res = await apiRequest<{ success: boolean; items: EnrichedMenuItem[] }>(
-      "/menu/items?includeUnavailable=true"
-    );
+    const res = await fetchAndCacheMobileMenu(isPull);
 
-    if (res.success && res.data?.items?.length) {
-      setMenuItems(res.data.items);
-      void saveLiveMenuCache(res.data.items);
+    if (res.success && res.items?.length) {
+      setMenuItems(res.items);
       setIsOffline(false);
       setLastSyncedAt(new Date().toISOString());
     } else {

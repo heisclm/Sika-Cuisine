@@ -18,6 +18,7 @@ import { useCart } from "@/context/CartContext";
 import { usePublicConfig } from "@/context/PublicConfigContext";
 import { useToast } from "@/context/ToastContext";
 import { formatPesewasToGhs } from "@/lib/currency";
+import { fetchAndCacheWebMenu, readCachedWebMenu } from "@/lib/menu-cache";
 import { RESTAURANT_INFO } from "@/lib/navigation";
 import { MenuItem } from "@/types/menu";
 import { KineticMarquee } from "@/components/creative/KineticMarquee";
@@ -72,7 +73,6 @@ export default function HomePage() {
   const carouselRef = useRef<HTMLDivElement | null>(null);
 
   const [activeDishForModal, setActiveDishForModal] = useState<MenuItem | null>(null);
-  const [featuredDishes, setFeaturedDishes] = useState<MenuItem[]>([]);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -81,36 +81,32 @@ export default function HomePage() {
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
 
-  const loadCatalog = useCallback(async () => {
-    setLoading(true);
+  const featuredDishes = useMemo(
+    () => menuItems.filter((item) => item.isFeatured),
+    [menuItems]
+  );
+
+  const loadCatalog = useCallback(async (force = false) => {
+    const cached = readCachedWebMenu();
+    if (cached && cached.items.length > 0) {
+      setMenuItems(cached.items);
+      setLoading(false);
+    } else {
+      setLoading(true);
+    }
+
     setLoadError(null);
     try {
-      const [featuredRes, menuRes] = await Promise.all([
-        fetch("/api/v1/menu/items?featured=true"),
-        fetch("/api/v1/menu/items?includeUnavailable=true"),
-      ]);
-      const [featuredPayload, menuPayload] = await Promise.all([
-        featuredRes.json(),
-        menuRes.json(),
-      ]);
-
-      if (!featuredRes.ok || !featuredPayload.success || !menuRes.ok || !menuPayload.success) {
-        throw new Error(menuPayload.error || featuredPayload.error || "Unable to load menu catalog.");
-      }
-
-      const mapCategory = (item: MenuItem & { category?: { name: string } }) => ({
-        ...item,
-        categoryName: item.category?.name,
-      });
-
-      setFeaturedDishes((featuredPayload.items ?? []).map(mapCategory));
-      setMenuItems((menuPayload.items ?? []).map(mapCategory));
+      const items = await fetchAndCacheWebMenu(force);
+      setMenuItems(items);
     } catch (error) {
-      setLoadError(
-        error instanceof Error
-          ? error.message
-          : "Unable to connect to Sika Cuisine menu right now."
-      );
+      if (!cached || cached.items.length === 0) {
+        setLoadError(
+          error instanceof Error
+            ? error.message
+            : "Unable to connect to Sika Cuisine menu right now."
+        );
+      }
     } finally {
       setLoading(false);
     }
@@ -426,7 +422,7 @@ export default function HomePage() {
           <ErrorState
             title="Could not load featured dishes"
             message={loadError}
-            onRetry={() => void loadCatalog()}
+            onRetry={() => void loadCatalog(true)}
           />
         ) : featuredDishes.length === 0 ? (
           <EmptyState
@@ -460,10 +456,11 @@ export default function HomePage() {
               onScroll={updateCarouselEdges}
               className="flex items-stretch gap-3.5 sm:gap-5 overflow-x-auto scrollbar-none scroll-smooth pb-2 touch-pan-x"
             >
-              {featuredDishes.map((dish) => (
+              {featuredDishes.map((dish, index) => (
                 <div key={dish.id} className="w-[225px] sm:w-[300px] flex-shrink-0">
                   <DishCard
                     dish={dish}
+                    priority={index < 4}
                     cardRef={(el) => {
                       cardRefs.current[dish.id] = el;
                     }}

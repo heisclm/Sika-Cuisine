@@ -46,7 +46,11 @@ import { useToast } from "../context/ToastContext";
 import { DEFAULT_MENU_CATEGORIES, DEFAULT_MENU_ITEMS } from "../data/default-menu";
 import { MOBILE_IMAGE_ASSETS, resolveDishImageSource } from "../data/dish-images";
 import { apiRequest } from "../services/api-client";
-import { getLiveMenuCache, saveLiveMenuCache } from "../services/offline-menu-cache";
+import {
+  fetchAndCacheMobileMenu,
+  getInMemoryMenuCache,
+  getLiveMenuCache,
+} from "../services/offline-menu-cache";
 import {
   CachedOrderSummary,
   getOrdersFromCache,
@@ -112,8 +116,12 @@ export function HomeScreen({
   const { items, addItem, updateQuantity } = useCart();
   const { success } = useToast();
 
-  const [menuItems, setMenuItems] = useState<EnrichedMenuItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [menuItems, setMenuItems] = useState<EnrichedMenuItem[]>(
+    () => getInMemoryMenuCache()?.items ?? []
+  );
+  const [loading, setLoading] = useState(
+    () => (getInMemoryMenuCache()?.items?.length ?? 0) === 0
+  );
   const [refreshing, setRefreshing] = useState(false);
   const [isOffline, setIsOffline] = useState(false);
   const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(null);
@@ -127,13 +135,22 @@ export function HomeScreen({
   const [selectedDish, setSelectedDish] = useState<EnrichedMenuItem | null>(null);
 
   const loadHomeCatalog = useCallback(async (isPull = false) => {
-    if (isPull) setRefreshing(true);
-    else setLoading(true);
+    const syncMem = getInMemoryMenuCache();
+    if (isPull) {
+      setRefreshing(true);
+    } else if (!syncMem?.items?.length) {
+      const diskCached = await getLiveMenuCache();
+      if (diskCached?.items?.length) {
+        setMenuItems(diskCached.items);
+        setLastSyncedAt(diskCached.savedAt);
+        setLoading(false);
+      } else {
+        setLoading(true);
+      }
+    }
 
     const [res, configRes, user] = await Promise.all([
-      apiRequest<{ success: boolean; items: EnrichedMenuItem[] }>(
-        "/menu/items?includeUnavailable=true"
-      ),
+      fetchAndCacheMobileMenu(isPull),
       apiRequest<{
         success: boolean;
         restaurant?: { isAcceptingOrders?: boolean };
@@ -142,9 +159,8 @@ export function HomeScreen({
       getCurrentUser(),
     ]);
 
-    if (res.success && res.data?.items?.length) {
-      setMenuItems(res.data.items);
-      void saveLiveMenuCache(res.data.items);
+    if (res.success && res.items?.length) {
+      setMenuItems(res.items);
       setIsOffline(false);
       setLastSyncedAt(new Date().toISOString());
     } else {

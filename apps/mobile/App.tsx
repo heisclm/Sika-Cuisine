@@ -136,11 +136,30 @@ function SikaMobileShell() {
   const [currentUser, setCurrentUser] = useState<UserDTO | null>(null);
 
   const [activeScreen, setActiveScreen] = useState<ActiveScreen>("home");
+  const [visitedTabs, setVisitedTabs] = useState<Record<MobileTabId, boolean>>({
+    home: true,
+    menu: false,
+    orders: false,
+    account: false,
+  });
   const [searchReturnScreen, setSearchReturnScreen] = useState<"home" | "menu">("home");
   const [menuCategoryId, setMenuCategoryId] = useState<string>("all");
   const [menuSearchQuery, setMenuSearchQuery] = useState<string>("");
   const [activeOrderNumber, setActiveOrderNumber] = useState<string>("");
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+
+  useEffect(() => {
+    if (
+      activeScreen === "home" ||
+      activeScreen === "menu" ||
+      activeScreen === "orders" ||
+      activeScreen === "account"
+    ) {
+      setVisitedTabs((prev) =>
+        prev[activeScreen] ? prev : { ...prev, [activeScreen]: true }
+      );
+    }
+  }, [activeScreen]);
 
   const openSearchScreen = (from: "home" | "menu", initialQuery = "") => {
     triggerLightHaptic();
@@ -435,7 +454,13 @@ function SikaMobileShell() {
           },
         ]}
       >
-        {activeScreen === "home" && (
+        {/* Keep visited primary tabs mounted so scroll position & decoded images stay warm */}
+        <View
+          style={[
+            styles.tabPanel,
+            activeScreen !== "home" && styles.tabPanelHidden,
+          ]}
+        >
           <HomeScreen
             currentUser={currentUser}
             onNavigateToMenu={navigateToMenu}
@@ -444,15 +469,57 @@ function SikaMobileShell() {
             onOpenOrders={() => setActiveScreen("orders")}
             onTrackOrder={navigateToTracking}
           />
+        </View>
+
+        {visitedTabs.menu && (
+          <View
+            style={[
+              styles.tabPanel,
+              activeScreen !== "menu" && styles.tabPanelHidden,
+            ]}
+          >
+            <MenuScreen
+              initialCategoryId={menuCategoryId}
+              initialSearch={menuSearchQuery}
+              onOpenSearch={() => openSearchScreen("menu", menuSearchQuery)}
+              onNavigateToCart={() => setActiveScreen("cart")}
+            />
+          </View>
         )}
 
-        {activeScreen === "menu" && (
-          <MenuScreen
-            initialCategoryId={menuCategoryId}
-            initialSearch={menuSearchQuery}
-            onOpenSearch={() => openSearchScreen("menu", menuSearchQuery)}
-            onNavigateToCart={() => setActiveScreen("cart")}
-          />
+        {visitedTabs.orders && (
+          <View
+            style={[
+              styles.tabPanel,
+              activeScreen !== "orders" && styles.tabPanelHidden,
+            ]}
+          >
+            <OrdersScreen
+              isActive={activeScreen === "orders"}
+              authUserId={currentUser?.id ?? null}
+              onTrackOrder={navigateToTracking}
+              onBrowseMenu={() => navigateToMenu("all")}
+              onOpenCart={() => setActiveScreen("cart")}
+            />
+          </View>
+        )}
+
+        {visitedTabs.account && (
+          <View
+            style={[
+              styles.tabPanel,
+              activeScreen !== "account" && styles.tabPanelHidden,
+            ]}
+          >
+            <ProfileScreen
+              isActive={activeScreen === "account"}
+              authUserId={currentUser?.id ?? null}
+              onNavigateToAuth={() => setActiveScreen("auth")}
+              onNavigateToOrders={() => setActiveScreen("orders")}
+              onReplayOnboarding={handleReplayOnboarding}
+              onSignedOut={() => setCurrentUser(null)}
+            />
+          </View>
         )}
 
         {activeScreen === "search" && (
@@ -480,28 +547,11 @@ function SikaMobileShell() {
           />
         )}
 
-        {activeScreen === "orders" && (
-          <OrdersScreen
-            onTrackOrder={navigateToTracking}
-            onBrowseMenu={() => navigateToMenu("all")}
-            onOpenCart={() => setActiveScreen("cart")}
-          />
-        )}
-
         {activeScreen === "tracking" && (
           <OrderTrackingScreen
             orderNumber={activeOrderNumber}
             onBack={() => setActiveScreen("orders")}
             onOpenCart={() => setActiveScreen("cart")}
-          />
-        )}
-
-        {activeScreen === "account" && (
-          <ProfileScreen
-            onNavigateToAuth={() => setActiveScreen("auth")}
-            onNavigateToOrders={() => setActiveScreen("orders")}
-            onReplayOnboarding={handleReplayOnboarding}
-            onSignedOut={() => setCurrentUser(null)}
           />
         )}
 
@@ -728,6 +778,12 @@ const styles = StyleSheet.create({
   },
   stage: {
     flex: 1,
+  },
+  tabPanel: {
+    flex: 1,
+  },
+  tabPanelHidden: {
+    display: "none",
   },
   dockWrapper: {
     position: "absolute",

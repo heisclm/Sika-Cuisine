@@ -13,6 +13,7 @@ interface DishCardProps {
   onSelectDish: (dish: MenuItem) => void;
   onQuickAdd: (dish: MenuItem, e: React.MouseEvent) => void;
   className?: string;
+  priority?: boolean;
 }
 
 /**
@@ -26,6 +27,7 @@ export function DishCard({
   onSelectDish,
   onQuickAdd,
   className = "",
+  priority = false,
 }: DishCardProps) {
   const { items, updateQuantity } = useCart();
   const [imgError, setImgError] = React.useState(false);
@@ -66,7 +68,8 @@ export function DishCard({
           className={`block h-full w-full object-cover transform-gpu will-change-transform transition-transform duration-500 ease-out ${
             dish.isAvailable ? "group-hover:scale-105" : "grayscale-[65%]"
           }`}
-          loading="lazy"
+          loading={priority ? "eager" : "lazy"}
+          decoding="async"
         />
         <div className="pointer-events-none absolute -inset-x-px -bottom-px top-0 bg-gradient-to-t from-[#1C1C1C] from-[2%] via-[#1C1C1C]/20 to-black/35" />
 

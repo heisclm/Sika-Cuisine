@@ -54,6 +54,8 @@ import { SikaColors, SikaRadius, SikaSpace } from "../theme";
 import { triggerLightHaptic, triggerSuccessHaptic } from "../utils/haptics";
 
 interface OrdersScreenProps {
+  isActive?: boolean;
+  authUserId?: string | null;
   onTrackOrder: (orderNumber: string) => void;
   onBrowseMenu?: () => void;
   onOpenCart?: () => void;
@@ -113,6 +115,8 @@ function mapDtoToCachedSummary(
  * - Cursor pagination (`Load Older Orders`) + 1-Tap Reorder directly into Tray
  */
 export function OrdersScreen({
+  isActive = true,
+  authUserId,
   onTrackOrder,
   onBrowseMenu,
   onOpenCart,
@@ -415,8 +419,10 @@ export function OrdersScreen({
   );
 
   useEffect(() => {
-    void loadOrders();
-  }, [loadOrders]);
+    if (isActive) {
+      void loadOrders();
+    }
+  }, [isActive, authUserId, loadOrders]);
 
   const handleLookupOrder = async () => {
     const cleaned = lookupInput.trim().toUpperCase();

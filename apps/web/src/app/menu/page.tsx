@@ -4,6 +4,7 @@ import React, { Suspense, useState, useRef, useMemo, useEffect, useCallback } fr
 import { useSearchParams } from "next/navigation";
 import { Search, ArrowUp, X, SlidersHorizontal, Flame } from "lucide-react";
 import { MenuItem } from "@/types/menu";
+import { fetchAndCacheWebMenu, readCachedWebMenu } from "@/lib/menu-cache";
 import { useCart } from "@/context/CartContext";
 import { useToast } from "@/context/ToastContext";
 import { DishDetailModal } from "@/components/menu/DishDetailModal";
@@ -41,26 +42,26 @@ function MenuContent() {
   const [showBackToTop, setShowBackToTop] = useState(false);
   const [visibleCount, setVisibleCount] = useState(WEB_MENU_PAGE_SIZE);
 
-  const loadMenu = useCallback(async () => {
-    setLoading(true);
+  const loadMenu = useCallback(async (force = false) => {
+    const cached = readCachedWebMenu();
+    if (cached && cached.items.length > 0) {
+      setMenuItems(cached.items);
+      setLoading(false);
+    } else {
+      setLoading(true);
+    }
+
     setLoadError(null);
     try {
-      const response = await fetch("/api/v1/menu/items?includeUnavailable=true");
-      const payload = await response.json();
-      if (!response.ok || !payload.success) {
-        throw new Error(payload.error || "Unable to load restaurant menu.");
-      }
-      setMenuItems(
-        (payload.items ?? []).map((item: MenuItem & { category?: { name: string } }) => ({
-          ...item,
-          categoryName: item.category?.name,
-        }))
-      );
+      const items = await fetchAndCacheWebMenu(force);
+      setMenuItems(items);
     } catch (error) {
-      setLoadError(
-        error instanceof Error ? error.message : "Could not connect to Sika Cuisine menu."
-      );
-      setMenuItems([]);
+      if (!cached || cached.items.length === 0) {
+        setLoadError(
+          error instanceof Error ? error.message : "Could not connect to Sika Cuisine menu."
+        );
+        setMenuItems([]);
+      }
     } finally {
       setLoading(false);
     }
@@ -309,7 +310,7 @@ function MenuContent() {
           <ErrorState
             title="Could not load the menu"
             message={loadError}
-            onRetry={() => void loadMenu()}
+            onRetry={() => void loadMenu(true)}
           />
         ) : filteredDishes.length === 0 ? (
           <EmptyState
@@ -335,6 +336,7 @@ function MenuContent() {
                 >
                   <DishCard
                     dish={dish}
+                    priority={idx < 6}
                     cardRef={(el) => {
                       cardRefs.current[dish.id] = el;
                     }}
