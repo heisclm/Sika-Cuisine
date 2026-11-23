@@ -26,11 +26,6 @@
     ],
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
-    "splash": {
-      "image": "./assets/adaptive-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#101010"
-    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.sikacuisine.app",
