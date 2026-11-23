@@ -42,5 +42,5 @@ jobs:
       - name: Build Web Production Bundle
         env:
           AUTH_SECRET: "ci_only_ephemeral_32_byte_secret_for_build_check"
-          NEXT_PUBLIC_APP_URL: "https://sikacuisine.com"
+          NEXT_PUBLIC_APP_URL: "https://sika-cuisine.vercel.app/"
         run: npm run build --workspace=@sika/web

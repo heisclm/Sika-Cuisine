@@ -4,7 +4,7 @@
  * for Sika Cuisine Web, API handlers, SEO metadata, and health checks.
  */
 
-const DEFAULT_PUBLIC_ORIGIN = "https://sikacuisine.com";
+const DEFAULT_PUBLIC_ORIGIN = "https://sika-cuisine.vercel.app/";
 const DEFAULT_DEV_ORIGIN = "http://localhost:3000";
 
 function normalizeOrigin(raw?: string): string {

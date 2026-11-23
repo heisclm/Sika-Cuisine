@@ -24,7 +24,7 @@ Copy `.env.example` to `.env` at the repository root and configure the required 
 **2. Mobile Client (`apps/mobile/.env`):**  
 Copy `apps/mobile/.env.example` to `apps/mobile/.env` and point `EXPO_PUBLIC_API_URL` to the backend API:
 * Android emulator: `EXPO_PUBLIC_API_URL=http://10.0.2.2:3000/api/v1`
-* Physical device / Production: LAN IP (`http://<LAN-IP>:3000/api/v1`) or production HTTPS URL (`https://sikacuisine.com/api/v1`, matching `app.json`).
+* Physical device / Production: LAN IP (`http://<LAN-IP>:3000/api/v1`) or production HTTPS URL (`https://sika-cuisine.vercel.app//api/v1`, matching `app.json`).
 
 ### A.3 Installation, Database Migration, and Seeding
 1. **Install all monorepo dependencies:**

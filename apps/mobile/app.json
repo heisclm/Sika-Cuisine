@@ -28,7 +28,7 @@
       "versionCode": 1
     },
     "extra": {
-      "apiUrl": "https://sikacuisine.com/api/v1"
+      "apiUrl": "https://sika-cuisine.vercel.app//api/v1"
     }
   }
 }

@@ -214,7 +214,7 @@ Before pointing live Sunyani traffic and real Mobile Money payments at your depl
 4. **Health & Uptime Verification:**
    - Point your uptime monitor at `GET https://sikacuisine.com/api/v1/health` and confirm `status: "healthy"`, `database: "connected"`, `authSecretStrong: true`, and `paystackMode: "live"`.
 5. **Mobile Release Builds (`apps/mobile/eas.json`):**
-   - `apps/mobile/eas.json` is preconfigured with `development`, `preview` (APK), and `production` profiles targeting `https://sikacuisine.com/api/v1`. Run `npx eas build --platform android --profile production` from `apps/mobile` when ready to package native binaries.
+   - `apps/mobile/eas.json` is preconfigured with `development`, `preview` (APK), and `production` profiles targeting `https://sika-cuisine.vercel.app//api/v1`. Run `npx eas build --platform android --profile production` from `apps/mobile` when ready to package native binaries.
 
 ---
 
