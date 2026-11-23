@@ -8,7 +8,34 @@ const DEFAULT_PUBLIC_ORIGIN = "https://sikacuisine.com";
 const DEFAULT_DEV_ORIGIN = "http://localhost:3000";
 
 function normalizeOrigin(raw?: string): string {
-  return (raw || "").trim().replace(/\/+$/, "");
+  const cleaned = (raw || "").trim().replace(/\/+$/, "");
+  if (!cleaned) return "";
+
+  const candidate =
+    /^https?:\/\//i.test(cleaned)
+      ? cleaned
+      : cleaned.includes(".")
+      ? `https://${cleaned}`
+      : "";
+
+  if (!candidate) return "";
+
+  try {
+    const parsed = new URL(candidate);
+    if (parsed.protocol === "http:" || parsed.protocol === "https:") {
+      return parsed.origin;
+    }
+  } catch {
+  }
+
+  return "";
+}
+
+function getVercelOrigin(): string {
+  return (
+    normalizeOrigin(process.env.VERCEL_PROJECT_PRODUCTION_URL) ||
+    normalizeOrigin(process.env.VERCEL_URL)
+  );
 }
 
 function isLocalhostUrl(url: string): boolean {
@@ -22,6 +49,8 @@ function isLocalhostUrl(url: string): boolean {
 export function getAppUrl(): string {
   const configured = normalizeOrigin(process.env.NEXT_PUBLIC_APP_URL);
   if (configured) return configured;
+  const vercelOrigin = getVercelOrigin();
+  if (vercelOrigin) return vercelOrigin;
   return process.env.NODE_ENV === "production"
     ? DEFAULT_PUBLIC_ORIGIN
     : DEFAULT_DEV_ORIGIN;
@@ -35,6 +64,10 @@ export function getSiteOrigin(): string {
   const configured = normalizeOrigin(process.env.NEXT_PUBLIC_APP_URL);
   if (configured && !isLocalhostUrl(configured)) {
     return configured;
+  }
+  const vercelOrigin = getVercelOrigin();
+  if (vercelOrigin && !isLocalhostUrl(vercelOrigin)) {
+    return vercelOrigin;
   }
   return DEFAULT_PUBLIC_ORIGIN;
 }
@@ -81,7 +114,13 @@ export function getEnvDiagnostics(): EnvDiagnostics {
         (process.env.SUPABASE_SECRET_KEY?.trim() ||
           process.env.SUPABASE_SERVICE_ROLE_KEY?.trim())
     ),
-    emailConfigured: Boolean(process.env.RESEND_API_KEY?.trim()),
+    emailConfigured: Boolean(
+      process.env.RESEND_API_KEY?.trim() ||
+        (process.env.GMAIL_USER?.trim() && process.env.GMAIL_APP_PASSWORD?.trim()) ||
+        (process.env.SMTP_HOST?.trim() &&
+          process.env.SMTP_USER?.trim() &&
+          process.env.SMTP_PASS?.trim())
+    ),
     smsConfigured,
   };
 }
