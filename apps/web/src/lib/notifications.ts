@@ -35,6 +35,10 @@ let cachedSmtp: CachedSmtpTransport | null = null;
  * variables without a full restart. This hydrates missing notification env keys from the root `.env` on demand.
  */
 function hydrateRootEnvIfMissing(): void {
+  if (process.env.NODE_ENV === "production") {
+    return;
+  }
+
   if (
     (process.env.GMAIL_USER?.trim() && process.env.GMAIL_APP_PASSWORD?.trim()) ||
     process.env.RESEND_API_KEY?.trim() ||
@@ -54,8 +58,8 @@ function hydrateRootEnvIfMissing(): void {
 
   for (const envPath of candidatePaths) {
     try {
-      if (!fs.existsSync(envPath)) continue;
-      const raw = fs.readFileSync(envPath, "utf8");
+      if (!fs.existsSync(/*turbopackIgnore: true*/ envPath)) continue;
+      const raw = fs.readFileSync(/*turbopackIgnore: true*/ envPath, "utf8");
       for (const line of raw.split(/\r?\n/)) {
         const trimmed = line.trim();
         if (!trimmed || trimmed.startsWith("#")) continue;
