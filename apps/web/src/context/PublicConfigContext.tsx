@@ -95,6 +95,21 @@ export function PublicConfigProvider({ children }: { children: React.ReactNode }
     refreshConfig();
   }, [refreshConfig]);
 
+  // Quietly re-sync restaurant status when browser regains focus or network reconnects
+  useEffect(() => {
+    const handleFocusOrOnline = () => {
+      if (document.visibilityState === "visible") {
+        void refreshConfig();
+      }
+    };
+    window.addEventListener("online", handleFocusOrOnline);
+    document.addEventListener("visibilitychange", handleFocusOrOnline);
+    return () => {
+      window.removeEventListener("online", handleFocusOrOnline);
+      document.removeEventListener("visibilitychange", handleFocusOrOnline);
+    };
+  }, [refreshConfig]);
+
   // Automatically flip live kitchen open/closed status on the client when opening/closing time arrives
   useEffect(() => {
     const syncSchedule = () => {

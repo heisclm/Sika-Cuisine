@@ -32,7 +32,6 @@ import {
 } from "@sika/shared";
 import { DishCard, EnrichedMenuItem } from "../components/DishCard";
 import { DishDetailModal } from "../components/DishDetailModal";
-import { OfflineBanner } from "../components/OfflineBanner";
 import {
   DEFAULT_MENU_FILTERS,
   FilterSheet,
@@ -42,6 +41,7 @@ import { ScalePressable } from "../components/ui/ScalePressable";
 import { DishCardSkeleton } from "../components/ui/Skeleton";
 import { Badge } from "../components/ui/Badge";
 import { useCart } from "../context/CartContext";
+import { useSync } from "../context/SyncContext";
 import { useToast } from "../context/ToastContext";
 import { DEFAULT_MENU_CATEGORIES, DEFAULT_MENU_ITEMS } from "../data/default-menu";
 import { MOBILE_IMAGE_ASSETS, resolveDishImageSource } from "../data/dish-images";
@@ -114,6 +114,7 @@ export function HomeScreen({
   const cardWidth = Math.floor((width - SikaSpace.md * 2 - 10) / 2);
 
   const { items, addItem, updateQuantity } = useCart();
+  const { reconnectVersion } = useSync();
   const { success } = useToast();
 
   const [menuItems, setMenuItems] = useState<EnrichedMenuItem[]>(
@@ -123,8 +124,6 @@ export function HomeScreen({
     () => (getInMemoryMenuCache()?.items?.length ?? 0) === 0
   );
   const [refreshing, setRefreshing] = useState(false);
-  const [isOffline, setIsOffline] = useState(false);
-  const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(null);
   const [isAcceptingOrders, setIsAcceptingOrders] = useState(true);
   const [lowestDeliveryPesewas, setLowestDeliveryPesewas] = useState(800);
   const [activeOrder, setActiveOrder] = useState<CachedOrderSummary | null>(null);
@@ -142,7 +141,6 @@ export function HomeScreen({
       const diskCached = await getLiveMenuCache();
       if (diskCached?.items?.length) {
         setMenuItems(diskCached.items);
-        setLastSyncedAt(diskCached.savedAt);
         setLoading(false);
       } else {
         setLoading(true);
@@ -161,15 +159,9 @@ export function HomeScreen({
 
     if (res.success && res.items?.length) {
       setMenuItems(res.items);
-      setIsOffline(false);
-      setLastSyncedAt(new Date().toISOString());
     } else {
       const cachedMenu = await getLiveMenuCache();
       setMenuItems(cachedMenu?.items?.length ? cachedMenu.items : DEFAULT_MENU_ITEMS);
-      setIsOffline(true);
-      if (cachedMenu?.savedAt) {
-        setLastSyncedAt(cachedMenu.savedAt);
-      }
     }
 
     if (configRes.success && configRes.data) {
@@ -228,6 +220,12 @@ export function HomeScreen({
   useEffect(() => {
     loadHomeCatalog(false);
   }, [loadHomeCatalog]);
+
+  useEffect(() => {
+    if (reconnectVersion > 0) {
+      void loadHomeCatalog(true);
+    }
+  }, [reconnectVersion, loadHomeCatalog]);
 
   const categories = useMemo(() => {
     const map = new Map<string, string>();
@@ -288,8 +286,6 @@ export function HomeScreen({
 
   return (
     <View style={styles.root}>
-      <OfflineBanner isOffline={isOffline} lastSynchronizedAt={lastSyncedAt} />
-
       <ScrollView
         showsVerticalScrollIndicator={false}
         refreshControl={

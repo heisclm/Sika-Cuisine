@@ -38,7 +38,6 @@ import {
   formatPaymentStatusLabel,
   formatPesewasToGhs,
 } from "@sika/shared";
-import { OfflineBanner } from "../components/OfflineBanner";
 import { OrderStatusTimeline } from "../components/OrderStatusTimeline";
 import { Badge } from "../components/ui/Badge";
 import { Button } from "../components/ui/Button";
@@ -476,11 +475,6 @@ export function OrderTrackingScreen({
           <RefreshCw size={16} color={SikaColors.warmWhite} />
         </Pressable>
       </View>
-
-      <OfflineBanner
-        isOffline={isOffline}
-        lastSynchronizedAt={tracking?.lastSynchronizedAt}
-      />
 
       {loading && !tracking ? (
         <View style={styles.pad}>

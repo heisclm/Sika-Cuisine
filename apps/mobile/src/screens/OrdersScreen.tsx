@@ -34,13 +34,13 @@ import {
   formatPesewasToGhs,
   getDateRangeBounds,
 } from "@sika/shared";
-import { OfflineBanner } from "../components/OfflineBanner";
 import { Badge, BadgeVariant } from "../components/ui/Badge";
 import { Button } from "../components/ui/Button";
 import { EmptyState } from "../components/ui/EmptyState";
 import { ErrorState } from "../components/ui/ErrorState";
 import { OrderRowSkeleton } from "../components/ui/Skeleton";
 import { useCart } from "../context/CartContext";
+import { useSync } from "../context/SyncContext";
 import { useToast } from "../context/ToastContext";
 import { resolveDishImageSource } from "../data/dish-images";
 import { apiRequest } from "../services/api-client";
@@ -122,6 +122,7 @@ export function OrdersScreen({
   onOpenCart,
 }: OrdersScreenProps) {
   const { addItem } = useCart();
+  const { reconnectVersion } = useSync();
   const { success, info, error: toastError } = useToast();
 
   const [scope, setScope] = useState<HistoryScope>("active");
@@ -147,8 +148,6 @@ export function OrdersScreen({
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [isOffline, setIsOffline] = useState(false);
-  const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [reorderingOrderNumber, setReorderingOrderNumber] = useState<
     string | null
@@ -309,8 +308,6 @@ export function OrdersScreen({
           const srvPast = res.data.pastCount ?? 0;
           setActiveCount(srvActive);
           setPastCount(srvPast);
-          setIsOffline(false);
-          setLastSyncedAt(syncedAt);
 
           if (!initializedTabRef.current) {
             initializedTabRef.current = true;
@@ -321,9 +318,7 @@ export function OrdersScreen({
             }
           }
         } else if (res.isOffline) {
-          setIsOffline(true);
           setOrders(filterLocally(cached));
-          setLastSyncedAt(cached[0]?.lastSynchronizedAt || null);
         } else if (cached.length === 0) {
           setErrorMessage(res.error || "Unable to fetch orders.");
         }
@@ -382,7 +377,6 @@ export function OrdersScreen({
                 }
               }
             });
-            setIsOffline(offlineHit);
             await saveOrdersToCache("guest", workingCache);
           }
         }
@@ -397,7 +391,6 @@ export function OrdersScreen({
         setActiveCount(guestActive);
         setPastCount(guestPast);
         setOrders(filterLocally(workingCache));
-        setLastSyncedAt(workingCache[0]?.lastSynchronizedAt || null);
         setHasMore(false);
         setNextCursor(null);
 
@@ -422,7 +415,7 @@ export function OrdersScreen({
     if (isActive) {
       void loadOrders();
     }
-  }, [isActive, authUserId, loadOrders]);
+  }, [isActive, authUserId, reconnectVersion, loadOrders]);
 
   const handleLookupOrder = async () => {
     const cleaned = lookupInput.trim().toUpperCase();
@@ -535,8 +528,6 @@ export function OrdersScreen({
 
   return (
     <View style={styles.root}>
-      <OfflineBanner isOffline={isOffline} lastSynchronizedAt={lastSyncedAt} />
-
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}

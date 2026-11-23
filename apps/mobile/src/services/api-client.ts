@@ -45,6 +45,32 @@ export interface ApiRequestOptions extends RequestInit {
   timeoutMs?: number;
 }
 
+export type NetworkSyncEvent =
+  | { type: "online"; syncedAt: string }
+  | { type: "offline" };
+
+type NetworkSyncListener = (event: NetworkSyncEvent) => void;
+const networkListeners = new Set<NetworkSyncListener>();
+
+export function subscribeToNetworkEvents(
+  listener: NetworkSyncListener
+): () => void {
+  networkListeners.add(listener);
+  return () => {
+    networkListeners.delete(listener);
+  };
+}
+
+function emitNetworkEvent(event: NetworkSyncEvent) {
+  networkListeners.forEach((listener) => {
+    try {
+      listener(event);
+    } catch {
+      // Ignore subscriber errors cleanly
+    }
+  });
+}
+
 /**
  * Dispatches an HTTP request to the shared Next.js REST API with automatic Bearer token injection and timeout.
  *
@@ -86,6 +112,8 @@ export async function apiRequest<T = any>(
     clearTimeout(timeoutId);
 
     const json = await response.json();
+    emitNetworkEvent({ type: "online", syncedAt: new Date().toISOString() });
+
     if (!response.ok) {
       return {
         success: false,
@@ -101,6 +129,7 @@ export async function apiRequest<T = any>(
       data: json,
     };
   } catch (error: any) {
+    emitNetworkEvent({ type: "offline" });
     if (error.name === "AbortError") {
       return {
         success: false,

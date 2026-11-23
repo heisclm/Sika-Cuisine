@@ -38,9 +38,11 @@ import {
   formatPesewasToGhs,
 } from "@sika/shared";
 import { RestaurantClocheIcon } from "./src/components/icons/RestaurantClocheIcon";
+import { OfflineBanner } from "./src/components/OfflineBanner";
 import { MobileNotificationBell } from "./src/components/notifications/MobileNotificationBell";
 import { RiderShell } from "./src/components/rider/RiderShell";
 import { CartProvider, useCart } from "./src/context/CartContext";
+import { SyncProvider, useSync } from "./src/context/SyncContext";
 import { ToastProvider, useToast } from "./src/context/ToastContext";
 import { MOBILE_IMAGE_ASSETS } from "./src/data/dish-images";
 import { AuthScreen } from "./src/screens/AuthScreen";
@@ -129,6 +131,7 @@ function SikaMobileShell() {
     syncCartOwner,
     clearCartOnSignOut,
   } = useCart();
+  const { isOffline, lastSyncedAt } = useSync();
   const { info } = useToast();
 
   const [onboardingChecked, setOnboardingChecked] = useState(false);
@@ -444,6 +447,9 @@ function SikaMobileShell() {
         </View>
       </View>
 
+      {/* Single App-Wide Connectivity Alert (Visible Only When Offline) */}
+      <OfflineBanner isOffline={isOffline} lastSynchronizedAt={lastSyncedAt} />
+
       {/* Main Content Stage */}
       <Animated.View
         style={[
@@ -681,11 +687,13 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <StatusBar style="light" />
-      <ToastProvider>
-        <CartProvider>
-          <SikaMobileShell />
-        </CartProvider>
-      </ToastProvider>
+      <SyncProvider>
+        <ToastProvider>
+          <CartProvider>
+            <SikaMobileShell />
+          </CartProvider>
+        </ToastProvider>
+      </SyncProvider>
     </SafeAreaProvider>
   );
 }

@@ -1,6 +1,6 @@
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
-import { Cloud, WifiOff } from "lucide-react-native";
+import { WifiOff } from "lucide-react-native";
 import { SikaColors, SikaRadius, SikaSpace } from "../theme";
 
 interface OfflineBannerProps {
@@ -9,10 +9,15 @@ interface OfflineBannerProps {
 }
 
 /**
- * Displays connection and cache staleness status transparently without fabricating live updates.
+ * Global shell-level connectivity alert.
+ * Remains hidden during normal online operation (following standard mobile UX),
+ * and surfaces once beneath the header only when offline / connection drops.
  */
-export function OfflineBanner({ isOffline, lastSynchronizedAt }: OfflineBannerProps) {
-  if (!isOffline && !lastSynchronizedAt) {
+export function OfflineBanner({
+  isOffline,
+  lastSynchronizedAt,
+}: OfflineBannerProps) {
+  if (!isOffline) {
     return null;
   }
 
@@ -24,24 +29,11 @@ export function OfflineBanner({ isOffline, lastSynchronizedAt }: OfflineBannerPr
     : null;
 
   return (
-    <View style={[styles.banner, isOffline ? styles.offlineBanner : styles.cachedBanner]}>
-      {isOffline ? (
-        <WifiOff size={15} color={SikaColors.warning} style={styles.icon} />
-      ) : (
-        <Cloud size={15} color={SikaColors.success} style={styles.icon} />
-      )}
-      <Text
-        style={[
-          styles.bannerText,
-          { color: isOffline ? SikaColors.warning : SikaColors.warmWhite },
-        ]}
-        numberOfLines={2}
-      >
-        {isOffline
-          ? `Offline Mode — Viewing cached data${
-              formattedTime ? ` from ${formattedTime}` : ""
-            }. Live updates paused.`
-          : `Synced with Sunyani kitchen at ${formattedTime || "recently"}`}
+    <View style={[styles.banner, styles.offlineBanner]} accessibilityRole="alert">
+      <WifiOff size={15} color={SikaColors.warning} style={styles.icon} />
+      <Text style={styles.bannerText} numberOfLines={2}>
+        Offline Mode — Viewing cached data
+        {formattedTime ? ` from ${formattedTime}` : ""}. Reconnecting automatically…
       </Text>
     </View>
   );
@@ -60,14 +52,11 @@ const styles = StyleSheet.create({
     backgroundColor: SikaColors.warningBg,
     borderBottomColor: SikaColors.warningBorder,
   },
-  cachedBanner: {
-    backgroundColor: SikaColors.surface,
-    borderBottomColor: SikaColors.border,
-  },
   icon: {
     marginRight: SikaSpace.sm,
   },
   bannerText: {
+    color: SikaColors.warning,
     fontSize: 12,
     fontWeight: "600",
     flexShrink: 1,

@@ -15,7 +15,6 @@ import { formatPesewasToGhs } from "@sika/shared";
 import { DishCard, EnrichedMenuItem } from "../components/DishCard";
 import { DishDetailModal } from "../components/DishDetailModal";
 import { RestaurantClocheIcon } from "../components/icons/RestaurantClocheIcon";
-import { OfflineBanner } from "../components/OfflineBanner";
 import { EmptyState } from "../components/ui/EmptyState";
 import {
   DEFAULT_MENU_FILTERS,
@@ -24,6 +23,7 @@ import {
 } from "../components/ui/FilterSheet";
 import { DishCardSkeleton } from "../components/ui/Skeleton";
 import { useCart } from "../context/CartContext";
+import { useSync } from "../context/SyncContext";
 import { useToast } from "../context/ToastContext";
 import { DEFAULT_MENU_CATEGORIES, DEFAULT_MENU_ITEMS } from "../data/default-menu";
 import { apiRequest } from "../services/api-client";
@@ -58,6 +58,7 @@ export function MenuScreen({
   const cardWidth = Math.floor((width - SikaSpace.md * 2 - 10) / 2);
 
   const { addItem, cartSubtotalPesewas, totalItemCount } = useCart();
+  const { reconnectVersion } = useSync();
   const { success } = useToast();
 
   const [menuItems, setMenuItems] = useState<EnrichedMenuItem[]>(
@@ -67,8 +68,6 @@ export function MenuScreen({
     () => (getInMemoryMenuCache()?.items?.length ?? 0) === 0
   );
   const [refreshing, setRefreshing] = useState(false);
-  const [isOffline, setIsOffline] = useState(false);
-  const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(null);
 
   const [activeCategory, setActiveCategory] = useState(initialCategoryId);
   const [searchQuery, setSearchQuery] = useState(initialSearch);
@@ -93,7 +92,6 @@ export function MenuScreen({
       const diskCached = await getLiveMenuCache();
       if (diskCached?.items?.length) {
         setMenuItems(diskCached.items);
-        setLastSyncedAt(diskCached.savedAt);
         setLoading(false);
       } else {
         setLoading(true);
@@ -104,15 +102,9 @@ export function MenuScreen({
 
     if (res.success && res.items?.length) {
       setMenuItems(res.items);
-      setIsOffline(false);
-      setLastSyncedAt(new Date().toISOString());
     } else {
       const cachedMenu = await getLiveMenuCache();
       setMenuItems(cachedMenu?.items?.length ? cachedMenu.items : DEFAULT_MENU_ITEMS);
-      setIsOffline(true);
-      if (cachedMenu?.savedAt) {
-        setLastSyncedAt(cachedMenu.savedAt);
-      }
     }
 
     setLoading(false);
@@ -122,6 +114,12 @@ export function MenuScreen({
   useEffect(() => {
     fetchMenu(false);
   }, [fetchMenu]);
+
+  useEffect(() => {
+    if (reconnectVersion > 0) {
+      void fetchMenu(true);
+    }
+  }, [reconnectVersion, fetchMenu]);
 
   const categories = useMemo(() => {
     const map = new Map<string, string>();
@@ -209,8 +207,6 @@ export function MenuScreen({
 
   return (
     <View style={styles.root}>
-      <OfflineBanner isOffline={isOffline} lastSynchronizedAt={lastSyncedAt} />
-
       {/* Search & Filter Toolbar — Tapping search opens dedicated SearchScreen */}
       <View style={styles.toolbar}>
         <View style={styles.searchRow}>
