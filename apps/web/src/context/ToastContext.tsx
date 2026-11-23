@@ -174,7 +174,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     <div
       aria-live="polite"
       aria-atomic="false"
-      className="pointer-events-none fixed inset-x-3 top-3 z-[9999] mx-auto flex max-w-[460px] flex-col gap-2.5 sm:inset-x-auto sm:right-6 sm:top-24 sm:mx-0 sm:w-[420px]"
+      className="pointer-events-none fixed inset-x-4 top-3 z-[9999] mx-auto flex max-w-[360px] flex-col gap-2 sm:inset-x-auto sm:right-5 sm:top-20 sm:mx-0 sm:w-[360px]"
     >
       <AnimatePresence initial={false} mode="popLayout">
         {toasts.map((t) => {
@@ -184,29 +184,29 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
               key={t.id}
               layout
               drag="y"
-              dragConstraints={{ top: -90, bottom: 0 }}
+              dragConstraints={{ top: -80, bottom: 0 }}
               dragElastic={{ top: 0.4, bottom: 0.05 }}
               onDragEnd={(_, dragInfo) => {
-                if (dragInfo.offset.y < -26 || dragInfo.velocity.y < -180) {
+                if (dragInfo.offset.y < -24 || dragInfo.velocity.y < -180) {
                   removeToast(t.id);
                 }
               }}
-              initial={{ opacity: 0, y: -32, scale: 0.94 }}
+              initial={{ opacity: 0, y: -28, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{
                 opacity: 0,
-                y: -20,
-                scale: 0.95,
-                transition: { duration: 0.18, ease: SikaMotion.ease },
+                y: -18,
+                scale: 0.96,
+                transition: { duration: 0.16, ease: SikaMotion.ease },
               }}
               transition={{
                 type: "spring",
-                stiffness: 380,
-                damping: 28,
-                mass: 0.85,
+                stiffness: 400,
+                damping: 30,
+                mass: 0.8,
               }}
               role="status"
-              className={`pointer-events-auto relative overflow-hidden rounded-2xl border ${tone.border} bg-[#1C1C1C]/95 backdrop-blur-xl ${tone.shadowGlow}`}
+              className={`pointer-events-auto relative overflow-hidden rounded-xl border ${tone.border} bg-[#1C1C1C]/95 backdrop-blur-xl ${tone.shadowGlow}`}
             >
               {/* Left signature accent stripe */}
               <span
@@ -214,30 +214,27 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
                 className={`absolute inset-y-0 left-0 w-1 ${tone.accentBar}`}
               />
 
-              <div className="flex items-start gap-3.5 py-4 pl-4 pr-3.5 sm:py-4 sm:pl-5 sm:pr-4">
+              <div className="flex items-start gap-3 py-3 pl-3.5 pr-3 sm:py-3 sm:pl-4 sm:pr-3">
                 <div
-                  className={`mt-0.5 flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl ${tone.iconWrap}`}
+                  className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${tone.iconWrap}`}
                 >
                   {t.type === "success" && (
-                    <CheckCircle2 className="h-5 w-5" aria-hidden="true" />
+                    <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
                   )}
                   {t.type === "error" && (
-                    <AlertCircle className="h-5 w-5" aria-hidden="true" />
+                    <AlertCircle className="h-4 w-4" aria-hidden="true" />
                   )}
                   {t.type === "info" && (
-                    <Bell className="h-5 w-5" aria-hidden="true" />
+                    <Bell className="h-4 w-4" aria-hidden="true" />
                   )}
                 </div>
 
                 <div className="min-w-0 flex-1">
-                  <span className="block font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-[#A3A3A3]">
-                    {tone.label}
-                  </span>
-                  <h4 className="mt-0.5 text-sm sm:text-[15px] font-bold leading-snug text-[#F5F1EA]">
+                  <h4 className="text-[13px] font-bold leading-snug text-[#F5F1EA]">
                     {t.title}
                   </h4>
                   {t.description && (
-                    <p className="mt-1 text-xs sm:text-[13px] leading-relaxed text-[#A3A3A3] break-words">
+                    <p className="mt-0.5 text-xs leading-relaxed text-[#A3A3A3] break-words">
                       {t.description}
                     </p>
                   )}
@@ -248,10 +245,10 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
                         t.action?.onClick();
                         removeToast(t.id);
                       }}
-                      className="mt-2.5 inline-flex items-center gap-1.5 rounded-lg border border-[#D71920]/45 bg-[#D71920]/15 px-3 py-1.5 text-xs font-bold text-[#F5F1EA] transition-colors hover:bg-[#D71920] hover:text-white"
+                      className="mt-1.5 inline-flex items-center gap-1 rounded-md border border-[#D71920]/45 bg-[#D71920]/15 px-2.5 py-1 text-[11px] font-bold text-[#F5F1EA] transition-colors hover:bg-[#D71920] hover:text-white"
                     >
                       <span>{t.action.label}</span>
-                      <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+                      <ArrowRight className="h-3 w-3" aria-hidden="true" />
                     </button>
                   )}
                 </div>
@@ -260,14 +257,14 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
                   type="button"
                   onClick={() => removeToast(t.id)}
                   aria-label="Dismiss notification"
-                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[#333333] bg-[#262626] text-[#A3A3A3] transition-colors hover:border-[#484848] hover:text-white"
+                  className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-[#333333] bg-[#262626] text-[#A3A3A3] transition-colors hover:border-[#484848] hover:text-white"
                 >
-                  <X className="h-3.5 w-3.5" aria-hidden="true" />
+                  <X className="h-3 w-3" aria-hidden="true" />
                 </button>
               </div>
 
               {/* Countdown progress hairline */}
-              <div className="h-[3px] w-full bg-[#262626]">
+              <div className="h-[2px] w-full bg-[#262626]">
                 <motion.div
                   initial={{ scaleX: 1 }}
                   animate={{ scaleX: 0 }}

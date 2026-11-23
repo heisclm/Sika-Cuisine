@@ -392,47 +392,54 @@ export function DishDetailClient({
 
             <div
               ref={addAreaRef}
-              className="flex flex-wrap sm:flex-nowrap items-center gap-3.5 border-t border-[#333333] pt-5"
+              className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-3.5 border-t border-[#333333] pt-5"
             >
-              <div className="flex items-center gap-2 rounded-xl border border-[#333333] bg-[#1C1C1C] p-1">
-                <button
-                  type="button"
-                  disabled={!dish.isAvailable || quantity <= 1}
-                  onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                  className="flex h-10 w-10 items-center justify-center rounded-lg text-[#A3A3A3] hover:bg-[#262626] hover:text-white disabled:opacity-40"
-                  aria-label="Decrease quantity"
-                >
-                  <Minus className="h-4 w-4" aria-hidden="true" />
-                </button>
-                <span className="tabular-nums min-w-[28px] text-center font-mono text-base font-bold text-white">
-                  {quantity}
+              <div className="flex items-center justify-between sm:justify-start gap-2 rounded-xl border border-[#333333] bg-[#1C1C1C] px-3 py-1 sm:p-1">
+                <span className="text-xs font-semibold uppercase tracking-wider text-[#A3A3A3] sm:hidden">
+                  Quantity
                 </span>
-                <button
-                  type="button"
-                  disabled={!dish.isAvailable || quantity >= 50}
-                  onClick={() => setQuantity((q) => Math.min(50, q + 1))}
-                  className="flex h-10 w-10 items-center justify-center rounded-lg text-[#A3A3A3] hover:bg-[#262626] hover:text-white disabled:opacity-40"
-                  aria-label="Increase quantity"
-                >
-                  <Plus className="h-4 w-4" aria-hidden="true" />
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    disabled={!dish.isAvailable || quantity <= 1}
+                    onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                    className="flex h-10 w-10 items-center justify-center rounded-lg text-[#A3A3A3] hover:bg-[#262626] hover:text-white disabled:opacity-40"
+                    aria-label="Decrease quantity"
+                  >
+                    <Minus className="h-4 w-4" aria-hidden="true" />
+                  </button>
+                  <span className="tabular-nums min-w-[28px] text-center font-mono text-base font-bold text-white">
+                    {quantity}
+                  </span>
+                  <button
+                    type="button"
+                    disabled={!dish.isAvailable || quantity >= 50}
+                    onClick={() => setQuantity((q) => Math.min(50, q + 1))}
+                    className="flex h-10 w-10 items-center justify-center rounded-lg text-[#A3A3A3] hover:bg-[#262626] hover:text-white disabled:opacity-40"
+                    aria-label="Increase quantity"
+                  >
+                    <Plus className="h-4 w-4" aria-hidden="true" />
+                  </button>
+                </div>
               </div>
 
               <button
                 type="button"
                 disabled={!dish.isAvailable}
                 onClick={handleAddToTray}
-                className={`flex flex-1 items-center justify-between rounded-2xl px-6 py-4 text-sm sm:text-base font-bold transition-all active:scale-[0.98] ${
+                className={`flex w-full sm:w-auto sm:flex-1 items-center justify-between gap-3 rounded-2xl px-5 py-3.5 sm:px-6 sm:py-4 text-sm sm:text-base font-bold transition-all active:scale-[0.98] ${
                   !dish.isAvailable
                     ? "cursor-not-allowed border border-[#333333] bg-[#1C1C1C] text-[#737373]"
                     : "bg-[#D71920] hover:bg-[#A91017] text-white shadow-[0_8px_24px_rgba(215,25,32,0.4)]"
                 }`}
               >
-                <span className="flex items-center gap-2">
-                  <RestaurantClocheIcon className="h-4 w-4" />
+                <span className="flex items-center gap-2 whitespace-nowrap">
+                  <RestaurantClocheIcon className="h-4 w-4 shrink-0" />
                   <span>{dish.isAvailable ? "Add to Tray" : "Currently Unavailable"}</span>
                 </span>
-                <span className="tabular-nums font-mono">{formatPesewasToGhs(lineTotalPesewas)}</span>
+                <span className="tabular-nums font-mono whitespace-nowrap">
+                  {formatPesewasToGhs(lineTotalPesewas)}
+                </span>
               </button>
             </div>
           </div>
