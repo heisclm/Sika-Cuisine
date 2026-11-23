@@ -1,6 +1,13 @@
 "use client";
 
-import React, { createContext, useContext, useState, useCallback } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useEffect,
+} from "react";
+import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { CheckCircle2, AlertCircle, Bell, X } from "lucide-react";
 import { SikaMotion } from "@sika/shared";
@@ -38,6 +45,11 @@ const ToastContext = createContext<ToastContextType | undefined>(undefined);
 
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const removeToast = useCallback((id: string) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
@@ -92,117 +104,135 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     [toast]
   );
 
+  const toastViewport = (
+    <div
+      aria-live="polite"
+      className="fixed top-3 left-1/2 -translate-x-1/2 w-[calc(100vw-24px)] max-w-[360px] sm:top-20 sm:left-auto sm:right-6 sm:translate-x-0 sm:w-[370px] z-[999999] flex flex-col gap-2.5 pointer-events-none pt-[env(safe-area-inset-top)]"
+    >
+      <AnimatePresence initial={false} mode="popLayout">
+        {toasts.map((t) => {
+          const palette =
+            t.type === "success"
+              ? {
+                  bar: "bg-gradient-to-r from-[#22C55E] to-[#4ADE80]",
+                  ring: "border-[#22C55E]/30",
+                  iconWrap:
+                    "bg-[#22C55E]/15 text-[#4ADE80] ring-1 ring-[#22C55E]/35",
+                  glow: "shadow-[0_14px_36px_rgba(0,0,0,0.72),0_0_24px_rgba(34,197,94,0.12)]",
+                }
+              : t.type === "error"
+              ? {
+                  bar: "bg-gradient-to-r from-[#EF4444] to-[#FB7185]",
+                  ring: "border-[#FB7185]/35",
+                  iconWrap:
+                    "bg-[#FB7185]/15 text-[#FDA4AF] ring-1 ring-[#FB7185]/35",
+                  glow: "shadow-[0_14px_36px_rgba(0,0,0,0.72),0_0_24px_rgba(239,68,68,0.16)]",
+                }
+              : {
+                  bar: "bg-gradient-to-r from-[#D71920] to-[#F0444A]",
+                  ring: "border-white/15",
+                  iconWrap:
+                    "bg-[#D71920]/20 text-[#F0444A] ring-1 ring-[#D71920]/40",
+                  glow: "shadow-[0_14px_36px_rgba(0,0,0,0.72),0_0_24px_rgba(215,25,32,0.14)]",
+                };
+
+          return (
+            <motion.div
+              key={t.id}
+              layout
+              drag="y"
+              dragConstraints={{ top: -80, bottom: 0 }}
+              dragElastic={{ top: 0.45, bottom: 0.05 }}
+              onDragEnd={(_, info) => {
+                if (info.offset.y < -24 || info.velocity.y < -180) {
+                  removeToast(t.id);
+                }
+              }}
+              initial={{ opacity: 0, y: -42, scale: 0.92 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{
+                opacity: 0,
+                y: -24,
+                scale: 0.94,
+                transition: { duration: 0.18, ease: SikaMotion.ease },
+              }}
+              transition={{
+                type: "spring",
+                stiffness: 420,
+                damping: 30,
+                mass: 0.8,
+              }}
+              className={`pointer-events-auto relative overflow-hidden rounded-2xl border ${palette.ring} bg-[#141416]/95 ${palette.glow} backdrop-blur-2xl touch-pan-x`}
+            >
+              <div className="flex items-center gap-3 px-3.5 py-3">
+                <div
+                  className={`flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-full ${palette.iconWrap}`}
+                >
+                  {t.type === "success" && (
+                    <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
+                  )}
+                  {t.type === "error" && (
+                    <AlertCircle className="h-4 w-4" aria-hidden="true" />
+                  )}
+                  {t.type === "info" && (
+                    <Bell className="h-4 w-4" aria-hidden="true" />
+                  )}
+                </div>
+
+                <div className="flex-1 min-w-0">
+                  <h4 className="text-[13px] font-semibold tracking-tight text-white leading-tight">
+                    {t.title}
+                  </h4>
+                  {t.description && (
+                    <p className="text-[11.5px] text-[#A1A1AA] mt-0.5 leading-snug break-words">
+                      {t.description}
+                    </p>
+                  )}
+                  {t.action && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        t.action?.onClick();
+                        removeToast(t.id);
+                      }}
+                      className="mt-1.5 inline-flex items-center text-[11px] font-bold uppercase tracking-wider text-[#F0444A] hover:text-white transition-colors"
+                    >
+                      {t.action.label} &rarr;
+                    </button>
+                  )}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => removeToast(t.id)}
+                  className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/[0.07] text-[#A1A1AA] hover:bg-white/[0.15] hover:text-white transition-colors"
+                  aria-label="Dismiss toast"
+                >
+                  <X className="h-3 w-3" aria-hidden="true" />
+                </button>
+              </div>
+
+              {/* Smooth animated countdown hairline */}
+              <div className="h-[2px] w-full bg-white/[0.06]">
+                <motion.div
+                  initial={{ scaleX: 1 }}
+                  animate={{ scaleX: 0 }}
+                  transition={{ duration: 4.2, ease: "linear" }}
+                  style={{ transformOrigin: "left" }}
+                  className={`h-full w-full ${palette.bar}`}
+                />
+              </div>
+            </motion.div>
+          );
+        })}
+      </AnimatePresence>
+    </div>
+  );
+
   return (
     <ToastContext.Provider value={{ toast, success, error, info }}>
       {children}
-      <div
-        aria-live="polite"
-        className="fixed top-[max(12px,env(safe-area-inset-top))] left-3 right-3 mx-auto max-w-[380px] sm:top-20 sm:left-auto sm:right-6 sm:mx-0 sm:w-[360px] md:w-[380px] z-[9999] flex flex-col gap-2 pointer-events-none"
-      >
-        <AnimatePresence initial={false} mode="popLayout">
-          {toasts.map((t) => {
-            const barColor =
-              t.type === "success"
-                ? "bg-[#22C55E]"
-                : t.type === "error"
-                ? "bg-[#FB7185]"
-                : "bg-[#F0444A]";
-
-            return (
-              <motion.div
-                key={t.id}
-                layout
-                drag="y"
-                dragConstraints={{ top: -80, bottom: 0 }}
-                dragElastic={{ top: 0.4, bottom: 0.05 }}
-                onDragEnd={(_, info) => {
-                  if (info.offset.y < -28 || info.velocity.y < -200) {
-                    removeToast(t.id);
-                  }
-                }}
-                initial={{ opacity: 0, y: -28, scale: 0.94 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{
-                  opacity: 0,
-                  y: -18,
-                  scale: 0.95,
-                  transition: { duration: 0.18, ease: SikaMotion.ease },
-                }}
-                transition={{
-                  type: "spring",
-                  stiffness: 360,
-                  damping: 28,
-                  mass: 0.85,
-                }}
-                className="pointer-events-auto relative overflow-hidden rounded-2xl border border-white/12 bg-[#161618]/95 shadow-[0_18px_44px_rgba(0,0,0,0.78),inset_0_1px_0_rgba(255,255,255,0.12)] backdrop-blur-2xl touch-pan-x"
-              >
-                <div className="flex items-start gap-2.5 sm:gap-3 p-3 sm:p-3.5">
-                  <div className="flex-shrink-0 mt-0.5">
-                    {t.type === "success" && (
-                      <div className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-xl border border-[#22C55E]/35 bg-[#22C55E]/15 text-[#4ADE80]">
-                        <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
-                      </div>
-                    )}
-                    {t.type === "error" && (
-                      <div className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-xl border border-[#FB7185]/35 bg-[#FB7185]/15 text-[#FDA4AF]">
-                        <AlertCircle className="h-4 w-4" aria-hidden="true" />
-                      </div>
-                    )}
-                    {t.type === "info" && (
-                      <div className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-xl border border-[#D71920]/40 bg-[#D71920]/18 text-[#F0444A]">
-                        <Bell className="h-4 w-4" aria-hidden="true" />
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="flex-1 min-w-0 pr-1">
-                    <h4 className="text-xs sm:text-[13px] font-bold text-white leading-snug">
-                      {t.title}
-                    </h4>
-                    {t.description && (
-                      <p className="text-[11px] sm:text-xs text-[#B4B4B8] mt-0.5 leading-relaxed break-words">
-                        {t.description}
-                      </p>
-                    )}
-                    {t.action && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          t.action?.onClick();
-                          removeToast(t.id);
-                        }}
-                        className="mt-1.5 inline-flex items-center text-[11px] font-bold uppercase tracking-wider text-[#F0444A] hover:text-white transition-colors"
-                      >
-                        {t.action.label} &rarr;
-                      </button>
-                    )}
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => removeToast(t.id)}
-                    className="flex h-6 w-6 items-center justify-center rounded-full bg-white/[0.06] text-[#A3A3A3] hover:bg-white/[0.14] hover:text-white transition-colors flex-shrink-0"
-                    aria-label="Dismiss toast"
-                  >
-                    <X className="h-3 w-3" aria-hidden="true" />
-                  </button>
-                </div>
-
-                {/* Animated bottom countdown hairline */}
-                <div className="h-[2.5px] w-full bg-white/[0.05]">
-                  <motion.div
-                    initial={{ scaleX: 1 }}
-                    animate={{ scaleX: 0 }}
-                    transition={{ duration: 4.2, ease: "linear" }}
-                    style={{ transformOrigin: "left" }}
-                    className={`h-full w-full ${barColor} opacity-85`}
-                  />
-                </div>
-              </motion.div>
-            );
-          })}
-        </AnimatePresence>
-      </div>
+      {mounted ? createPortal(toastViewport, document.body) : null}
     </ToastContext.Provider>
   );
 }

@@ -507,8 +507,12 @@ export function HomeScreen({
                       resizeMode="cover"
                     />
                     <LinearGradient
-                      colors={["rgba(16,16,16,0.05)", "rgba(16,16,16,0.94)"]}
-                      locations={[0.3, 1]}
+                      colors={[
+                        "rgba(16,16,16,0.02)",
+                        "rgba(16,16,16,0.38)",
+                        "rgba(16,16,16,0.92)",
+                      ]}
+                      locations={[0, 0.45, 1]}
                       style={StyleSheet.absoluteFill}
                     />
                     <View style={styles.featuredTop}>
@@ -957,6 +961,8 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     left: 0,
+    width: "100%",
+    height: "100%",
   },
   featuredTop: {
     padding: SikaSpace.md,

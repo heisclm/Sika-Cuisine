@@ -15,7 +15,11 @@ import {
   View,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
+
+// Keep the native Sika Cuisine splash screen visible until initial session check finishes
+SplashScreen.preventAutoHideAsync().catch(() => {});
 import {
   SafeAreaProvider,
   useSafeAreaInsets,
@@ -222,6 +226,7 @@ function SikaMobileShell() {
       })
       .finally(() => {
         if (active) setOnboardingChecked(true);
+        SplashScreen.hideAsync().catch(() => {});
       });
 
     return () => {
