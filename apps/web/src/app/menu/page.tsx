@@ -181,7 +181,7 @@ function MenuContent() {
       <div className="sticky top-16 sm:top-20 z-30 border-b border-[#333333] bg-[#101010]/95 backdrop-blur-xl py-2.5 sm:py-3.5 shadow-md">
         <div className="mx-auto max-w-7xl px-3 sm:px-6 lg:px-8 space-y-2.5 sm:space-y-3">
           {/* Category Chips */}
-          <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto scrollbar-none touch-pan-x pb-0.5">
+          <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto scrollbar-none overscroll-x-contain [touch-action:pan-x_pan-y] pb-0.5">
             {categories.map((cat) => {
               const count =
                 cat.id === "all"

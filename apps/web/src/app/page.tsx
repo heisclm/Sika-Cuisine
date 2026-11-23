@@ -454,7 +454,7 @@ export default function HomePage() {
             <div
               ref={carouselRef}
               onScroll={updateCarouselEdges}
-              className="flex items-stretch gap-3.5 sm:gap-5 overflow-x-auto scrollbar-none scroll-smooth pb-2 touch-pan-x"
+              className="flex items-stretch gap-3.5 sm:gap-5 overflow-x-auto scrollbar-none scroll-smooth overscroll-x-contain [touch-action:pan-x_pan-y] pb-2"
             >
               {featuredDishes.map((dish, index) => (
                 <div key={dish.id} className="w-[225px] sm:w-[300px] flex-shrink-0">
@@ -499,7 +499,7 @@ export default function HomePage() {
         </div>
 
         {loading ? (
-          <div className="flex overflow-x-auto scrollbar-none scroll-smooth touch-pan-x snap-x snap-mandatory gap-3 pb-2 sm:grid sm:grid-cols-2 lg:grid-cols-3 sm:gap-5 sm:overflow-visible sm:pb-0">
+          <div className="flex overflow-x-auto scrollbar-none scroll-smooth overscroll-x-contain [touch-action:pan-x_pan-y] snap-x snap-proximity gap-3 pb-2 sm:grid sm:grid-cols-2 lg:grid-cols-3 sm:gap-5 sm:overflow-visible sm:pb-0">
             {Array.from({ length: 6 }).map((_, i) => (
               <div
                 key={i}
@@ -513,7 +513,7 @@ export default function HomePage() {
               aria-hidden="true"
               className="pointer-events-none sm:hidden absolute inset-y-0 right-0 z-10 w-10 bg-gradient-to-l from-[#101010] to-transparent"
             />
-            <div className="flex overflow-x-auto scrollbar-none scroll-smooth touch-pan-x snap-x snap-mandatory gap-3 pb-2 sm:grid sm:grid-cols-2 lg:grid-cols-3 sm:gap-5 sm:overflow-visible sm:pb-0">
+            <div className="flex overflow-x-auto scrollbar-none scroll-smooth overscroll-x-contain [touch-action:pan-x_pan-y] snap-x snap-proximity gap-3 pb-2 sm:grid sm:grid-cols-2 lg:grid-cols-3 sm:gap-5 sm:overflow-visible sm:pb-0">
               {menuCategories.map((cat) => (
                 <Link
                   key={cat.id}
