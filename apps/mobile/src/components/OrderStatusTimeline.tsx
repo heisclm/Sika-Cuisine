@@ -1,5 +1,5 @@
-import React from "react";
-import { StyleSheet, Text, View } from "react-native";
+import React, { useEffect, useRef } from "react";
+import { Animated, Easing, StyleSheet, Text, View } from "react-native";
 import {
   Bike,
   CheckCircle2,
@@ -8,7 +8,11 @@ import {
   PackageCheck,
   XCircle,
 } from "lucide-react-native";
-import { FulfilmentStatus, FulfilmentType } from "@sika/shared";
+import {
+  FulfilmentStatus,
+  FulfilmentType,
+  formatCustomerTimelineNote,
+} from "@sika/shared";
 import { SikaColors, SikaRadius, SikaSpace } from "../theme";
 
 export interface OrderTimelineHistoryEntry {
@@ -74,6 +78,27 @@ export function OrderStatusTimeline({
 }: OrderStatusTimelineProps) {
   const steps = fulfilmentType === "COLLECTION" ? PICKUP_STEPS : DELIVERY_STEPS;
   const currentIndex = steps.findIndex((s) => s.status === currentStatus);
+  const pulseAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, {
+          toValue: 1,
+          duration: 1500,
+          easing: Easing.out(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulseAnim, {
+          toValue: 0,
+          duration: 0,
+          useNativeDriver: true,
+        }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [pulseAnim]);
 
   if (currentStatus === "CANCELLED" || currentStatus === "REJECTED") {
     return (
@@ -111,14 +136,38 @@ export function OrderStatusTimeline({
         return (
           <View key={step.status} style={styles.stepRow}>
             <View style={styles.indicatorCol}>
-              <View
-                style={[
-                  styles.node,
-                  isCompleted && styles.nodeCompleted,
-                  isCurrent && styles.nodeCurrent,
-                ]}
-              >
-                {renderStepIcon(step.iconKey, badgeColor)}
+              <View style={styles.nodeWrapper}>
+                {isCurrent ? (
+                  <Animated.View
+                    pointerEvents="none"
+                    style={[
+                      styles.nodePulseHalo,
+                      {
+                        opacity: pulseAnim.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [0.55, 0],
+                        }),
+                        transform: [
+                          {
+                            scale: pulseAnim.interpolate({
+                              inputRange: [0, 1],
+                              outputRange: [1, 1.55],
+                            }),
+                          },
+                        ],
+                      },
+                    ]}
+                  />
+                ) : null}
+                <View
+                  style={[
+                    styles.node,
+                    isCompleted && styles.nodeCompleted,
+                    isCurrent && styles.nodeCurrent,
+                  ]}
+                >
+                  {renderStepIcon(step.iconKey, badgeColor)}
+                </View>
               </View>
               {!isFinalStep ? (
                 <View
@@ -147,7 +196,11 @@ export function OrderStatusTimeline({
                 ) : null}
               </View>
               <Text style={styles.stepSubtext}>
-                {recorded?.note || step.subtext}
+                {formatCustomerTimelineNote(
+                  step.status,
+                  recorded?.note,
+                  step.subtext
+                )}
               </Text>
             </View>
           </View>
@@ -168,6 +221,19 @@ const styles = StyleSheet.create({
     alignItems: "center",
     width: 34,
     marginRight: SikaSpace.md,
+  },
+  nodeWrapper: {
+    width: 30,
+    height: 30,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  nodePulseHalo: {
+    position: "absolute",
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: SikaColors.accent,
   },
   node: {
     width: 30,

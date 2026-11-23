@@ -14,6 +14,7 @@ import {
 import {
   ArrowLeft,
   ArrowRight,
+  Bike,
   CheckCircle2,
   Compass,
   Eye,
@@ -22,36 +23,41 @@ import {
   Mail,
   MessageCircle,
   Phone,
-  ShieldAlert,
+  ShieldCheck,
   User,
   UserPlus,
 } from "lucide-react-native";
-import { RESTAURANT_INFO, UserDTO, phoneRegex } from "@sika/shared";
+import { RESTAURANT_INFO, UserDTO, formatFirstName, phoneRegex } from "@sika/shared";
 import { Button } from "../components/ui/Button";
 import { useToast } from "../context/ToastContext";
 import { MOBILE_IMAGE_ASSETS } from "../data/dish-images";
 import { apiRequest } from "../services/api-client";
-import { saveAuthToken, saveCurrentUser } from "../services/storage";
+import { removeAuthToken, saveAuthToken, saveCurrentUser } from "../services/storage";
 import { SikaColors, SikaRadius, SikaSpace } from "../theme";
+import { triggerLightHaptic } from "../utils/haptics";
 
 interface AuthScreenProps {
-  onAuthSuccess: () => void;
+  onAuthSuccess: (user: UserDTO) => void;
   onCancel?: () => void;
   onTrackAsGuest?: () => void;
+  initialPortal?: "CUSTOMER" | "RIDER";
 }
 
 type AuthMode = "LOGIN" | "REGISTER" | "RECOVERY";
+type AuthPortal = "CUSTOMER" | "RIDER";
 
 /**
- * Customer authentication, registration, and password assistance screen matching
- * Web `/login`, `/register`, and `/forgot-password` layouts, validation rules, and flows.
+ * Customer authentication, registration, password assistance, and discreet Rider Portal
+ * sign-in matching Web `/login`, `/register`, `/forgot-password`, and `/rider/login` flows.
  */
 export function AuthScreen({
   onAuthSuccess,
   onCancel,
   onTrackAsGuest,
+  initialPortal = "CUSTOMER",
 }: AuthScreenProps) {
   const { success } = useToast();
+  const [portal, setPortal] = useState<AuthPortal>(initialPortal);
   const [mode, setMode] = useState<AuthMode>("LOGIN");
 
   const [fullName, setFullName] = useState("");
@@ -70,9 +76,20 @@ export function AuthScreen({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const switchMode = (nextMode: AuthMode) => {
+    triggerLightHaptic();
     setErrorMessage(null);
     setRecoverySubmitted(false);
     setMode(nextMode);
+  };
+
+  const switchPortal = (nextPortal: AuthPortal) => {
+    triggerLightHaptic();
+    setErrorMessage(null);
+    setRecoverySubmitted(false);
+    setPortal(nextPortal);
+    if (nextPortal === "RIDER" && mode === "REGISTER") {
+      setMode("LOGIN");
+    }
   };
 
   const handleAuthSubmit = async () => {
@@ -145,24 +162,64 @@ export function AuthScreen({
       return;
     }
 
+    if (portal === "RIDER" && res.data.user.role !== "DELIVERY_RIDER") {
+      await apiRequest("/auth/logout", { method: "POST" }).catch(() => {});
+      await removeAuthToken();
+      setErrorMessage(
+        "Access denied. This portal requires a registered Delivery Rider account."
+      );
+      return;
+    }
+
     if (res.data.token) {
       await saveAuthToken(res.data.token);
     }
     await saveCurrentUser(res.data.user);
-    success(
-      mode === "LOGIN" ? "Signed In" : "Account Created",
-      `Welcome, ${res.data.user.fullName}`
-    );
-    onAuthSuccess();
+    const firstName = formatFirstName(res.data.user.fullName, "Guest");
+    if (res.data.user.role === "DELIVERY_RIDER") {
+      success(`Welcome back, ${firstName}`, "Sunyani Dispatch mode is active.");
+    } else if (mode === "LOGIN") {
+      success(
+        `Welcome back, ${firstName}`,
+        "Good to see you again. Ready when you are."
+      );
+    } else {
+      success(
+        `Welcome to Sika Cuisine, ${firstName}`,
+        "Your account is set up and ready for ordering."
+      );
+    }
+    onAuthSuccess(res.data.user);
   };
 
-  const handleRecoverySubmit = () => {
+  const handleRecoverySubmit = async () => {
     setErrorMessage(null);
-    if (!recoveryIdentifier.trim()) {
+    const clean = recoveryIdentifier.trim();
+    if (!clean) {
       setErrorMessage("Please enter your registered email or phone number.");
       return;
     }
-    setRecoverySubmitted(true);
+
+    setLoading(true);
+    try {
+      const res = await apiRequest<{ success: boolean; message?: string }>(
+        "/auth/forgot-password",
+        {
+          method: "POST",
+          body: JSON.stringify({ identifier: clean }),
+        }
+      );
+
+      if (!res.success) {
+        setErrorMessage(
+          res.error || "Unable to dispatch password recovery instructions right now."
+        );
+        return;
+      }
+      setRecoverySubmitted(true);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -195,26 +252,39 @@ export function AuthScreen({
               style={styles.brandLogo}
               resizeMode="contain"
             />
-            <Text style={styles.eyebrow}>
-              {mode === "LOGIN"
-                ? "CUSTOMER SIGN IN"
-                : mode === "REGISTER"
-                ? "NEW CUSTOMER"
-                : "ACCOUNT RECOVERY"}
-            </Text>
+            {portal === "RIDER" && mode === "LOGIN" ? (
+              <View style={styles.riderPortalBadge}>
+                <Bike size={13} color={SikaColors.accentLight} />
+                <Text style={styles.riderPortalBadgeText}>
+                  SUNYANI DISPATCH PORTAL
+                </Text>
+              </View>
+            ) : (
+              <Text style={styles.eyebrow}>
+                {mode === "LOGIN"
+                  ? "CUSTOMER SIGN IN"
+                  : mode === "REGISTER"
+                  ? "NEW CUSTOMER"
+                  : "ACCOUNT RECOVERY"}
+              </Text>
+            )}
             <Text style={styles.title}>
-              {mode === "LOGIN"
+              {portal === "RIDER" && mode === "LOGIN"
+                ? "Delivery Rider Sign In"
+                : mode === "LOGIN"
                 ? "Welcome Back to Sika"
                 : mode === "REGISTER"
                 ? "Create Sika Account"
-                : "Need Password Help?"}
+                : "Reset Your Password"}
             </Text>
             <Text style={styles.subtitle}>
-              {mode === "LOGIN"
+              {portal === "RIDER" && mode === "LOGIN"
+                ? "Sign in with your assigned courier account to pick up and complete Sunyani drops."
+                : mode === "LOGIN"
                 ? "Sign in to view your saved profile, order history, and active deliveries."
                 : mode === "REGISTER"
                 ? "Save your contact details for faster Sunyani delivery and pickup tracking."
-                : "Self-service automated password resets are not active yet. Verify your account details with our Sunyani desk for manual assistance."}
+                : "Enter your registered email or Ghanaian phone number and we will email a secure reset link."}
             </Text>
           </View>
 
@@ -226,25 +296,18 @@ export function AuthScreen({
 
           {mode === "RECOVERY" ? (
             <View style={styles.formStack}>
-              <View style={styles.noticeBox}>
-                <ShieldAlert size={18} color={SikaColors.warning} style={{ marginTop: 1 }} />
-                <Text style={styles.noticeText}>
-                  For security, no automated reset emails or SMS codes are dispatched from this screen. Contact our kitchen counter directly to verify your phone number.
-                </Text>
-              </View>
-
               {recoverySubmitted ? (
                 <View style={styles.recoverySuccessBox}>
                   <CheckCircle2 size={28} color={SikaColors.success} />
                   <Text style={styles.recoverySuccessTitle}>
-                    Ready for Direct Verification
+                    Check Your Email
                   </Text>
                   <Text style={styles.recoverySuccessCopy}>
-                    Reach out to Sika Cuisine Sunyani mentioning{" "}
+                    If an active account matches{" "}
                     <Text style={{ color: SikaColors.text, fontWeight: "700" }}>
                       {recoveryIdentifier}
-                    </Text>{" "}
-                    so our team can assist with access restoration.
+                    </Text>
+                    , a password reset link expiring in 30 minutes has been dispatched. Need help? Contact Sunyani support below.
                   </Text>
 
                   <View style={styles.recoveryBtns}>
@@ -290,10 +353,11 @@ export function AuthScreen({
                     />
                   </View>
                   <Button
-                    title="Get Password Assistance"
+                    title="Send Reset Instructions"
                     variant="primary"
                     size="lg"
                     fullWidth
+                    loading={loading}
                     onPress={handleRecoverySubmit}
                     style={styles.ctaSpacing}
                   />
@@ -447,7 +511,13 @@ export function AuthScreen({
               ) : null}
 
               <Button
-                title={mode === "LOGIN" ? "Sign In to Account" : "Create Sika Account"}
+                title={
+                  portal === "RIDER" && mode === "LOGIN"
+                    ? "Sign In to Dispatch"
+                    : mode === "LOGIN"
+                    ? "Sign In to Account"
+                    : "Create Sika Account"
+                }
                 variant="primary"
                 size="lg"
                 fullWidth
@@ -458,37 +528,75 @@ export function AuthScreen({
               />
 
               {mode === "LOGIN" ? (
-                <View style={styles.loginFooter}>
-                  <Pressable
-                    onPress={() => switchMode("REGISTER")}
-                    style={styles.inlineSwitchRow}
-                  >
-                    <Text style={styles.switchMuted}>
-                      Don&apos;t have an account yet?{" "}
-                    </Text>
-                    <UserPlus size={13} color={SikaColors.accentLight} />
-                    <Text style={styles.switchAccent}> Create an Account</Text>
-                  </Pressable>
+                portal === "RIDER" ? (
+                  <View style={styles.loginFooter}>
+                    <View style={styles.riderInviteNote}>
+                      <ShieldCheck size={15} color={SikaColors.accentLight} />
+                      <Text style={styles.riderInviteNoteText}>
+                        Rider accounts are provisioned by Sika Cuisine Management. Contact dispatch if you need access.
+                      </Text>
+                    </View>
 
-                  <View style={styles.orRow}>
-                    <View style={styles.orLine} />
-                    <Text style={styles.orLabel}>OR</Text>
-                    <View style={styles.orLine} />
+                    <Pressable
+                      onPress={() => switchPortal("CUSTOMER")}
+                      style={styles.inlineSwitchRow}
+                    >
+                      <ArrowLeft size={13} color={SikaColors.accentLight} />
+                      <Text style={styles.switchAccent}>
+                        {" "}
+                        Switch to Customer Sign In
+                      </Text>
+                    </Pressable>
                   </View>
+                ) : (
+                  <View style={styles.loginFooter}>
+                    <Pressable
+                      onPress={() => switchMode("REGISTER")}
+                      style={styles.inlineSwitchRow}
+                    >
+                      <Text style={styles.switchMuted}>
+                        Don&apos;t have an account yet?{" "}
+                      </Text>
+                      <UserPlus size={13} color={SikaColors.accentLight} />
+                      <Text style={styles.switchAccent}> Create an Account</Text>
+                    </Pressable>
 
-                  <Pressable
-                    onPress={() => {
-                      if (onTrackAsGuest) onTrackAsGuest();
-                      else onCancel?.();
-                    }}
-                    style={styles.guestTrackBtn}
-                  >
-                    <Compass size={15} color={SikaColors.accentLight} />
-                    <Text style={styles.guestTrackText}>
-                      Track Existing Order as Guest
-                    </Text>
-                  </Pressable>
-                </View>
+                    <View style={styles.orRow}>
+                      <View style={styles.orLine} />
+                      <Text style={styles.orLabel}>OR</Text>
+                      <View style={styles.orLine} />
+                    </View>
+
+                    <Pressable
+                      onPress={() => {
+                        if (onTrackAsGuest) onTrackAsGuest();
+                        else onCancel?.();
+                      }}
+                      style={styles.guestTrackBtn}
+                    >
+                      <Compass size={15} color={SikaColors.accentLight} />
+                      <Text style={styles.guestTrackText}>
+                        Track Existing Order as Guest
+                      </Text>
+                    </Pressable>
+
+                    <View style={styles.riderDivider}>
+                      <Text style={styles.riderSwitchLabel}>
+                        Sika Delivery Team?
+                      </Text>
+                      <Pressable
+                        onPress={() => switchPortal("RIDER")}
+                        hitSlop={8}
+                        style={styles.riderPortalTrigger}
+                      >
+                        <Bike size={14} color={SikaColors.accentLight} />
+                        <Text style={styles.riderPortalLink}>
+                          Rider Portal Sign In →
+                        </Text>
+                      </Pressable>
+                    </View>
+                  </View>
+                )
               ) : (
                 <Pressable
                   onPress={() => switchMode("LOGIN")}
@@ -791,6 +899,64 @@ const styles = StyleSheet.create({
   phoneLink: {
     color: SikaColors.accentLight,
     fontSize: 12,
+    fontWeight: "800",
+  },
+  riderPortalBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    borderRadius: SikaRadius.pill,
+    borderWidth: 1,
+    borderColor: SikaColors.accentWash40,
+    backgroundColor: SikaColors.accentWash12,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    marginBottom: 8,
+  },
+  riderPortalBadgeText: {
+    color: SikaColors.accentLight,
+    fontSize: 10.5,
+    fontWeight: "800",
+    letterSpacing: 1.6,
+  },
+  riderInviteNote: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 8,
+    borderRadius: SikaRadius.md,
+    borderWidth: 1,
+    borderColor: SikaColors.border,
+    backgroundColor: SikaColors.elevated,
+    padding: SikaSpace.md,
+  },
+  riderInviteNoteText: {
+    flex: 1,
+    color: SikaColors.secondaryText,
+    fontSize: 12,
+    lineHeight: 17,
+  },
+  riderDivider: {
+    borderTopWidth: 1,
+    borderTopColor: SikaColors.border,
+    paddingTop: SikaSpace.md,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    flexWrap: "wrap",
+  },
+  riderSwitchLabel: {
+    color: SikaColors.muted,
+    fontSize: 12,
+  },
+  riderPortalTrigger: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+  },
+  riderPortalLink: {
+    color: SikaColors.accentLight,
+    fontSize: 12.5,
     fontWeight: "800",
   },
 });

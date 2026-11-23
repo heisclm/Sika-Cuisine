@@ -8,9 +8,10 @@ import { MapPin, Menu, X, User } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import { RestaurantClocheIcon } from "@/components/icons/RestaurantClocheIcon";
 import { Logo } from "@/components/brand/Logo";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { MobileMenu } from "./MobileMenu";
 import { CUSTOMER_NAV_LINKS, RESTAURANT_INFO } from "@/lib/navigation";
-import { SikaMotion } from "@sika/shared";
+import { formatFirstName, getDashboardForRole, SikaMotion } from "@sika/shared";
 
 interface NavSessionUser {
   id: string;
@@ -29,7 +30,15 @@ export function Navbar() {
   const { totalCount, setIsCartOpen } = useCart();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [sessionUser, setSessionUser] = useState<NavSessionUser | null>(null);
+  const [scrolled, setScrolled] = useState(false);
   const menuTriggerRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 12);
+    handleScroll();
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -55,10 +64,23 @@ export function Navbar() {
     return pathname === href || pathname.startsWith(`${href}/`);
   };
 
-  const firstName = sessionUser?.fullName?.split(" ")[0] || "Account";
+  const firstName = formatFirstName(sessionUser?.fullName, "Account", 14);
+  const accountDestination = sessionUser ? getDashboardForRole(sessionUser.role) : null;
+  const accountHref = accountDestination ? accountDestination.path : "/login";
+  const accountLabel = sessionUser
+    ? sessionUser.role === "CUSTOMER"
+      ? firstName
+      : `${accountDestination?.shortLabel}`
+    : "Sign In";
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-[#333333] bg-[#101010]/95 backdrop-blur-xl">
+    <header
+      className={`sticky top-0 z-40 w-full border-b backdrop-blur-xl transition-all duration-300 ${
+        scrolled
+          ? "border-white/10 bg-[#101010]/85 backdrop-blur-2xl shadow-[0_12px_32px_rgba(0,0,0,0.65),inset_0_1px_0_rgba(255,255,255,0.06)]"
+          : "border-[#333333]/80 bg-[#101010]/95"
+      }`}
+    >
       <div className="mx-auto flex h-16 sm:h-20 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8 gap-4">
         {/* Brand Identity */}
         <Link
@@ -107,8 +129,9 @@ export function Navbar() {
           })}
         </nav>
 
-        {/* Right Actions: Cart + Account + Mobile Drawer Trigger */}
+        {/* Right Actions: Notifications + Cart + Account + Mobile Drawer Trigger */}
         <div className="flex items-center gap-2.5 shrink-0">
+          {sessionUser && <NotificationBell userId={sessionUser.id} />}
           <button
             id="header-cart-button"
             type="button"
@@ -131,11 +154,11 @@ export function Navbar() {
           </button>
 
           <Link
-            href={sessionUser ? "/account" : "/login"}
-            className="hidden sm:inline-flex items-center gap-2 rounded-full bg-[#D71920] hover:bg-[#A91017] px-4 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-semibold text-white active:scale-95 transition-all shadow-[0_6px_18px_rgba(215,25,32,0.35)] whitespace-nowrap"
+            href={accountHref}
+            className="hidden sm:inline-flex items-center gap-2 rounded-full bg-[#D71920] hover:bg-[#A91017] px-4 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-semibold text-white active:scale-95 transition-all shadow-[0_6px_18px_rgba(215,25,32,0.35)] whitespace-nowrap max-w-[165px]"
           >
-            <User className="h-3.5 w-3.5" aria-hidden="true" />
-            <span>{sessionUser ? firstName : "Sign In"}</span>
+            <User className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+            <span className="truncate">{accountLabel}</span>
           </Link>
 
           <button

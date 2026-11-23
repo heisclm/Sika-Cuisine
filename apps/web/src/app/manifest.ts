@@ -13,9 +13,15 @@ export default function manifest(): MetadataRoute.Manifest {
     theme_color: SikaPalette.primaryRed,
     icons: [
       {
+        src: "/images/icon-192.png",
+        sizes: "192x192",
+        type: "image/png",
+      },
+      {
         src: "/images/logo.png",
         sizes: "512x512",
         type: "image/png",
+        purpose: "maskable",
       },
     ],
   };

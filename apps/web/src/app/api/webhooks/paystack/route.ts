@@ -1,98 +1,192 @@
-import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { NextResponse } from "next/server";
+import prisma from "@/lib/prisma";
 import { verifyPaystackWebhookSignature } from "@/lib/paystack";
+import {
+  reconcilePaystackAttempt,
+  reconcilePaystackRefundWebhook,
+} from "@/lib/payments";
+import { recordAuditLog } from "@/lib/audit";
+import { logError, logWarn } from "@/lib/logger";
 
-export async function POST(req: NextRequest) {
+/**
+ * POST /api/webhooks/paystack
+ * Authoritative asynchronous Paystack webhook receiver.
+ * Enforces HMAC-SHA512 signature verification, replay protection, strict GHS currency
+ * and exact pesewas amount validation, duplicate-charge alerting, and `charge.failed` handling.
+ */
+export async function POST(req: Request) {
   try {
     const rawBody = await req.text();
-    const signature = req.headers.get("x-paystack-signature");
+    const signature = req.headers.get("x-paystack-signature") || "";
 
-    const isValid = verifyPaystackWebhookSignature(rawBody, signature);
-    if (!isValid) {
+    if (!verifyPaystackWebhookSignature(rawBody, signature)) {
+      logWarn("paystack.webhook.invalid_signature", {
+        route: "/api/webhooks/paystack",
+      });
       return NextResponse.json(
-        { error: "Invalid cryptographic signature" },
+        { success: false, error: "Invalid signature." },
+        { status: 401 }
+      );
+    }
+
+    const payload = JSON.parse(rawBody);
+    const eventType: string | undefined = payload?.event;
+    const data = payload?.data;
+
+    if (!eventType || !data) {
+      return NextResponse.json(
+        { success: false, error: "Malformed webhook payload." },
         { status: 400 }
       );
     }
 
-    const event = JSON.parse(rawBody);
-    const eventId = event.event + "_" + (event.data?.reference || event.data?.id || Date.now());
+    const eventId = `${eventType}:${data.id ?? data.reference ?? Date.now()}`;
 
-    try {
-      const existingEvent = await prisma.paystackWebhookEvent.findUnique({
-        where: { eventId },
-      });
+    const existingEvent = await prisma.paystackWebhookEvent.findUnique({
+      where: { eventId },
+    });
 
-      if (existingEvent) {
-        return NextResponse.json({ received: true, idempotent: true }, { status: 200 });
-      }
-
-      await prisma.paystackWebhookEvent.create({
-        data: {
-          eventId,
-          eventType: event.event,
-          payload: event,
-          status: "PROCESSING",
-        },
-      });
-    } catch {
+    if (existingEvent && existingEvent.status === "PROCESSED") {
+      return NextResponse.json(
+        { success: true, message: "Duplicate event already processed." },
+        { status: 200 }
+      );
     }
 
-    if (event.event === "charge.success") {
-      const { reference, amount, currency, channel } = event.data;
+    await prisma.paystackWebhookEvent.upsert({
+      where: { eventId },
+      update: { eventType, payload, status: "RECEIVED" },
+      create: {
+        eventId,
+        eventType,
+        payload,
+        status: "RECEIVED",
+      },
+    });
 
-      if (currency !== "GHS") {
-        console.warn(`Unexpected currency in Paystack webhook: ${currency}`);
+    if (eventType === "charge.success") {
+      const reference: string | undefined = data.reference;
+      if (!reference) {
+        return NextResponse.json(
+          { success: false, error: "Missing transaction reference." },
+          { status: 400 }
+        );
       }
 
-      try {
-        const paymentAttempt = await prisma.paymentAttempt.findUnique({
+      const result = await reconcilePaystackAttempt({
+        reference,
+        req,
+        source: "webhook",
+        verifiedTxData: data,
+      });
+
+      if (!result.found) {
+        await prisma.paystackWebhookEvent.update({
+          where: { eventId },
+          data: { status: "IGNORED_UNKNOWN_REF" },
+        });
+        return NextResponse.json(
+          { success: true, message: "Reference not found in local payment attempts." },
+          { status: 200 }
+        );
+      }
+
+      if (result.mismatch) {
+        const currency = String(data.currency ?? "").toUpperCase();
+        await prisma.paystackWebhookEvent.update({
+          where: { eventId },
+          data: { status: currency !== "GHS" ? "IGNORED_CURRENCY" : "REJECTED_UNDERPAID" },
+        });
+        return NextResponse.json(
+          { success: false, error: result.error || "Payment mismatch." },
+          { status: 400 }
+        );
+      }
+
+      await prisma.paystackWebhookEvent.update({
+        where: { eventId },
+        data: { status: "PROCESSED" },
+      });
+    } else if (eventType === "charge.failed") {
+      const reference: string | undefined = data.reference;
+      if (reference) {
+        const attempt = await prisma.paymentAttempt.findUnique({
           where: { reference },
           include: { order: true },
         });
 
-        if (paymentAttempt) {
-          if (amount < paymentAttempt.order.totalPesewas) {
-            console.error(
-              `Payment amount mismatch. Expected ${paymentAttempt.order.totalPesewas} pesewas, received ${amount} pesewas.`
-            );
-          } else {
-            await prisma.$transaction([
-              prisma.paymentAttempt.update({
-                where: { reference },
+        if (attempt && attempt.order) {
+          await prisma.$transaction(async (tx) => {
+            if (attempt.status === "INITIALIZED") {
+              await tx.paymentAttempt.update({
+                where: { id: attempt.id },
                 data: {
-                  status: "SUCCESS",
-                  channel,
-                  providerMetadata: event.data,
+                  status: "FAILED",
+                  channel: data.channel ? String(data.channel) : attempt.channel,
+                  providerMetadata: data,
                 },
-              }),
-              prisma.order.update({
-                where: { id: paymentAttempt.orderId },
-                data: {
-                  paymentStatus: "PAID",
-                },
-              }),
-              prisma.orderStatusHistory.create({
-                data: {
-                  orderId: paymentAttempt.orderId,
-                  fromStatus: paymentAttempt.order.fulfilmentStatus,
-                  toStatus: paymentAttempt.order.fulfilmentStatus,
-                  note: `Payment of ${amount} pesewas verified via Paystack webhook (${channel}).`,
-                },
-              }),
-            ]);
-          }
+              });
+            }
+
+            await tx.order.updateMany({
+              where: {
+                id: attempt.order.id,
+                paymentStatus: { not: "PAID" },
+              },
+              data: {
+                paymentStatus: "FAILED",
+              },
+            });
+          });
+
+          await recordAuditLog({
+            action: "PAYMENT_FAILED_WEBHOOK",
+            entityType: "Order",
+            entityId: attempt.order.id,
+            metadata: {
+              reference,
+              gatewayResponse: data.gateway_response ?? null,
+            },
+            req,
+          });
         }
-      } catch (dbErr) {
-        console.error("Database update error in webhook handler:", dbErr);
       }
+
+      await prisma.paystackWebhookEvent.update({
+        where: { eventId },
+        data: { status: "PROCESSED" },
+      });
+    } else if (eventType === "refund.processed" || eventType === "refund.failed") {
+      const refundOutcome = await reconcilePaystackRefundWebhook({
+        eventType,
+        data: data as Record<string, unknown>,
+        req,
+      });
+
+      await prisma.paystackWebhookEvent.update({
+        where: { eventId },
+        data: {
+          status: refundOutcome.found ? "PROCESSED" : "IGNORED_UNKNOWN_REF",
+        },
+      });
+    } else {
+      await prisma.paystackWebhookEvent.update({
+        where: { eventId },
+        data: { status: "IGNORED_EVENT" },
+      });
     }
 
-    return NextResponse.json({ received: true }, { status: 200 });
-  } catch (error: any) {
-    console.error("Paystack Webhook Handler Error:", error);
     return NextResponse.json(
-      { error: "Webhook processing failure" },
+      { success: true, received: true },
+      { status: 200 }
+    );
+  } catch (error: any) {
+    logError("paystack.webhook.error", {
+      route: "/api/webhooks/paystack",
+      error: error?.message || String(error),
+    });
+    return NextResponse.json(
+      { success: false, error: "Webhook processing failure." },
       { status: 500 }
     );
   }

@@ -3,9 +3,25 @@ import { registerSchema } from "@sika/shared";
 import { prisma } from "@/lib/prisma";
 import { hashPassword } from "@/lib/auth/password";
 import { createSessionToken, setSessionCookie } from "@/lib/auth/session";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 export async function POST(req: NextRequest) {
   try {
+    const ip = getClientIp(req);
+    const rateLimit = await checkRateLimit(`auth-register:${ip}`, {
+      limit: 5,
+      windowMs: 60_000,
+    });
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Too many registration attempts. Please try again shortly.",
+        },
+        { status: 429 }
+      );
+    }
+
     const body = await req.json();
     const validated = registerSchema.safeParse(body);
 

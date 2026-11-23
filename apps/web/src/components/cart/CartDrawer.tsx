@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import {
+  AlertCircle,
   X,
   Trash2,
   Plus,
@@ -15,8 +16,8 @@ import {
   Store,
 } from "lucide-react";
 import { useCart } from "@/context/CartContext";
+import { usePublicConfig } from "@/context/PublicConfigContext";
 import { formatPesewasToGhs } from "@/lib/currency";
-import { SUNYANI_DELIVERY_ZONES, getZoneFeePesewas } from "@/lib/delivery-zones";
 import { RestaurantClocheIcon } from "@/components/icons/RestaurantClocheIcon";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { Select } from "@/components/ui/Select";
@@ -32,13 +33,34 @@ export function CartDrawer() {
     clearCart,
     subtotalPesewas,
     totalCount,
+    selectedFulfilmentType: fulfilmentMode,
+    setSelectedFulfilmentType: setFulfilmentMode,
+    selectedZoneId,
+    setSelectedZoneId,
+    unavailableMenuItemIds,
+    unavailableCount,
+    refreshCartAvailability,
+    removeUnavailableItems,
   } = useCart();
 
-  const [fulfilmentMode, setFulfilmentMode] = useState<"DELIVERY" | "COLLECTION">("DELIVERY");
-  const [selectedZone, setSelectedZone] = useState<string>(SUNYANI_DELIVERY_ZONES[0].name);
+  const { deliveryZones, restaurant } = usePublicConfig();
   const [confirmClearOpen, setConfirmClearOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const closeBtnRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (deliveryZones.length > 0 && !deliveryZones.some((z) => z.id === selectedZoneId)) {
+      setSelectedZoneId(deliveryZones[0].id);
+    }
+  }, [deliveryZones, selectedZoneId, setSelectedZoneId]);
+
+  useEffect(() => {
+    if (fulfilmentMode === "DELIVERY" && !restaurant.isDeliveryEnabled && restaurant.isCollectionEnabled) {
+      setFulfilmentMode("COLLECTION");
+    } else if (fulfilmentMode === "COLLECTION" && !restaurant.isCollectionEnabled && restaurant.isDeliveryEnabled) {
+      setFulfilmentMode("DELIVERY");
+    }
+  }, [fulfilmentMode, setFulfilmentMode, restaurant.isDeliveryEnabled, restaurant.isCollectionEnabled]);
 
   useEffect(() => {
     setMounted(true);
@@ -47,6 +69,7 @@ export function CartDrawer() {
   useEffect(() => {
     if (!isCartOpen) return;
 
+    void refreshCartAvailability();
     const timer = window.setTimeout(() => closeBtnRef.current?.focus(), 10);
     const originalBody = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -67,8 +90,10 @@ export function CartDrawer() {
 
   if (!mounted) return null;
 
+  const activeZone =
+    deliveryZones.find((z) => z.id === selectedZoneId) ?? deliveryZones[0];
   const currentZoneFeePesewas =
-    fulfilmentMode === "COLLECTION" ? 0 : getZoneFeePesewas(selectedZone);
+    fulfilmentMode === "COLLECTION" ? 0 : activeZone?.feePesewas ?? 0;
   const estimatedTotalPesewas = subtotalPesewas + currentZoneFeePesewas;
 
   return (
@@ -94,7 +119,7 @@ export function CartDrawer() {
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ duration: SikaMotion.standard / 1000, ease: SikaMotion.ease }}
-              className="relative z-10 flex h-full w-full sm:max-w-md flex-col border-l border-[#333333] bg-[#101010] p-5 sm:p-6 shadow-2xl"
+              className="relative z-10 flex h-full w-full sm:max-w-md flex-col border-l border-[#333333] bg-[#101010] p-5 sm:p-6 shadow-[0_24px_60px_rgba(0,0,0,0.85),inset_0_1px_0_rgba(255,255,255,0.07)]"
             >
               {/* Header */}
               <div className="flex items-center justify-between pb-4 border-b border-[#333333]">
@@ -157,24 +182,72 @@ export function CartDrawer() {
                 <>
                   {/* Scrollable Items */}
                   <div className="flex-1 overflow-y-auto py-4 space-y-3 pr-1">
-                    {items.map((item) => (
+                    {unavailableCount > 0 && (
+                      <div
+                        role="alert"
+                        className="rounded-2xl border border-[#FB7185]/45 bg-[#FB7185]/10 p-3.5 space-y-2.5"
+                      >
+                        <div className="flex items-start gap-2.5">
+                          <AlertCircle
+                            className="h-4 w-4 text-[#FDA4AF] shrink-0 mt-0.5"
+                            aria-hidden="true"
+                          />
+                          <div className="min-w-0">
+                            <p className="text-xs font-bold text-[#FDA4AF]">
+                              {unavailableCount === 1
+                                ? "1 dish in your tray is currently sold out"
+                                : `${unavailableCount} dishes in your tray are unavailable`}
+                            </p>
+                            <p className="text-[11px] text-[#F5F1EA]/80 mt-0.5 leading-relaxed">
+                              Remove unavailable items before proceeding to checkout.
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={removeUnavailableItems}
+                          className="inline-flex w-full items-center justify-center gap-1.5 rounded-xl border border-[#FB7185]/40 bg-[#FB7185]/15 hover:bg-[#FB7185]/25 py-2 text-xs font-bold text-[#FDA4AF] transition-colors"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                          <span>Remove Unavailable {unavailableCount === 1 ? "Dish" : "Dishes"}</span>
+                        </button>
+                      </div>
+                    )}
+
+                    {items.map((item) => {
+                      const unavailableReason = unavailableMenuItemIds[item.menuItemId];
+                      const isUnavailable = Boolean(unavailableReason);
+                      return (
                       <div
                         key={item.id}
-                        className="flex gap-3.5 rounded-2xl border border-[#333333] bg-[#1C1C1C] p-3.5"
+                        className={`flex gap-3.5 rounded-2xl border p-3.5 transition-colors ${
+                          isUnavailable
+                            ? "border-[#FB7185]/45 bg-[#1C1C1C]/70 opacity-80"
+                            : "border-[#333333] bg-[#1C1C1C]"
+                        }`}
                       >
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={item.imageUrl}
                           alt={item.name}
-                          className="h-20 w-20 flex-shrink-0 rounded-xl object-cover border border-[#333333] bg-[#262626]"
+                          className={`h-20 w-20 flex-shrink-0 rounded-xl object-cover border border-[#333333] bg-[#262626] ${
+                            isUnavailable ? "grayscale opacity-65" : ""
+                          }`}
                         />
 
                         <div className="flex flex-1 flex-col justify-between min-w-0">
                           <div>
                             <div className="flex items-start justify-between gap-2">
-                              <h3 className="font-serif text-sm font-bold text-white leading-snug line-clamp-2">
-                                {item.name}
-                              </h3>
+                              <div className="min-w-0">
+                                <h3 className="font-serif text-sm font-bold text-white leading-snug line-clamp-2">
+                                  {item.name}
+                                </h3>
+                                {isUnavailable && (
+                                  <span className="mt-1 inline-flex items-center rounded-full border border-[#FB7185]/45 bg-[#FB7185]/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#FDA4AF]">
+                                    {unavailableReason === "REMOVED" ? "No longer on menu" : "Sold Out"}
+                                  </span>
+                                )}
+                              </div>
                               <button
                                 type="button"
                                 onClick={() => removeItem(item.id)}
@@ -222,8 +295,9 @@ export function CartDrawer() {
                               </span>
                               <button
                                 type="button"
+                                disabled={isUnavailable}
                                 onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                                className="flex h-7 w-7 items-center justify-center rounded-lg text-[#A3A3A3] hover:bg-[#1C1C1C] hover:text-white transition-colors"
+                                className="flex h-7 w-7 items-center justify-center rounded-lg text-[#A3A3A3] hover:bg-[#1C1C1C] hover:text-white transition-colors disabled:opacity-35 disabled:cursor-not-allowed"
                                 aria-label={`Increase quantity of ${item.name}`}
                               >
                                 <Plus className="h-3 w-3" aria-hidden="true" />
@@ -236,7 +310,8 @@ export function CartDrawer() {
                           </div>
                         </div>
                       </div>
-                    ))}
+                      );
+                    })}
                   </div>
 
                   {/* Estimator & Checkout Footer */}
@@ -245,27 +320,29 @@ export function CartDrawer() {
                       <div className="grid grid-cols-2 gap-2">
                         <button
                           type="button"
-                          onClick={() => setFulfilmentMode("DELIVERY")}
-                          className={`flex items-center justify-center gap-1.5 rounded-xl border py-2 text-xs font-semibold transition-all ${
+                          disabled={!restaurant.isDeliveryEnabled}
+                          onClick={() => restaurant.isDeliveryEnabled && setFulfilmentMode("DELIVERY")}
+                          className={`flex items-center justify-center gap-1.5 rounded-xl border py-2 text-xs font-semibold transition-all disabled:opacity-45 disabled:cursor-not-allowed ${
                             fulfilmentMode === "DELIVERY"
                               ? "border-[#D71920] bg-[#D71920]/15 text-white"
                               : "border-[#333333] bg-[#262626] text-[#A3A3A3] hover:text-white"
                           }`}
                         >
                           <Truck className="h-3.5 w-3.5 text-[#F0444A]" aria-hidden="true" />
-                          <span>Delivery</span>
+                          <span>{restaurant.isDeliveryEnabled ? "Delivery" : "Delivery Paused"}</span>
                         </button>
                         <button
                           type="button"
-                          onClick={() => setFulfilmentMode("COLLECTION")}
-                          className={`flex items-center justify-center gap-1.5 rounded-xl border py-2 text-xs font-semibold transition-all ${
+                          disabled={!restaurant.isCollectionEnabled}
+                          onClick={() => restaurant.isCollectionEnabled && setFulfilmentMode("COLLECTION")}
+                          className={`flex items-center justify-center gap-1.5 rounded-xl border py-2 text-xs font-semibold transition-all disabled:opacity-45 disabled:cursor-not-allowed ${
                             fulfilmentMode === "COLLECTION"
                               ? "border-[#D71920] bg-[#D71920]/15 text-white"
                               : "border-[#333333] bg-[#262626] text-[#A3A3A3] hover:text-white"
                           }`}
                         >
                           <Store className="h-3.5 w-3.5 text-[#F0444A]" aria-hidden="true" />
-                          <span>Pickup (Free)</span>
+                          <span>{restaurant.isCollectionEnabled ? "Pickup (Free)" : "Pickup Paused"}</span>
                         </button>
                       </div>
 
@@ -283,14 +360,14 @@ export function CartDrawer() {
                           </div>
                           <Select
                             ariaLabel="Select Sunyani delivery zone"
-                            value={selectedZone}
-                            onChange={setSelectedZone}
+                            value={activeZone?.id || ""}
+                            onChange={setSelectedZoneId}
                             placement="top"
                             variant="elevated"
                             size="sm"
                             fullWidth
-                            options={SUNYANI_DELIVERY_ZONES.map((zone) => ({
-                              value: zone.name,
+                            options={deliveryZones.map((zone) => ({
+                              value: zone.id,
                               label: zone.name,
                               description: `Est. ~${zone.estimatedMinutes} mins`,
                               meta: formatPesewasToGhs(zone.feePesewas),
@@ -307,9 +384,15 @@ export function CartDrawer() {
                     <div className="space-y-1.5 text-xs text-[#A3A3A3] px-1">
                       <div className="flex justify-between">
                         <span>Dishes Subtotal</span>
-                        <span className="tabular-nums font-semibold text-[#F5F1EA] font-mono">
+                        <motion.span
+                          key={subtotalPesewas}
+                          initial={{ scale: 0.92, opacity: 0.65 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          transition={{ duration: 0.2 }}
+                          className="tabular-nums font-semibold text-[#F5F1EA] font-mono"
+                        >
                           {formatPesewasToGhs(subtotalPesewas)}
-                        </span>
+                        </motion.span>
                       </div>
                       <div className="flex justify-between">
                         <span>{fulfilmentMode === "COLLECTION" ? "Collection Fee" : "Est. Delivery"}</span>
@@ -321,20 +404,36 @@ export function CartDrawer() {
                       </div>
                       <div className="border-t border-[#333333] pt-2.5 flex justify-between items-baseline">
                         <span className="font-serif text-sm font-bold text-white">Estimated Total</span>
-                        <span className="tabular-nums font-serif text-xl font-black text-[#F0444A] font-mono">
+                        <motion.span
+                          key={estimatedTotalPesewas}
+                          initial={{ scale: 0.9, opacity: 0.65 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          transition={{ type: "spring", stiffness: 420, damping: 24 }}
+                          className="tabular-nums font-serif text-xl font-black text-[#F0444A] font-mono"
+                        >
                           {formatPesewasToGhs(estimatedTotalPesewas)}
-                        </span>
+                        </motion.span>
                       </div>
                     </div>
 
-                    <Link
-                      href="/checkout"
-                      onClick={() => setIsCartOpen(false)}
-                      className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#D71920] hover:bg-[#A91017] py-3.5 text-sm font-bold text-white shadow-[0_6px_20px_rgba(215,25,32,0.4)] transition-colors"
-                    >
-                      <span>Proceed to Checkout</span>
-                      <ArrowRight className="h-4 w-4" aria-hidden="true" />
-                    </Link>
+                    {unavailableCount > 0 ? (
+                      <button
+                        type="button"
+                        disabled
+                        className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#262626] border border-[#333333] py-3.5 text-xs font-bold text-[#A3A3A3] cursor-not-allowed"
+                      >
+                        <span>Remove Sold-Out Items to Checkout</span>
+                      </button>
+                    ) : (
+                      <Link
+                        href="/checkout"
+                        onClick={() => setIsCartOpen(false)}
+                        className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#D71920] hover:bg-[#A91017] py-3.5 text-sm font-bold text-white shadow-[0_6px_20px_rgba(215,25,32,0.4)] transition-colors"
+                      >
+                        <span>Proceed to Checkout</span>
+                        <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                      </Link>
+                    )}
                   </div>
                 </>
               )}

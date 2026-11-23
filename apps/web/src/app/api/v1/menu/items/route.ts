@@ -35,18 +35,14 @@ export async function GET(req: NextRequest) {
           },
         });
 
-        if (item) {
-          return NextResponse.json({ success: true, item, source: "database" });
-        }
-
-        const fallbackItem = getFallbackMenuItems({ slug });
-        if (!fallbackItem) {
+        if (!item) {
           return NextResponse.json(
             { success: false, error: "Dish not found." },
             { status: 404 }
           );
         }
-        return NextResponse.json({ success: true, item: fallbackItem, source: "catalog" });
+
+        return NextResponse.json({ success: true, item, source: "database" });
       }
 
       const where: Record<string, unknown> = includeUnavailable ? {} : { isAvailable: true };
@@ -74,7 +70,7 @@ export async function GET(req: NextRequest) {
         },
       });
 
-      if (items.length > 0 || categoryId) {
+      if (items.length > 0 || categoryId || process.env.NODE_ENV === "production") {
         return NextResponse.json({
           success: true,
           items,
@@ -83,13 +79,26 @@ export async function GET(req: NextRequest) {
       }
     } catch (error) {
       console.warn(
-        "[API v1 Menu Items] Database unreachable; serving local Sunyani catalog fallback:",
+        "[API v1 Menu Items] Database error:",
         error instanceof Error ? error.message : error
       );
+      if (process.env.NODE_ENV === "production") {
+        return NextResponse.json(
+          { success: false, error: "Menu temporarily unavailable. Please retry shortly." },
+          { status: 503 }
+        );
+      }
     }
   }
 
-  // Fallback path when DATABASE_URL is absent, DB is unreachable, or DB is unseeded
+  if (process.env.NODE_ENV === "production") {
+    return NextResponse.json(
+      { success: false, error: "Menu database is not configured." },
+      { status: 503 }
+    );
+  }
+
+  // Fallback path strictly for unconfigured local preview/development environments
   if (slug) {
     const fallbackItem = getFallbackMenuItems({ slug });
     if (!fallbackItem) {

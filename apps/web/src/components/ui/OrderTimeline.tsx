@@ -10,7 +10,12 @@ import {
   Bike,
   XCircle,
 } from "lucide-react";
-import { FulfilmentStatus, FulfilmentType, SikaMotion } from "@sika/shared";
+import {
+  formatCustomerTimelineNote,
+  FulfilmentStatus,
+  FulfilmentType,
+  SikaMotion,
+} from "@sika/shared";
 
 interface TimelineHistoryEvent {
   id: string;
@@ -55,16 +60,18 @@ export function OrderTimeline({
 
   if (isAborted) {
     return (
-      <div className="rounded-2xl border border-[#FB7185]/40 bg-[#FB7185]/10 p-5 flex items-start gap-4">
-        <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-[#FB7185]/20 text-[#FDA4AF]">
-          <XCircle className="h-6 w-6" aria-hidden="true" />
+      <div className="rounded-2xl border border-[#FB7185]/40 bg-[#FB7185]/10 p-4 sm:p-5 flex items-start gap-3.5 sm:gap-4">
+        <div className="flex h-10 w-10 sm:h-11 sm:w-11 flex-shrink-0 items-center justify-center rounded-xl bg-[#FB7185]/20 text-[#FDA4AF]">
+          <XCircle className="h-5 w-5 sm:h-6 sm:w-6" aria-hidden="true" />
         </div>
-        <div>
-          <h3 className="font-serif text-lg font-bold text-[#FDA4AF]">
-            Order {currentStatus === "REJECTED" ? "Rejected by Kitchen" : "Cancelled"}
+        <div className="min-w-0">
+          <h3 className="font-serif text-base sm:text-lg font-bold text-[#FDA4AF]">
+            {currentStatus === "REJECTED" ? "Order Declined by Kitchen" : "Order Cancelled"}
           </h3>
-          <p className="mt-1 text-sm text-[#F5F1EA]/80">
-            This order stopped progressing at {currentStatus.toLowerCase()}. Contact Sika Cuisine Sunyani if you need assistance.
+          <p className="mt-1 text-xs sm:text-sm text-[#F5F1EA]/80 leading-relaxed">
+            {currentStatus === "REJECTED"
+              ? "The kitchen was unable to fulfil this order. Reach Sika Cuisine Sunyani if you need help."
+              : "This order was cancelled before preparation. Reach Sika Cuisine Sunyani if you have any questions."}
           </p>
         </div>
       </div>
@@ -97,16 +104,25 @@ export function OrderTimeline({
 
             return (
               <div key={step.status} className="flex flex-col items-center text-center">
-                <div
-                  className={`flex h-14 w-14 items-center justify-center rounded-2xl border transition-all ${
-                    isCurrent
-                      ? "border-[#F0444A] bg-[#D71920] text-white shadow-[0_0_24px_rgba(215,25,32,0.5)] scale-105 ring-4 ring-[#D71920]/20"
-                      : isCompleted
-                      ? "border-[#22C55E]/45 bg-[#22C55E]/15 text-[#4ADE80]"
-                      : "border-[#333333] bg-[#262626] text-[#737373]"
-                  }`}
-                >
-                  <Icon className="h-5 w-5" aria-hidden="true" />
+                <div className="relative flex items-center justify-center">
+                  {isCurrent && (
+                    <span
+                      aria-hidden="true"
+                      className="pointer-events-none absolute inset-0 rounded-2xl bg-[#D71920]/45 animate-ping"
+                      style={{ animationDuration: "2.2s" }}
+                    />
+                  )}
+                  <div
+                    className={`relative flex h-14 w-14 items-center justify-center rounded-2xl border transition-all duration-300 ${
+                      isCurrent
+                        ? "border-[#F0444A] bg-[#D71920] text-white shadow-[0_0_24px_rgba(215,25,32,0.5)] scale-105 ring-4 ring-[#D71920]/20"
+                        : isCompleted
+                        ? "border-[#22C55E]/45 bg-[#22C55E]/15 text-[#4ADE80]"
+                        : "border-[#333333] bg-[#262626] text-[#737373]"
+                    }`}
+                  >
+                    <Icon className="h-5 w-5" aria-hidden="true" />
+                  </div>
                 </div>
                 <span
                   className={`mt-3 text-xs font-bold ${
@@ -147,16 +163,25 @@ export function OrderTimeline({
                   }`}
                 />
               )}
-              <div
-                className={`relative z-10 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl border ${
-                  isCurrent
-                    ? "border-[#F0444A] bg-[#D71920] text-white shadow-[0_0_16px_rgba(215,25,32,0.4)]"
-                    : isCompleted
-                    ? "border-[#22C55E]/45 bg-[#22C55E]/15 text-[#4ADE80]"
-                    : "border-[#333333] bg-[#262626] text-[#737373]"
-                }`}
-              >
-                <Icon className="h-4 w-4" aria-hidden="true" />
+              <div className="relative z-10 flex items-center justify-center flex-shrink-0">
+                {isCurrent && (
+                  <span
+                    aria-hidden="true"
+                    className="pointer-events-none absolute inset-0 rounded-xl bg-[#D71920]/45 animate-ping"
+                    style={{ animationDuration: "2.2s" }}
+                  />
+                )}
+                <div
+                  className={`relative flex h-10 w-10 items-center justify-center rounded-xl border transition-all duration-300 ${
+                    isCurrent
+                      ? "border-[#F0444A] bg-[#D71920] text-white shadow-[0_0_16px_rgba(215,25,32,0.4)]"
+                      : isCompleted
+                      ? "border-[#22C55E]/45 bg-[#22C55E]/15 text-[#4ADE80]"
+                      : "border-[#333333] bg-[#262626] text-[#737373]"
+                  }`}
+                >
+                  <Icon className="h-4 w-4" aria-hidden="true" />
+                </div>
               </div>
               <div className="flex-1 pt-0.5">
                 <div className="flex items-center justify-between gap-2">
@@ -176,7 +201,9 @@ export function OrderTimeline({
                     </span>
                   )}
                 </div>
-                <p className="text-xs text-[#A3A3A3]">{recorded?.note || step.desc}</p>
+                <p className="text-xs text-[#A3A3A3] break-words">
+                  {formatCustomerTimelineNote(step.status, recorded?.note, step.desc)}
+                </p>
               </div>
             </div>
           );

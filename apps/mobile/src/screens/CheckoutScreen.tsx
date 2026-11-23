@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import {
-  Alert,
   KeyboardAvoidingView,
+  Linking,
   Platform,
   Pressable,
   ScrollView,
@@ -16,26 +16,35 @@ import {
   Banknote,
   Bike,
   CheckCircle2,
+  Clock,
   CreditCard,
   MapPin,
   Store,
+  Trash2,
+  WifiOff,
 } from "lucide-react-native";
 import {
+  DeliveryZone,
   FulfilmentType,
   OrderDTO,
   PaymentMethod,
   RESTAURANT_INFO,
   SUNYANI_DELIVERY_ZONES,
-  calculateDeliveryFeePesewas,
+  formatFirstName,
   formatPesewasToGhs,
   phoneRegex,
 } from "@sika/shared";
 import { Button } from "../components/ui/Button";
+import { SikaModal } from "../components/ui/SikaModal";
 import { useCart } from "../context/CartContext";
 import { useToast } from "../context/ToastContext";
 import { apiRequest } from "../services/api-client";
 import { CachedOrderSummary, updateCachedOrder } from "../services/offline-order-cache";
 import { getCurrentUser } from "../services/storage";
+import {
+  getMobilePaymentReturnUrl,
+  openInAppPaystackCheckout,
+} from "../utils/paystack-browser";
 import { SikaColors, SikaRadius, SikaSpace } from "../theme";
 
 interface CheckoutScreenProps {
@@ -48,8 +57,16 @@ interface CheckoutScreenProps {
  * delivery tariffs (or zero-fee pickup), payment pairing, and offline fallback queueing.
  */
 export function CheckoutScreen({ onBackToCart, onOrderPlaced }: CheckoutScreenProps) {
-  const { items, cartSubtotalPesewas, clearCart } = useCart();
-  const { error: toastError, success: toastSuccess } = useToast();
+  const {
+    items,
+    cartSubtotalPesewas,
+    clearCart,
+    unavailableCount,
+    refreshCartAvailability,
+    markItemsUnavailable,
+    removeUnavailableItems,
+  } = useCart();
+  const { error: toastError, info: toastInfo, success: toastSuccess } = useToast();
 
   const [fulfilmentType, setFulfilmentType] = useState<FulfilmentType>("DELIVERY");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("PAYSTACK");
@@ -57,22 +74,98 @@ export function CheckoutScreen({ onBackToCart, onOrderPlaced }: CheckoutScreenPr
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
+  const [signedInUser, setSignedInUser] = useState<{ fullName: string } | null>(null);
 
   const [streetAddress, setStreetAddress] = useState("");
-  const [selectedZoneLocality, setSelectedZoneLocality] = useState(
-    SUNYANI_DELIVERY_ZONES[0].localities[0]
-  );
+  const [deliveryZones, setDeliveryZones] = useState<DeliveryZone[]>(SUNYANI_DELIVERY_ZONES);
+  const [selectedZoneId, setSelectedZoneId] = useState<string>(SUNYANI_DELIVERY_ZONES[0].id);
+  const [restaurantConfig, setRestaurantConfig] = useState<{
+    isAcceptingOrders: boolean;
+    isDeliveryEnabled: boolean;
+    isCollectionEnabled: boolean;
+    address: string;
+  }>({
+    isAcceptingOrders: true,
+    isDeliveryEnabled: true,
+    isCollectionEnabled: true,
+    address: RESTAURANT_INFO.address,
+  });
   const [landmark, setLandmark] = useState("");
   const [deliveryNotes, setDeliveryNotes] = useState("");
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [submittedCashModal, setSubmittedCashModal] = useState<{
+    orderNumber: string;
+    totalPesewas: number;
+    fulfilmentType: FulfilmentType;
+    paymentMethod: PaymentMethod;
+  } | null>(null);
+  const [offlineModalMessage, setOfflineModalMessage] = useState<string | null>(null);
+  const [paystackFallbackModal, setPaystackFallbackModal] = useState<{
+    orderNumber: string;
+    authorizationUrl: string;
+  } | null>(null);
+
+  // Sync live restaurant config & delivery zones from /api/v1/config/public
+  useEffect(() => {
+    let active = true;
+    apiRequest<{
+      success: boolean;
+      restaurant?: {
+        isAcceptingOrders?: boolean;
+        isDeliveryEnabled?: boolean;
+        isCollectionEnabled?: boolean;
+        address?: string;
+      };
+      deliveryZones?: DeliveryZone[];
+    }>("/config/public").then((res) => {
+      if (!active || !res.success || !res.data) return;
+
+      const nextZones = res.data.deliveryZones;
+      if (Array.isArray(nextZones) && nextZones.length > 0) {
+        setDeliveryZones(nextZones);
+        setSelectedZoneId((prev) =>
+          nextZones.some((z) => z.id === prev) ? prev : nextZones[0].id
+        );
+      }
+
+      if (res.data.restaurant) {
+        const nextConfig = {
+          isAcceptingOrders: res.data.restaurant.isAcceptingOrders ?? true,
+          isDeliveryEnabled: res.data.restaurant.isDeliveryEnabled ?? true,
+          isCollectionEnabled: res.data.restaurant.isCollectionEnabled ?? true,
+          address: res.data.restaurant.address || RESTAURANT_INFO.address,
+        };
+        setRestaurantConfig(nextConfig);
+        if (!nextConfig.isDeliveryEnabled && nextConfig.isCollectionEnabled) {
+          setFulfilmentType("COLLECTION");
+          setPaymentMethod((prev) =>
+            prev === "CASH_ON_DELIVERY" ? "CASH_ON_COLLECTION" : prev
+          );
+        } else if (!nextConfig.isCollectionEnabled && nextConfig.isDeliveryEnabled) {
+          setFulfilmentType("DELIVERY");
+          setPaymentMethod((prev) =>
+            prev === "CASH_ON_COLLECTION" ? "CASH_ON_DELIVERY" : prev
+          );
+        }
+      }
+    });
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   // Prefill contact information when a customer session already exists in SecureStore
   useEffect(() => {
     let active = true;
+    if (items.length > 0) {
+      void refreshCartAvailability();
+    }
     getCurrentUser().then((user) => {
       if (!active || !user) return;
+      setSignedInUser({ fullName: user.fullName || "Customer" });
       setFullName((prev) => prev || user.fullName || "");
       setPhone((prev) => prev || user.phone || "");
       setEmail((prev) => prev || user.email || "");
@@ -82,13 +175,14 @@ export function CheckoutScreen({ onBackToCart, onOrderPlaced }: CheckoutScreenPr
     };
   }, []);
 
+  const selectedZone = useMemo(
+    () => deliveryZones.find((z) => z.id === selectedZoneId) ?? deliveryZones[0],
+    [deliveryZones, selectedZoneId]
+  );
+
   const deliveryFeePesewas = useMemo(
-    () =>
-      calculateDeliveryFeePesewas(
-        fulfilmentType,
-        fulfilmentType === "DELIVERY" ? selectedZoneLocality : null
-      ),
-    [fulfilmentType, selectedZoneLocality]
+    () => (fulfilmentType === "COLLECTION" ? 0 : selectedZone?.feePesewas ?? 0),
+    [fulfilmentType, selectedZone]
   );
 
   const grandTotalPesewas = useMemo(
@@ -127,6 +221,23 @@ export function CheckoutScreen({ onBackToCart, onOrderPlaced }: CheckoutScreenPr
   };
 
   const handlePlaceOrder = async () => {
+    if (!restaurantConfig.isAcceptingOrders) {
+      setErrorMessage(
+        "Sika Cuisine kitchen is currently closed for new online orders. Please check back shortly."
+      );
+      return;
+    }
+
+    if (fulfilmentType === "DELIVERY" && !restaurantConfig.isDeliveryEnabled) {
+      setErrorMessage("Delivery is temporarily paused. Switch to Pickup to continue.");
+      return;
+    }
+
+    if (fulfilmentType === "COLLECTION" && !restaurantConfig.isCollectionEnabled) {
+      setErrorMessage("Counter Pickup is temporarily paused. Switch to Delivery to continue.");
+      return;
+    }
+
     const validationErr = validateForm();
     if (validationErr) {
       setErrorMessage(validationErr);
@@ -138,16 +249,26 @@ export function CheckoutScreen({ onBackToCart, onOrderPlaced }: CheckoutScreenPr
       return;
     }
 
+    if (unavailableCount > 0) {
+      setErrorMessage(
+        "Please remove sold-out dishes from your tray before placing your order."
+      );
+      return;
+    }
+
     setErrorMessage(null);
     setIsSubmitting(true);
 
     const compactPhone = phone.replace(/\s+/g, "").trim();
     const resolvedMethod: PaymentMethod =
       paymentMethod === "PAYSTACK" ? "PAYSTACK" : cashVariant;
+    const mobileReturnUrl = getMobilePaymentReturnUrl();
 
     const payload = {
       fulfilmentType,
       paymentMethod: resolvedMethod,
+      clientPlatform: "mobile",
+      mobileReturnUrl,
       customerInfo: {
         fullName: fullName.trim(),
         email: email.trim(),
@@ -159,7 +280,7 @@ export function CheckoutScreen({ onBackToCart, onOrderPlaced }: CheckoutScreenPr
               recipientName: fullName.trim(),
               recipientPhone: compactPhone,
               streetAddress: streetAddress.trim(),
-              areaLocality: selectedZoneLocality,
+              areaLocality: selectedZone?.localities?.[0] || selectedZone?.name || "Sunyani Central",
               landmark: landmark.trim() || undefined,
               city: "Sunyani",
               deliveryNotes: deliveryNotes.trim() || undefined,
@@ -175,24 +296,36 @@ export function CheckoutScreen({ onBackToCart, onOrderPlaced }: CheckoutScreenPr
     };
 
     try {
-      const response = await apiRequest<{ success: boolean; order: OrderDTO }>(
-        "/orders",
-        {
-          method: "POST",
-          body: JSON.stringify(payload),
-        }
-      );
+      const idempotencyKey = `sika-mobile-${Date.now()}-${Math.random()
+        .toString(36)
+        .slice(2, 10)}`;
+
+      const response = await apiRequest<{
+        success: boolean;
+        order: OrderDTO;
+        authorizationUrl?: string;
+      }>("/orders", {
+        method: "POST",
+        timeoutMs: 30000,
+        headers: {
+          "Idempotency-Key": idempotencyKey,
+        },
+        body: JSON.stringify(payload),
+      });
 
       const user = await getCurrentUser();
       const customerId = user?.id || "guest";
 
       if (response.success && response.data?.order) {
         const confirmed = response.data.order;
+        const authorizationUrl = response.data.authorizationUrl;
         const summary: CachedOrderSummary = {
           orderId: confirmed.id,
           orderNumber: confirmed.orderNumber,
           fulfilmentType: confirmed.fulfilmentType,
           lastKnownStatus: confirmed.fulfilmentStatus,
+          paymentMethod: confirmed.paymentMethod,
+          paymentStatus: confirmed.paymentStatus,
           statusHistory: (confirmed.statusHistory || []).map((h) => ({
             status: h.toStatus,
             timestamp: h.createdAt,
@@ -207,50 +340,91 @@ export function CheckoutScreen({ onBackToCart, onOrderPlaced }: CheckoutScreenPr
         };
 
         await updateCachedOrder(customerId, summary);
-        clearCart();
-        setIsSubmitting(false);
-        toastSuccess("Order Submitted", `Reference #${confirmed.orderNumber}`);
 
-        Alert.alert(
-          "Order Confirmed",
-          `Your order #${confirmed.orderNumber} has been sent to Sika Cuisine Sunyani.`,
-          [{ text: "Track Order", onPress: () => onOrderPlaced(confirmed.orderNumber) }]
+        if (resolvedMethod === "PAYSTACK") {
+          if (!authorizationUrl) {
+            setIsSubmitting(false);
+            const missingUrlMsg =
+              "Paystack checkout session could not be opened. Your tray is intact — please try again or select Cash.";
+            setErrorMessage(missingUrlMsg);
+            toastError("Paystack Unavailable", missingUrlMsg);
+            return;
+          }
+
+          clearCart();
+          const launchOutcome = await openInAppPaystackCheckout(
+            authorizationUrl,
+            mobileReturnUrl
+          );
+
+          if (launchOutcome === "failed") {
+            setIsSubmitting(false);
+            setPaystackFallbackModal({
+              orderNumber: confirmed.orderNumber,
+              authorizationUrl,
+            });
+            return;
+          }
+
+          const verifyRes = await apiRequest<{
+            success: boolean;
+            verified?: boolean;
+            paymentStatus?: "PENDING" | "PAID" | "FAILED" | "REFUNDED";
+          }>(`/orders/${encodeURIComponent(confirmed.orderNumber)}/pay`, {
+            method: "POST",
+            timeoutMs: 30000,
+            body: JSON.stringify({ verifyOnly: true, clientPlatform: "mobile" }),
+          });
+
+          const isPaid = Boolean(verifyRes.success && verifyRes.data?.verified);
+          if (isPaid) {
+            await updateCachedOrder(customerId, {
+              ...summary,
+              paymentStatus: "PAID",
+              lastSynchronizedAt: new Date().toISOString(),
+            });
+            toastSuccess(
+              "Payment Confirmed",
+              `Order #${confirmed.orderNumber} sent to Sika Cuisine kitchen.`
+            );
+          } else {
+            toastInfo(
+              "Payment Pending",
+              `Tap Complete Payment or Verify on order #${confirmed.orderNumber}.`
+            );
+          }
+
+          setIsSubmitting(false);
+          onOrderPlaced(confirmed.orderNumber);
+          return;
+        }
+
+        // Cash checkout: preserve cart snapshot until modal closes so subtotal doesn't flash GH₵0.00 behind modal
+        setIsSubmitting(false);
+        toastSuccess(
+          "Order Sent to Front Desk",
+          `#${confirmed.orderNumber} is awaiting cashier confirmation.`
         );
+        setSubmittedCashModal({
+          orderNumber: confirmed.orderNumber,
+          totalPesewas: confirmed.totalPesewas,
+          fulfilmentType: confirmed.fulfilmentType,
+          paymentMethod: confirmed.paymentMethod,
+        });
       } else if (response.isOffline) {
-        const fallbackOrderNumber = `SIKA-${new Date().getFullYear()}-${Math.floor(
-          1000 + Math.random() * 9000
-        )}`;
-        const localOrder: CachedOrderSummary = {
-          orderId: `local-${Date.now()}`,
-          orderNumber: fallbackOrderNumber,
-          fulfilmentType,
-          lastKnownStatus: "PENDING",
-          totalPesewas: grandTotalPesewas,
-          itemsSummary: items.map((item) => ({
-            name: item.menuItem.name,
-            quantity: item.quantity,
-          })),
-          lastSynchronizedAt: new Date().toISOString(),
-          statusHistory: [
-            {
-              status: "PENDING",
-              timestamp: new Date().toISOString(),
-              note: "Recorded in offline device queue awaiting server sync.",
-            },
-          ],
-        };
-
-        await updateCachedOrder(customerId, localOrder);
-        clearCart();
         setIsSubmitting(false);
-
-        Alert.alert(
-          "Saved to Offline Queue",
-          `Order #${fallbackOrderNumber} is cached locally while offline. View tracking details below.`,
-          [{ text: "View Order", onPress: () => onOrderPlaced(fallbackOrderNumber) }]
-        );
+        const offlineMsg =
+          "Connect to Wi-Fi or mobile data and tap Place Order again — your tray items are safely preserved.";
+        setErrorMessage(offlineMsg);
+        setOfflineModalMessage(offlineMsg);
       } else {
         setIsSubmitting(false);
+        const soldOutIds = (
+          response.data as { unavailableItemIds?: string[] } | undefined
+        )?.unavailableItemIds;
+        if (Array.isArray(soldOutIds) && soldOutIds.length > 0) {
+          markItemsUnavailable(soldOutIds, "SOLD_OUT");
+        }
         setErrorMessage(response.error || "Unable to submit order. Check details and retry.");
       }
     } catch (err) {
@@ -289,6 +463,43 @@ export function CheckoutScreen({ onBackToCart, onOrderPlaced }: CheckoutScreenPr
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
       >
+        {!restaurantConfig.isAcceptingOrders ? (
+          <View style={styles.errorBanner}>
+            <AlertCircle size={17} color={SikaColors.warning} />
+            <Text style={styles.errorText}>
+              Kitchen ordering is temporarily paused. Please check back during operating hours.
+            </Text>
+          </View>
+        ) : null}
+
+        {unavailableCount > 0 ? (
+          <View style={styles.soldOutBanner}>
+            <View style={styles.soldOutTop}>
+              <AlertCircle size={17} color={SikaColors.error} />
+              <Text style={styles.errorText}>
+                {unavailableCount === 1
+                  ? "1 dish in your tray just sold out."
+                  : `${unavailableCount} dishes in your tray are no longer available.`}{" "}
+                Remove it to continue without losing your details.
+              </Text>
+            </View>
+            <Pressable
+              onPress={() => {
+                removeUnavailableItems();
+                setErrorMessage(null);
+                toastInfo("Tray Updated", "Sold-out dishes removed. Your checkout details are preserved.");
+              }}
+              style={({ pressed }) => [
+                styles.removeSoldOutBtn,
+                pressed && { opacity: 0.8 },
+              ]}
+            >
+              <Trash2 size={13} color="#FDA4AF" />
+              <Text style={styles.removeSoldOutText}>Remove Sold-Out &amp; Continue</Text>
+            </Pressable>
+          </View>
+        ) : null}
+
         {errorMessage ? (
           <View style={styles.errorBanner}>
             <AlertCircle size={17} color={SikaColors.error} />
@@ -300,10 +511,14 @@ export function CheckoutScreen({ onBackToCart, onOrderPlaced }: CheckoutScreenPr
         <Text style={styles.sectionTitle}>1. Fulfilment Method</Text>
         <View style={styles.toggleGrid}>
           <Pressable
-            onPress={() => handleFulfilmentChange("DELIVERY")}
+            disabled={!restaurantConfig.isDeliveryEnabled}
+            onPress={() =>
+              restaurantConfig.isDeliveryEnabled && handleFulfilmentChange("DELIVERY")
+            }
             style={[
               styles.optionCard,
               fulfilmentType === "DELIVERY" && styles.optionCardActive,
+              !restaurantConfig.isDeliveryEnabled && { opacity: 0.45 },
             ]}
           >
             <Bike
@@ -315,14 +530,20 @@ export function CheckoutScreen({ onBackToCart, onOrderPlaced }: CheckoutScreenPr
               }
             />
             <Text style={styles.optionTitle}>Delivery</Text>
-            <Text style={styles.optionSub}>Sunyani zones</Text>
+            <Text style={styles.optionSub}>
+              {restaurantConfig.isDeliveryEnabled ? "Sunyani zones" : "Temporarily paused"}
+            </Text>
           </Pressable>
 
           <Pressable
-            onPress={() => handleFulfilmentChange("COLLECTION")}
+            disabled={!restaurantConfig.isCollectionEnabled}
+            onPress={() =>
+              restaurantConfig.isCollectionEnabled && handleFulfilmentChange("COLLECTION")
+            }
             style={[
               styles.optionCard,
               fulfilmentType === "COLLECTION" && styles.optionCardActive,
+              !restaurantConfig.isCollectionEnabled && { opacity: 0.45 },
             ]}
           >
             <Store
@@ -335,13 +556,23 @@ export function CheckoutScreen({ onBackToCart, onOrderPlaced }: CheckoutScreenPr
             />
             <Text style={styles.optionTitle}>Pickup</Text>
             <Text style={[styles.optionSub, { color: SikaColors.success }]}>
-              GHS 0.00 fee
+              {restaurantConfig.isCollectionEnabled ? "GHS 0.00 fee" : "Temporarily paused"}
             </Text>
           </Pressable>
         </View>
 
         {/* 2. Contact Information */}
-        <Text style={styles.sectionTitle}>2. Contact Information</Text>
+        <View style={styles.sectionHeaderRow}>
+          <Text style={styles.sectionTitle}>2. Contact Information</Text>
+          {signedInUser ? (
+            <View style={styles.prefillBadge}>
+              <CheckCircle2 size={12} color={SikaColors.success} />
+              <Text style={styles.prefillBadgeText} numberOfLines={1}>
+                Signed in as {formatFirstName(signedInUser.fullName)} · Pre-filled
+              </Text>
+            </View>
+          ) : null}
+        </View>
         <View style={styles.formCard}>
           <Text style={styles.inputLabel}>Full Name *</Text>
           <TextInput
@@ -381,12 +612,12 @@ export function CheckoutScreen({ onBackToCart, onOrderPlaced }: CheckoutScreenPr
             <View style={styles.formCard}>
               <Text style={styles.inputLabel}>Select Zone *</Text>
               <View style={styles.zoneList}>
-                {SUNYANI_DELIVERY_ZONES.map((zone) => {
-                  const zoneActive = zone.localities.includes(selectedZoneLocality);
+                {deliveryZones.map((zone) => {
+                  const zoneActive = zone.id === selectedZone?.id;
                   return (
                     <Pressable
                       key={zone.id}
-                      onPress={() => setSelectedZoneLocality(zone.localities[0])}
+                      onPress={() => setSelectedZoneId(zone.id)}
                       style={[styles.zoneRow, zoneActive && styles.zoneRowActive]}
                     >
                       <View style={styles.zoneTextCol}>
@@ -428,7 +659,7 @@ export function CheckoutScreen({ onBackToCart, onOrderPlaced }: CheckoutScreenPr
             <View style={styles.pickupCopy}>
               <Text style={styles.pickupTitle}>Counter Collection — Sunyani Central</Text>
               <Text style={styles.pickupDesc}>
-                Collect hot at {RESTAURANT_INFO.address}. Delivery tariff is zero.
+                Collect hot at {restaurantConfig.address}. Delivery tariff is zero.
               </Text>
             </View>
           </View>
@@ -510,15 +741,128 @@ export function CheckoutScreen({ onBackToCart, onOrderPlaced }: CheckoutScreenPr
         </View>
 
         <Button
-          title={`Confirm Order (${formatPesewasToGhs(grandTotalPesewas)})`}
+          title={
+            unavailableCount > 0
+              ? "Remove Sold-Out Items to Continue"
+              : !restaurantConfig.isAcceptingOrders
+              ? "Kitchen Currently Paused"
+              : paymentMethod === "PAYSTACK"
+              ? `Pay with Paystack (${formatPesewasToGhs(grandTotalPesewas)})`
+              : `Place Order (${formatPesewasToGhs(grandTotalPesewas)})`
+          }
           variant="primary"
           size="lg"
           fullWidth
+          disabled={
+            unavailableCount > 0 ||
+            !restaurantConfig.isAcceptingOrders ||
+            (fulfilmentType === "DELIVERY" && !restaurantConfig.isDeliveryEnabled) ||
+            (fulfilmentType === "COLLECTION" && !restaurantConfig.isCollectionEnabled)
+          }
           loading={isSubmitting}
           leadingIcon={<CheckCircle2 size={17} color={SikaColors.text} />}
           onPress={handlePlaceOrder}
         />
       </ScrollView>
+
+      {/* Branded Dark Order Submitted Modal (Cash on Delivery / Pickup) */}
+      <SikaModal
+        visible={Boolean(submittedCashModal)}
+        tone="warning"
+        icon={<Clock size={24} color={SikaColors.warning} />}
+        badgeLabel="Awaiting Cashier Confirmation"
+        badgeVariant="warning"
+        title="Order Submitted"
+        message="Your order has been sent to our front desk in Sunyani. We will notify you as soon as our cashier confirms it."
+        metaRows={
+          submittedCashModal
+            ? [
+                {
+                  label: "Order Reference",
+                  value: `#${submittedCashModal.orderNumber}`,
+                },
+                {
+                  label: "Payment Method",
+                  value:
+                    submittedCashModal.paymentMethod === "CASH_ON_DELIVERY"
+                      ? "Cash on Delivery"
+                      : "Cash at Counter Pickup",
+                },
+                {
+                  label: "Total Due at Handover",
+                  value: formatPesewasToGhs(submittedCashModal.totalPesewas),
+                  accent: true,
+                },
+              ]
+            : undefined
+        }
+        primaryLabel="Track Live Order"
+        onPrimaryPress={() => {
+          const targetOrder = submittedCashModal?.orderNumber;
+          setSubmittedCashModal(null);
+          clearCart();
+          if (targetOrder) {
+            onOrderPlaced(targetOrder);
+          }
+        }}
+      />
+
+      {/* Branded Dark Offline Alert */}
+      <SikaModal
+        visible={Boolean(offlineModalMessage)}
+        tone="warning"
+        icon={<WifiOff size={24} color={SikaColors.warning} />}
+        badgeLabel="Connection Needed"
+        badgeVariant="warning"
+        title="Internet Connection Required"
+        message={
+          offlineModalMessage ||
+          "Please reconnect to Wi-Fi or mobile data before placing your order."
+        }
+        primaryLabel="Got It"
+        onPrimaryPress={() => setOfflineModalMessage(null)}
+      />
+
+      {/* Paystack Browser Launch Fallback Modal */}
+      <SikaModal
+        visible={Boolean(paystackFallbackModal)}
+        tone="brand"
+        icon={<CreditCard size={24} color={SikaColors.accentLight} />}
+        badgeLabel="Paystack Checkout"
+        badgeVariant="brand"
+        title="Open Paystack Payment"
+        message="Tap below to open Paystack securely in your browser and complete payment for your order."
+        metaRows={
+          paystackFallbackModal
+            ? [
+                {
+                  label: "Order Reference",
+                  value: `#${paystackFallbackModal.orderNumber}`,
+                },
+              ]
+            : undefined
+        }
+        primaryLabel="Open Paystack Now"
+        onPrimaryPress={() => {
+          const url = paystackFallbackModal?.authorizationUrl;
+          const orderNum = paystackFallbackModal?.orderNumber;
+          setPaystackFallbackModal(null);
+          if (url) {
+            void Linking.openURL(url).catch(() => {});
+          }
+          if (orderNum) {
+            onOrderPlaced(orderNum);
+          }
+        }}
+        secondaryLabel="Go to Order Tracker"
+        onSecondaryPress={() => {
+          const orderNum = paystackFallbackModal?.orderNumber;
+          setPaystackFallbackModal(null);
+          if (orderNum) {
+            onOrderPlaced(orderNum);
+          }
+        }}
+      />
     </KeyboardAvoidingView>
   );
 }
@@ -563,7 +907,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: SikaSpace.lg,
-    paddingBottom: 36,
+    paddingBottom: 115,
     gap: SikaSpace.md,
   },
   errorBanner: {
@@ -582,11 +926,66 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 18,
   },
+  soldOutBanner: {
+    borderRadius: SikaRadius.md,
+    borderWidth: 1,
+    borderColor: SikaColors.errorBorder,
+    backgroundColor: SikaColors.errorBg,
+    padding: SikaSpace.md,
+    gap: 10,
+  },
+  soldOutTop: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: SikaSpace.sm,
+  },
+  removeSoldOutBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    borderRadius: SikaRadius.md,
+    borderWidth: 1,
+    borderColor: SikaColors.errorBorder,
+    backgroundColor: "rgba(251, 113, 133, 0.14)",
+    paddingVertical: 8,
+  },
+  removeSoldOutText: {
+    color: "#FDA4AF",
+    fontSize: 12,
+    fontWeight: "800",
+  },
+  sectionHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    flexWrap: "wrap",
+    gap: 8,
+    marginTop: SikaSpace.xs,
+  },
   sectionTitle: {
     color: SikaColors.warmWhite,
     fontSize: 15,
     fontWeight: "800",
     marginTop: SikaSpace.xs,
+  },
+  prefillBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    borderRadius: SikaRadius.pill,
+    borderWidth: 1,
+    borderColor: SikaColors.successBorder,
+    backgroundColor: SikaColors.successBg,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    maxWidth: 220,
+  },
+  prefillBadgeText: {
+    color: SikaColors.success,
+    fontSize: 11,
+    fontWeight: "700",
+    flexShrink: 1,
   },
   toggleGrid: {
     flexDirection: "row",

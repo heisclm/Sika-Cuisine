@@ -16,7 +16,7 @@ import { Check, Clock, Flame, Minus, Plus, X } from "lucide-react-native";
 import { MenuItemDTO, MenuItemOptionDTO, formatPesewasToGhs } from "@sika/shared";
 import { SelectedOptionChoice } from "../context/CartContext";
 import { useToast } from "../context/ToastContext";
-import { resolveDishImageSource } from "../data/dish-images";
+import { MOBILE_IMAGE_ASSETS, resolveDishImageSource } from "../data/dish-images";
 import { SikaColors, SikaRadius, SikaSpace } from "../theme";
 import { Badge } from "./ui/Badge";
 import { Button } from "./ui/Button";
@@ -51,11 +51,13 @@ export function DishDetailModal({
     Record<string, MenuItemOptionDTO>
   >({});
   const [specialInstructions, setSpecialInstructions] = useState<string>("");
+  const [imgFailed, setImgFailed] = useState(false);
 
   useEffect(() => {
     if (dish) {
       setQuantity(1);
       setSpecialInstructions("");
+      setImgFailed(false);
       const initial: Record<string, MenuItemOptionDTO> = {};
       if (dish.optionGroups?.length) {
         dish.optionGroups.forEach((group) => {
@@ -95,7 +97,13 @@ export function DishDetailModal({
   };
 
   return (
-    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
+    <Modal
+      visible={visible}
+      animationType="slide"
+      transparent
+      statusBarTranslucent
+      onRequestClose={onClose}
+    >
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.overlay}
@@ -107,7 +115,12 @@ export function DishDetailModal({
             {/* Photographic Banner */}
             <View style={styles.heroWrap}>
               <Image
-                source={resolveDishImageSource(dish.imageUrl)}
+                source={
+                  imgFailed
+                    ? MOBILE_IMAGE_ASSETS.heroPlate
+                    : resolveDishImageSource(dish.imageUrl)
+                }
+                onError={() => setImgFailed(true)}
                 style={styles.heroImage}
                 resizeMode="cover"
               />

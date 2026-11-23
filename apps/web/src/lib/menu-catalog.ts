@@ -2,11 +2,10 @@
  * @file apps/web/src/lib/menu-catalog.ts
  * @description Authoritative local fallback catalog for Sika Cuisine Sunyani.
  *
- * Keeps the web storefront (`/`, `/menu`, `/menu/[slug]`, `/api/v1/menu/*`) and
- * Admin menu availability view operational whenever `DATABASE_URL` is unconfigured
- * or PostgreSQL is offline. Item IDs, option IDs, and pesewas pricing strictly align
- * with `AUTHORITATIVE_MENU_CATALOG` in `apps/web/src/app/actions/order.ts`, and every
- * image points to a bundled local asset under `public/images/dishes/`.
+ * Keeps local preview and seed pipelines (`prisma/seed.ts`) aligned whenever
+ * `DATABASE_URL` is unconfigured in local development. Item IDs, option IDs, and
+ * pesewas pricing strictly match PostgreSQL seed records, and every image points to
+ * a bundled local asset under `public/images/dishes/`.
  */
 
 export interface FallbackMenuCategory {

@@ -1,464 +1,259 @@
-"use client";
+import React from "react";
+import type { Metadata } from "next";
+import { notFound } from "next/navigation";
+import { DishDetailClient } from "@/components/menu/DishDetailClient";
+import { formatPesewasToGhs } from "@/lib/currency";
+import { getSiteOrigin } from "@/lib/env";
+import { prisma } from "@/lib/prisma";
+import { MenuItem } from "@/types/menu";
 
-import React, { useEffect, useState, useRef, useCallback } from "react";
-import Link from "next/link";
-import { useParams } from "next/navigation";
-import {
-  ArrowLeft,
-  Clock,
-  Flame,
-  Minus,
-  Plus,
-  Sparkles,
-  AlertCircle,
-  ChevronRight,
-} from "lucide-react";
-import { MenuItem, MenuItemOption, SelectedOptionSnapshot } from "@/types/menu";
-import { formatPesewasToGhs, calculateLineTotalPesewas } from "@/lib/currency";
-import { useCart } from "@/context/CartContext";
-import { useToast } from "@/context/ToastContext";
-import { RestaurantClocheIcon } from "@/components/icons/RestaurantClocheIcon";
-import { DishCard } from "@/components/ui/DishCard";
-import { DishDetailModal } from "@/components/menu/DishDetailModal";
-import { ErrorState } from "@/components/ui/ErrorState";
-import { PageReveal } from "@/components/ui/MotionPrimitives";
+export const dynamic = "force-dynamic";
 
-export default function ProductDetailPage() {
-  const params = useParams<{ slug: string }>();
-  const slug = params?.slug;
-
-  const { addItem, setIsCartOpen } = useCart();
-  const { success } = useToast();
-  const addAreaRef = useRef<HTMLDivElement | null>(null);
-
-  const [dish, setDish] = useState<MenuItem | null>(null);
-  const [relatedDishes, setRelatedDishes] = useState<MenuItem[]>([]);
-  const [modalDish, setModalDish] = useState<MenuItem | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const [quantity, setQuantity] = useState(1);
-  const [selectedOptionsMap, setSelectedOptionsMap] = useState<{
-    [groupId: string]: MenuItemOption[];
-  }>({});
-  const [instructions, setInstructions] = useState("");
-  const [validationError, setValidationError] = useState<string | null>(null);
-  const [imgError, setImgError] = useState(false);
-
-  const loadDish = useCallback(async () => {
-    if (!slug) return;
-    setLoading(true);
-    setError(null);
-    setImgError(false);
-
-    try {
-      const response = await fetch(`/api/v1/menu/items?slug=${encodeURIComponent(slug)}`);
-      const payload = await response.json();
-      if (!response.ok || !payload.success || !payload.item) {
-        throw new Error(payload.error || "Dish not found.");
-      }
-
-      const fetchedDish: MenuItem = {
-        ...payload.item,
-        categoryName: payload.item.category?.name,
-      };
-      setDish(fetchedDish);
-      setQuantity(1);
-      setInstructions("");
-      setValidationError(null);
-
-      const defaults: { [groupId: string]: MenuItemOption[] } = {};
-      fetchedDish.optionGroups?.forEach((group) => {
-        if (group.isRequired && group.options.length > 0) {
-          const first = group.options.find((o) => o.isAvailable);
-          if (first) defaults[group.id] = [first];
-        }
-      });
-      setSelectedOptionsMap(defaults);
-
-      // Load related items in the same category
-      const relRes = await fetch(
-        `/api/v1/menu/items?categoryId=${encodeURIComponent(fetchedDish.categoryId)}`
-      );
-      if (relRes.ok) {
-        const relPayload = await relRes.json();
-        if (relPayload.success && Array.isArray(relPayload.items)) {
-          setRelatedDishes(
-            relPayload.items
-              .filter((item: MenuItem) => item.id !== fetchedDish.id)
-              .slice(0, 4)
-              .map((item: MenuItem & { category?: { name: string } }) => ({
-                ...item,
-                categoryName: item.category?.name,
-              }))
-          );
-        }
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Unable to load dish details.");
-      setDish(null);
-    } finally {
-      setLoading(false);
-    }
-  }, [slug]);
-
-  useEffect(() => {
-    void loadDish();
-  }, [loadDish]);
-
-  const handleSelectOption = (
-    groupId: string,
-    option: MenuItemOption,
-    maxSelect: number
-  ) => {
-    if (!option.isAvailable) return;
-    setValidationError(null);
-    setSelectedOptionsMap((prev) => {
-      const current = prev[groupId] || [];
-      if (maxSelect === 1) return { ...prev, [groupId]: [option] };
-      const exists = current.some((o) => o.id === option.id);
-      if (exists) {
-        return { ...prev, [groupId]: current.filter((o) => o.id !== option.id) };
-      }
-      if (current.length < maxSelect) {
-        return { ...prev, [groupId]: [...current, option] };
-      }
-      return prev;
-    });
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#101010] mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-          <div className="lg:col-span-6 aspect-[4/3] rounded-3xl sika-skeleton border border-[#333333]" />
-          <div className="lg:col-span-6 space-y-5">
-            <div className="h-4 w-32 rounded sika-skeleton" />
-            <div className="h-10 w-3/4 rounded-lg sika-skeleton" />
-            <div className="h-20 w-full rounded-xl sika-skeleton" />
-            <div className="h-36 w-full rounded-2xl sika-skeleton" />
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (error || !dish) {
-    return (
-      <div className="min-h-screen bg-[#101010] mx-auto max-w-3xl px-4 sm:px-6 py-20 space-y-6">
-        <Link
-          href="/menu"
-          className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#A3A3A3] hover:text-white"
-        >
-          <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-          Back to Menu
-        </Link>
-        <ErrorState
-          title="Dish not found"
-          message={error || "This dish could not be retrieved from the Sika Cuisine menu."}
-          onRetry={() => void loadDish()}
-        />
-      </div>
-    );
-  }
-
-  const selectedOptionsList: SelectedOptionSnapshot[] = [];
-  let optionsDeltaPesewas = 0;
-  dish.optionGroups?.forEach((group) => {
-    const selected = selectedOptionsMap[group.id] || [];
-    selected.forEach((opt) => {
-      optionsDeltaPesewas += opt.priceDeltaPesewas;
-      selectedOptionsList.push({
-        optionGroupId: group.id,
-        groupName: group.name,
-        optionId: opt.id,
-        optionName: opt.name,
+function serializeDish(raw: {
+  id: string;
+  categoryId: string;
+  name: string;
+  slug: string;
+  description: string;
+  basePricePesewas: number;
+  imageUrl: string;
+  isAvailable: boolean;
+  isFeatured: boolean;
+  spiceLevel: number;
+  preparationTimeMinutes: number;
+  sortOrder: number;
+  category?: { name: string } | null;
+  optionGroups?: Array<{
+    id: string;
+    name: string;
+    description: string | null;
+    minSelect: number;
+    maxSelect: number;
+    isRequired: boolean;
+    options: Array<{
+      id: string;
+      name: string;
+      priceDeltaPesewas: number;
+      isAvailable: boolean;
+    }>;
+  }>;
+}): MenuItem {
+  return {
+    id: raw.id,
+    categoryId: raw.categoryId,
+    categoryName: raw.category?.name,
+    name: raw.name,
+    slug: raw.slug,
+    description: raw.description,
+    basePricePesewas: raw.basePricePesewas,
+    imageUrl: raw.imageUrl,
+    isAvailable: raw.isAvailable,
+    isFeatured: raw.isFeatured,
+    spiceLevel: raw.spiceLevel,
+    preparationTimeMinutes: raw.preparationTimeMinutes,
+    sortOrder: raw.sortOrder,
+    optionGroups: (raw.optionGroups ?? []).map((group) => ({
+      id: group.id,
+      name: group.name,
+      description: group.description ?? undefined,
+      minSelect: group.minSelect,
+      maxSelect: group.maxSelect,
+      isRequired: group.isRequired,
+      options: group.options.map((opt) => ({
+        id: opt.id,
+        name: opt.name,
         priceDeltaPesewas: opt.priceDeltaPesewas,
-      });
-    });
-  });
-
-  const lineTotalPesewas = calculateLineTotalPesewas(
-    dish.basePricePesewas,
-    quantity,
-    optionsDeltaPesewas
-  );
-
-  const handleAddToTray = () => {
-    if (!dish.isAvailable) return;
-    const missingRequired = dish.optionGroups?.find((group) => {
-      const minRequired = group.isRequired ? Math.max(1, group.minSelect) : group.minSelect;
-      return (selectedOptionsMap[group.id]?.length ?? 0) < minRequired;
-    });
-    if (missingRequired) {
-      setValidationError(`Please choose an option for "${missingRequired.name}".`);
-      return;
-    }
-
-    addItem(dish, selectedOptionsList, quantity, instructions.trim() || undefined, addAreaRef.current);
-    success(`Added ${quantity}x ${dish.name}`, "Freshly added to your Sika order tray", {
-      label: "View Tray",
-      onClick: () => setIsCartOpen(true),
-    });
+        isAvailable: opt.isAvailable,
+      })),
+    })),
   };
+}
+
+async function fetchDishBySlug(slug: string): Promise<MenuItem | null> {
+  if (!process.env.DATABASE_URL?.trim()) return null;
+  try {
+    const raw = await prisma.menuItem.findUnique({
+      where: { slug },
+      include: {
+        category: { select: { name: true } },
+        optionGroups: {
+          include: {
+            options: {
+              where: { isAvailable: true },
+            },
+          },
+        },
+      },
+    });
+    return raw ? serializeDish(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const decodedSlug = decodeURIComponent(slug);
+  const dish = await fetchDishBySlug(decodedSlug);
+
+  if (!dish) {
+    return {
+      title: "Dish Not Found",
+      robots: { index: false, follow: false },
+    };
+  }
+
+  const origin = getSiteOrigin();
+  const priceLabel = formatPesewasToGhs(dish.basePricePesewas);
+  const canonicalPath = `/menu/${encodeURIComponent(dish.slug)}`;
+  const absoluteImageUrl = dish.imageUrl.startsWith("http")
+    ? dish.imageUrl
+    : `${origin}${dish.imageUrl.startsWith("/") ? dish.imageUrl : `/${dish.imageUrl}`}`;
+
+  return {
+    title: `${dish.name} — ${priceLabel}`,
+    description: `${dish.description} Order fresh in Sunyani for ${priceLabel} (pickup GH₵ 0.00 or doorstep delivery).`,
+    alternates: {
+      canonical: canonicalPath,
+    },
+    openGraph: {
+      title: `${dish.name} (${priceLabel}) | Sika Cuisine Sunyani`,
+      description: dish.description,
+      url: `${origin}${canonicalPath}`,
+      type: "article",
+      images: [
+        {
+          url: absoluteImageUrl,
+          width: 1200,
+          height: 900,
+          alt: dish.name,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${dish.name} — ${priceLabel}`,
+      description: dish.description,
+      images: [absoluteImageUrl],
+    },
+  };
+}
+
+export default async function ProductDetailPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
+  const decodedSlug = decodeURIComponent(slug);
+  const dish = await fetchDishBySlug(decodedSlug);
+
+  if (!dish && process.env.DATABASE_URL?.trim()) {
+    notFound();
+  }
+
+  let related: MenuItem[] = [];
+  if (dish && process.env.DATABASE_URL?.trim()) {
+    try {
+      const rawRelated = await prisma.menuItem.findMany({
+        where: {
+          categoryId: dish.categoryId,
+          id: { not: dish.id },
+          isAvailable: true,
+        },
+        orderBy: [{ isFeatured: "desc" }, { sortOrder: "asc" }],
+        take: 4,
+        include: {
+          category: { select: { name: true } },
+          optionGroups: {
+            include: {
+              options: {
+                where: { isAvailable: true },
+              },
+            },
+          },
+        },
+      });
+      related = rawRelated.map(serializeDish);
+    } catch {
+      related = [];
+    }
+  }
+
+  const origin = getSiteOrigin();
+  const absoluteImageUrl = dish?.imageUrl.startsWith("http")
+    ? dish.imageUrl
+    : `${origin}${dish?.imageUrl || "/images/dishes/hero-signature-plate.jpg"}`;
+
+  const menuItemJsonLd = dish
+    ? {
+        "@context": "https://schema.org",
+        "@type": "MenuItem",
+        name: dish.name,
+        description: dish.description,
+        image: absoluteImageUrl,
+        url: `${origin}/menu/${encodeURIComponent(dish.slug)}`,
+        offers: {
+          "@type": "Offer",
+          priceCurrency: "GHS",
+          price: (dish.basePricePesewas / 100).toFixed(2),
+          availability: dish.isAvailable
+            ? "https://schema.org/InStock"
+            : "https://schema.org/OutOfStock",
+        },
+      }
+    : null;
+
+  const breadcrumbJsonLd = dish
+    ? {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          {
+            "@type": "ListItem",
+            position: 1,
+            name: "Home",
+            item: origin,
+          },
+          {
+            "@type": "ListItem",
+            position: 2,
+            name: "Menu",
+            item: `${origin}/menu`,
+          },
+          {
+            "@type": "ListItem",
+            position: 3,
+            name: dish.name,
+            item: `${origin}/menu/${encodeURIComponent(dish.slug)}`,
+          },
+        ],
+      }
+    : null;
 
   return (
-    <div className="min-h-screen bg-[#101010] pb-24 text-[#F5F1EA]">
-      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 pt-8 sm:pt-12">
-        {/* Breadcrumb */}
-        <nav aria-label="Breadcrumb" className="mb-8 flex flex-wrap items-center gap-2 text-xs text-[#A3A3A3]">
-          <Link href="/" className="hover:text-white transition-colors">
-            Home
-          </Link>
-          <ChevronRight className="h-3.5 w-3.5 text-[#737373]" aria-hidden="true" />
-          <Link href="/menu" className="hover:text-white transition-colors">
-            Menu
-          </Link>
-          {dish.categoryName && (
-            <>
-              <ChevronRight className="h-3.5 w-3.5 text-[#737373]" aria-hidden="true" />
-              <Link
-                href={`/menu?category=${encodeURIComponent(dish.categoryId)}`}
-                className="hover:text-white transition-colors"
-              >
-                {dish.categoryName}
-              </Link>
-            </>
-          )}
-          <ChevronRight className="h-3.5 w-3.5 text-[#737373]" aria-hidden="true" />
-          <span className="font-semibold text-[#F5F1EA]">{dish.name}</span>
-        </nav>
-
-        {/* Main 2-column Layout */}
-        <PageReveal className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
-          {/* Photography Column */}
-          <div className="lg:col-span-6">
-            <div className="relative aspect-[4/3] overflow-hidden rounded-3xl border border-[#333333] bg-[#1C1C1C] shadow-2xl">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={imgError ? "/images/dishes/hero-signature-plate.jpg" : dish.imageUrl}
-                alt={dish.name}
-                onError={() => setImgError(true)}
-                className={`h-full w-full object-cover ${!dish.isAvailable ? "grayscale-[70%]" : ""}`}
-              />
-              <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/25" />
-              <div className="absolute top-4 left-4 flex flex-wrap gap-2">
-                {!dish.isAvailable ? (
-                  <span className="rounded-full border border-[#FB7185]/45 bg-[#101010]/90 px-3 py-1 text-xs font-bold uppercase tracking-wider text-[#FDA4AF]">
-                    Currently Unavailable
-                  </span>
-                ) : dish.isFeatured ? (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-[#D71920] px-3 py-1 text-xs font-bold uppercase tracking-wider text-white">
-                    <Sparkles className="h-3 w-3" aria-hidden="true" />
-                    Chef Signature
-                  </span>
-                ) : null}
-              </div>
-            </div>
-          </div>
-
-          {/* Details & Configuration Column */}
-          <div className="lg:col-span-6 space-y-6">
-            <div>
-              <span className="text-xs font-bold uppercase tracking-[0.2em] text-[#F0444A]">
-                {dish.categoryName || "Sika Kitchen"}
-              </span>
-              <h1 className="mt-1.5 font-serif text-3xl sm:text-4xl font-black tracking-tight text-white">
-                {dish.name}
-              </h1>
-              <div className="mt-3 flex flex-wrap items-center gap-3">
-                <span className="tabular-nums font-serif text-2xl font-black text-[#F0444A]">
-                  {formatPesewasToGhs(dish.basePricePesewas)}
-                </span>
-                <span className="inline-flex items-center gap-1 rounded-full border border-[#333333] bg-[#1C1C1C] px-3 py-1 text-xs font-semibold text-[#F5F1EA]">
-                  <Clock className="h-3.5 w-3.5 text-[#F0444A]" aria-hidden="true" />
-                  {dish.preparationTimeMinutes ?? 20} mins prep
-                </span>
-                {dish.spiceLevel && dish.spiceLevel > 0 ? (
-                  <span className="inline-flex items-center gap-1 rounded-full border border-[#333333] bg-[#1C1C1C] px-3 py-1 text-xs font-semibold text-[#F0444A]">
-                    <Flame className="h-3.5 w-3.5" aria-hidden="true" />
-                    Spice {dish.spiceLevel}/3
-                  </span>
-                ) : null}
-              </div>
-              <p className="mt-4 text-sm sm:text-base leading-relaxed text-[#A3A3A3]">
-                {dish.description}
-              </p>
-            </div>
-
-            {validationError && (
-              <div
-                role="alert"
-                className="flex items-center gap-2 rounded-xl border border-[#FB7185]/40 bg-[#FB7185]/10 px-4 py-3 text-xs font-medium text-[#FDA4AF]"
-              >
-                <AlertCircle className="h-4 w-4 flex-shrink-0" aria-hidden="true" />
-                <span>{validationError}</span>
-              </div>
-            )}
-
-            {dish.optionGroups && dish.optionGroups.length > 0 && (
-              <div className="space-y-4">
-                {dish.optionGroups.map((group) => {
-                  const selected = selectedOptionsMap[group.id] || [];
-                  return (
-                    <div
-                      key={group.id}
-                      className="rounded-2xl border border-[#333333] bg-[#1C1C1C] p-4 space-y-3"
-                    >
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h2 className="font-serif text-sm font-bold text-white">{group.name}</h2>
-                          {group.description && (
-                            <p className="text-xs text-[#A3A3A3]">{group.description}</p>
-                          )}
-                        </div>
-                        <span
-                          className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
-                            group.isRequired
-                              ? "bg-[#D71920]/15 text-[#F0444A]"
-                              : "bg-[#262626] text-[#A3A3A3]"
-                          }`}
-                        >
-                          {group.isRequired ? "Required" : "Optional"}
-                        </span>
-                      </div>
-
-                      <div className="space-y-2">
-                        {group.options.map((opt) => {
-                          const isSelected = selected.some((o) => o.id === opt.id);
-                          return (
-                            <button
-                              key={opt.id}
-                              type="button"
-                              disabled={!opt.isAvailable}
-                              onClick={() => handleSelectOption(group.id, opt, group.maxSelect)}
-                              className={`flex w-full items-center justify-between rounded-xl border px-3.5 py-3 text-sm transition-all ${
-                                !opt.isAvailable
-                                  ? "cursor-not-allowed border-[#333333] bg-[#262626]/40 text-[#737373]"
-                                  : isSelected
-                                  ? "border-[#D71920] bg-[#D71920]/15 text-white font-semibold"
-                                  : "border-[#333333] bg-[#262626] text-[#F5F1EA] hover:border-[#4D4D4D]"
-                              }`}
-                            >
-                              <span>{opt.name}</span>
-                              <span className="tabular-nums font-mono text-xs text-[#A3A3A3]">
-                                {opt.priceDeltaPesewas > 0
-                                  ? `+${formatPesewasToGhs(opt.priceDeltaPesewas)}`
-                                  : "Included"}
-                              </span>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-
-            <div>
-              <label
-                htmlFor="product-detail-notes"
-                className="mb-2 block text-xs font-bold uppercase tracking-wider text-[#A3A3A3]"
-              >
-                Kitchen Instructions (Optional)
-              </label>
-              <textarea
-                id="product-detail-notes"
-                value={instructions}
-                onChange={(e) => setInstructions(e.target.value)}
-                maxLength={250}
-                rows={2}
-                placeholder="e.g. Pack pepper separately, mild spice..."
-                className="w-full rounded-xl border border-[#333333] bg-[#1C1C1C] p-3 text-sm text-white placeholder-[#737373] focus:border-[#D71920] focus:outline-none"
-              />
-            </div>
-
-            <div
-              ref={addAreaRef}
-              className="flex flex-wrap sm:flex-nowrap items-center gap-3.5 border-t border-[#333333] pt-5"
-            >
-              <div className="flex items-center gap-2 rounded-xl border border-[#333333] bg-[#1C1C1C] p-1">
-                <button
-                  type="button"
-                  disabled={!dish.isAvailable || quantity <= 1}
-                  onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                  className="flex h-10 w-10 items-center justify-center rounded-lg text-[#A3A3A3] hover:bg-[#262626] hover:text-white disabled:opacity-40"
-                  aria-label="Decrease quantity"
-                >
-                  <Minus className="h-4 w-4" aria-hidden="true" />
-                </button>
-                <span className="tabular-nums min-w-[28px] text-center font-mono text-base font-bold text-white">
-                  {quantity}
-                </span>
-                <button
-                  type="button"
-                  disabled={!dish.isAvailable || quantity >= 50}
-                  onClick={() => setQuantity((q) => Math.min(50, q + 1))}
-                  className="flex h-10 w-10 items-center justify-center rounded-lg text-[#A3A3A3] hover:bg-[#262626] hover:text-white disabled:opacity-40"
-                  aria-label="Increase quantity"
-                >
-                  <Plus className="h-4 w-4" aria-hidden="true" />
-                </button>
-              </div>
-
-              <button
-                type="button"
-                disabled={!dish.isAvailable}
-                onClick={handleAddToTray}
-                className={`flex flex-1 items-center justify-between rounded-2xl px-6 py-4 text-sm sm:text-base font-bold transition-all active:scale-[0.98] ${
-                  !dish.isAvailable
-                    ? "cursor-not-allowed border border-[#333333] bg-[#1C1C1C] text-[#737373]"
-                    : "bg-[#D71920] hover:bg-[#A91017] text-white shadow-[0_8px_24px_rgba(215,25,32,0.4)]"
-                }`}
-              >
-                <span className="flex items-center gap-2">
-                  <RestaurantClocheIcon className="h-4 w-4" />
-                  <span>{dish.isAvailable ? "Add to Tray" : "Currently Unavailable"}</span>
-                </span>
-                <span className="tabular-nums font-mono">{formatPesewasToGhs(lineTotalPesewas)}</span>
-              </button>
-            </div>
-          </div>
-        </PageReveal>
-
-        {/* Related Dishes */}
-        {relatedDishes.length > 0 && (
-          <section className="mt-16 border-t border-[#333333] pt-12">
-            <h2 className="font-serif text-2xl font-bold text-white mb-6">
-              More from {dish.categoryName || "Sika Kitchen"}
-            </h2>
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
-              {relatedDishes.map((rel) => (
-                <DishCard
-                  key={rel.id}
-                  dish={rel}
-                  onSelectDish={setModalDish}
-                  onQuickAdd={(d, e) => {
-                    e.stopPropagation();
-                    if (!d.isAvailable) return;
-                    if (d.optionGroups?.some((g) => g.isRequired)) {
-                      setModalDish(d);
-                    } else {
-                      addItem(d, [], 1);
-                      success(`Added ${d.name}`, "Added to your Sika order tray", {
-                        label: "View Tray",
-                        onClick: () => setIsCartOpen(true),
-                      });
-                    }
-                  }}
-                />
-              ))}
-            </div>
-          </section>
-        )}
-      </div>
-
-      <DishDetailModal
-        dish={modalDish}
-        isOpen={!!modalDish}
-        onClose={() => setModalDish(null)}
+    <>
+      {menuItemJsonLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(menuItemJsonLd) }}
+        />
+      )}
+      {breadcrumbJsonLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+        />
+      )}
+      <DishDetailClient
+        slug={decodedSlug}
+        initialDish={dish}
+        initialRelated={related}
       />
-    </div>
+    </>
   );
 }

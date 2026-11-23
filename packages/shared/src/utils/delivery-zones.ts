@@ -130,6 +130,13 @@ export function calculateDeliveryFeePesewas(
   const normalized = locality.trim().toLowerCase();
 
   for (const zone of SUNYANI_DELIVERY_ZONES) {
+    if (
+      zone.id.toLowerCase() === normalized ||
+      zone.name.toLowerCase() === normalized ||
+      zone.description.toLowerCase().includes(normalized)
+    ) {
+      return zone.feePesewas;
+    }
     for (const loc of zone.localities) {
       if (loc.toLowerCase() === normalized || normalized.includes(loc.toLowerCase())) {
         return zone.feePesewas;
@@ -141,9 +148,9 @@ export function calculateDeliveryFeePesewas(
 }
 
 /**
- * Retrieves the matching DeliveryZone metadata for a given Sunyani locality.
+ * Retrieves the matching DeliveryZone metadata for a given Sunyani locality, zone ID, or zone name.
  *
- * @param locality - Suburb or locality name
+ * @param locality - Suburb, locality name, or zone identifier
  * @returns DeliveryZone | undefined - Matched zone object or undefined if unmapped
  */
 export function getZoneByLocality(locality?: string | null): DeliveryZone | undefined {
@@ -151,6 +158,13 @@ export function getZoneByLocality(locality?: string | null): DeliveryZone | unde
   const normalized = locality.trim().toLowerCase();
 
   for (const zone of SUNYANI_DELIVERY_ZONES) {
+    if (
+      zone.id.toLowerCase() === normalized ||
+      zone.name.toLowerCase() === normalized ||
+      zone.description.toLowerCase().includes(normalized)
+    ) {
+      return zone;
+    }
     for (const loc of zone.localities) {
       if (loc.toLowerCase() === normalized || normalized.includes(loc.toLowerCase())) {
         return zone;

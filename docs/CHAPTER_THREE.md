@@ -203,8 +203,8 @@ Figure 3.1 illustrates the complete Use Case model. A full-width, high-resolutio
 flowchart LR
     subgraph ACTORS_LEFT ["Client Actors"]
         direction TB
-        CUST["fa:fa-user Customer<br/>(Web & Mobile Client)"]
-        RIDER["fa:fa-motorcycle Delivery Courier<br/>(Campus Dispatch Rider)"]
+        CUST["Customer<br/>(Web & Mobile Client)"]
+        RIDER["Delivery Courier<br/>(Campus Dispatch Rider)"]
     end
 
     subgraph SYSTEM_BOUNDARY ["System Boundary: Sika Cuisine Multi-Platform Enterprise Platform"]
@@ -242,8 +242,8 @@ flowchart LR
 
     subgraph ACTORS_RIGHT ["Operations Actors"]
         direction TB
-        CHEF["fa:fa-utensils Kitchen Staff<br/>(Chef & Expediter)"]
-        ADMIN["fa:fa-user-tie System Admin<br/>(Restaurant Manager)"]
+        CHEF["Kitchen Staff<br/>(Chef & Expediter)"]
+        ADMIN["System Admin<br/>(Restaurant Manager)"]
     end
 
     %% Customer Associations
@@ -522,11 +522,11 @@ Figure 3.3 illustrates this asynchronous sequence. A full-width, high-resolution
 ```mermaid
 sequenceDiagram
     autonumber
-    actor Customer as fa:fa-user Customer (Web/Mobile)
-    participant Server as fa:fa-server Next.js App Server
-    participant DB as fa:fa-database Prisma & PostgreSQL
-    participant Paystack as fa:fa-credit-card Paystack Gateway
-    participant Kitchen as fa:fa-tv Kitchen Display
+    actor Customer as Customer (Web/Mobile)
+    participant Server as Next.js App Server
+    participant DB as Prisma & PostgreSQL
+    participant Paystack as Paystack Gateway
+    participant Kitchen as Kitchen Display
 
     Customer->>Server: POST createOrderAction(items[id, qty, options], locality, phone)
     Note over Server: Server-Side Execution Environment
@@ -651,9 +651,9 @@ Figure 3.5 illustrates the four-tier architectural model. A full-width, high-res
 flowchart TD
     subgraph TIER1 ["Tier 1: Presentation & Client Touchpoints"]
         direction LR
-        WEB["fa:fa-globe Web Application (apps/web)<br/>- Next.js 16 (App Router) & React 19<br/>- Tailwind CSS Bento Grid & Dark Palette<br/>- Self-Hosted Fonts & Flying Cart Motion"]
-        MOB["fa:fa-mobile Mobile Application (apps/mobile)<br/>- React Native 0.88 & Expo SDK 58<br/>- Offline Menu Cache (AsyncStorage)<br/>- Secure Session Vault (SecureStore)<br/>- Thumb-Zone Bottom-Sheet Navigation"]
-        OPS["fa:fa-tv Operations Portals (/admin, /rider)<br/>- Real-Time Order Stream & Audio Alerts<br/>- One-Touch State Transition Buttons<br/>- Courier Dispatch & Landmark Manifest"]
+        WEB["Web Application (apps/web)<br/>- Next.js 16 (App Router) & React 19<br/>- Tailwind CSS Bento Grid & Dark Palette<br/>- Self-Hosted Fonts & Flying Cart Motion"]
+        MOB["Mobile Application (apps/mobile)<br/>- React Native 0.88 & Expo SDK 58<br/>- Offline Menu Cache (AsyncStorage)<br/>- Secure Session Vault (SecureStore)<br/>- Thumb-Zone Bottom-Sheet Navigation"]
+        OPS["Operations Portals (/admin, /rider)<br/>- Real-Time Order Stream & Audio Alerts<br/>- One-Touch State Transition Buttons<br/>- Courier Dispatch & Landmark Manifest"]
     end
 
     subgraph TIER2 ["Tier 2: Shared Monorepo Domain Core (packages/shared)"]
@@ -673,8 +673,8 @@ flowchart TD
 
     subgraph TIER4 ["Tier 4: Data Persistence & External Infrastructure"]
         direction LR
-        DB[("fa:fa-database PostgreSQL 16 & Prisma ORM<br/>- Strictly Typed Relational Schema<br/>- Integer Pesewas Monetary Columns<br/>- Immutable OrderItem Price Snapshots<br/>- OrderStatusHistory Audit Trail")]
-        PAY["fa:fa-credit-card Paystack Ghana Financial Infrastructure<br/>- Mobile Money (MTN MoMo, Telecel, AT)<br/>- Debit/Credit Cards (Visa, Mastercard)<br/>- Asynchronous Webhook Delivery<br/>- 3D-Secure 2.0 Card Clearing"]
+        DB[("PostgreSQL 16 & Prisma ORM<br/>- Strictly Typed Relational Schema<br/>- Integer Pesewas Monetary Columns<br/>- Immutable OrderItem Price Snapshots<br/>- OrderStatusHistory Audit Trail")]
+        PAY["Paystack Ghana Financial Infrastructure<br/>- Mobile Money (MTN MoMo, Telecel, AT)<br/>- Debit/Credit Cards (Visa, Mastercard)<br/>- Asynchronous Webhook Delivery<br/>- 3D-Secure 2.0 Card Clearing"]
     end
 
     %% Cross-Tier Connectors
@@ -756,108 +756,17 @@ export function parseGhsToPesewas(ghs: string | number): number {
 
 ---
 
-## 3.6 Algorithmic Logic and Process Flow
+## 3.6 Process Flow and Settlement Logic
 
-### 3.6.1 Server-Authoritative Checkout and Payment Verification Algorithm
+### 3.6.1 Server-Authoritative Checkout and Payment Verification Logic
 
-The checkout and payment settlement pipeline is formalized in **Algorithm 3.1**. The algorithm guarantees that all prices are derived strictly from authoritative database records, all delivery fees conform to the Sunyani municipal matrix, all financial arithmetic executes in integer pesewas, and all payment confirmations require valid HMAC SHA-512 signatures.
+Rather than duplicating system logic in client browsers, the checkout and payment settlement pipeline executes through five deterministic stages on the server:
 
----
-
-**Algorithm 3.1: Server-Authoritative Checkout and Payment Verification**
-
-```
-INPUT:
-    Payload P = {
-        items: List<{ menuItemId: String, quantity: Integer, selectedOptionIds: List<String> }>,
-        fulfilmentType: Enum { DELIVERY, COLLECTION },
-        areaLocality: String,
-        recipientPhone: String,
-        paymentMethod: Enum { PAYSTACK, CASH_ON_DELIVERY, CASH_ON_COLLECTION }
-    }
-    SecretKey K = PAYSTACK_SECRET_KEY
-
-OUTPUT:
-    Response R = { success: Boolean, orderNumber: String, checkoutUrl: String or Null, error: String or Null }
-
-PROCEDURE ExecuteOrderCheckout(P):
-    1.  Validate P against Zod schema (enforce non-empty items, valid phone format '+233XX...').
-        IF validation fails THEN RETURN { success: False, error: "Malformed payload schema." }
-
-    2.  Initialize subtotalPesewas = 0
-    3.  Extract itemIds = [item.menuItemId FOR EACH item IN P.items]
-    4.  Query Database: dbItems = Query PostgreSQL MenuItem WHERE id IN itemIds WITH optionGroups.options
-
-    5.  FOR EACH clientItem IN P.items DO:
-            Find matching dbItem IN dbItems WHERE dbItem.id == clientItem.menuItemId
-            IF dbItem is NULL OR dbItem.isAvailable == False THEN:
-                RETURN { success: False, error: "Item unavailable or does not exist." }
-
-            itemPrice = dbItem.basePricePesewas
-            FOR EACH optionId IN clientItem.selectedOptionIds DO:
-                Find matching dbOption IN dbItem.options WHERE dbOption.id == optionId
-                IF dbOption is NOT NULL AND dbOption.isAvailable == True THEN:
-                    itemPrice = itemPrice + dbOption.priceDeltaPesewas
-            
-            lineTotal = itemPrice * clientItem.quantity
-            subtotalPesewas = subtotalPesewas + lineTotal
-
-    6.  IF P.fulfilmentType == DELIVERY THEN:
-            deliveryFeePesewas = Lookup SUNYANI_DELIVERY_ZONES[P.areaLocality].feePesewas
-            IF deliveryFeePesewas is NULL THEN deliveryFeePesewas = 1500  // Default standard fee (GH₵15)
-        ELSE:
-            deliveryFeePesewas = 0
-
-    7.  totalPesewas = subtotalPesewas + deliveryFeePesewas - discountPesewas
-    8.  Generate unique tracking string orderNumber = "SC-" + CurrentYear + "-" + CryptoRandomHex(4)
-
-    9.  BEGIN TRANSACTION (PostgreSQL):
-            order = Insert Order(orderNumber, subtotalPesewas, deliveryFeePesewas, totalPesewas, 
-                                 fulfilmentStatus = PENDING, paymentStatus = PENDING, paymentMethod = P.paymentMethod)
-            FOR EACH clientItem IN P.items DO:
-                Insert OrderItem(orderId = order.id, itemNameSnapshot = dbItem.name, 
-                                 unitPricePesewas = itemPrice, quantity = clientItem.quantity, 
-                                 subtotalPesewas = lineTotal, selectedOptionsSnapshot = clientItem.selectedOptionIds)
-            Insert OrderStatusHistory(orderId = order.id, toStatus = PENDING, note = "Order created via checkout")
-        COMMIT TRANSACTION
-
-    10. IF P.paymentMethod == PAYSTACK THEN:
-            paystackPayload = { email: P.email, amount: totalPesewas, reference: orderNumber, callback_url: "..." }
-            paystackRes = HTTP POST "https://api.paystack.co/transaction/initialize" WITH paystackPayload
-            RETURN { success: True, orderNumber: orderNumber, checkoutUrl: paystackRes.authorization_url }
-        ELSE:
-            // Cash on delivery / collection path
-            Update Order(order.id, fulfilmentStatus = CONFIRMED)
-            PushNotificationToKitchen(orderNumber, "New Cash Order Confirmed")
-            RETURN { success: True, orderNumber: orderNumber, checkoutUrl: Null }
-
-PROCEDURE ProcessPaystackWebhook(rawRequestBody, signatureHeader):
-    1.  computedHash = HMAC_SHA512(rawRequestBody, K)
-    2.  IF Length(signatureHeader) != Length(computedHash) THEN RETURN HTTP 401
-    3.  isValid = TimingSafeEqual(signatureHeader, computedHash)
-    4.  IF isValid == False THEN RETURN HTTP 401 Unauthorized
-
-    5.  payload = ParseJson(rawRequestBody)
-    6.  IF payload.event == "charge.success" THEN:
-            orderNumber = payload.data.reference
-            paidAmount = payload.data.amount  // Received in integer pesewas
-
-            BEGIN TRANSACTION (PostgreSQL):
-                order = Query Order WHERE orderNumber == orderNumber
-                IF order is NOT NULL AND order.paymentStatus == PENDING THEN:
-                    IF paidAmount == order.totalPesewas THEN:
-                        Update Order(order.id, paymentStatus = PAID, fulfilmentStatus = CONFIRMED)
-                        Insert PaystackWebhookEvent(eventId = payload.data.id, payload = payload, status = "PROCESSED")
-                        Insert OrderStatusHistory(orderId = order.id, toStatus = CONFIRMED, note = "Payment settled via Paystack")
-                        PushNotificationToKitchen(order.orderNumber, "Order Paid & Ready for Preparation")
-                        PushNotificationToCustomer(order.orderNumber, "Payment Confirmed")
-            COMMIT TRANSACTION
-            RETURN HTTP 200 OK
-    ELSE:
-        RETURN HTTP 200 OK  // Acknowledge other event types idempotently
-```
-
----
+1. **Payload Validation:** Incoming checkout requests (containing only menu item IDs, option IDs, quantities, fulfilment method, and Sunyani locality) are validated against strict Zod schemas, rejecting malformed inputs or invalid Ghanaian phone formats immediately.
+2. **Authoritative Price Re-Fetch & Integer Calculation:** The Next.js Server Action queries PostgreSQL directly for current `basePricePesewas` and `priceDeltaPesewas` values, verifies `isAvailable` flags, resolves the Sunyani delivery fee from `SUNYANI_DELIVERY_ZONES`, and computes `totalPesewas` strictly in integer pesewas.
+3. **Immutable Order Snapshotting:** Inside an atomic database transaction, the server generates a unique tracking number (`SC-YYYY-XXXX`), registers the `Order` as `PENDING`, and writes immutable `OrderItem` snapshots alongside an initial `OrderStatusHistory` entry.
+4. **Payment Channel Branching:** For cash orders, the order advances directly to `CONFIRMED` and alerts the Kitchen Display System. For Paystack orders, the server calls `POST /transaction/initialize` with the integer pesewas total and returns the checkout URL to the client.
+5. **Cryptographic Webhook Settlement:** Upon Mobile Money or card authorization, Paystack transmits an asynchronous `POST` webhook to `/api/webhooks/paystack`. The server computes the HMAC SHA-512 digest of the raw request body using `PAYSTACK_SECRET_KEY`, validates `x-paystack-signature` with `crypto.timingSafeEqual()`, logs the unique `eventId` idempotently, and atomically transitions the order to `PAID` and `CONFIRMED`.
 
 ### 3.6.2 Process Flowchart
 
@@ -866,7 +775,7 @@ To ensure maximum visual legibility and eliminate the vertical distortion observ
 * **Lane 2 (Server-Authoritative Engine):** Payload validation, authoritative database fetch, integer pesewas calculation, and order snapshotting.
 * **Lane 3 (Payment Gateway & Kitchen Fulfilment):** Paystack checkout initialization, USSD mobile money clearing, cryptographic HMAC SHA-512 webhook verification, and live kitchen state transition.
 
-Figure 3.6 illustrates the complete flowchart. A full-width, high-resolution rendering ($2400 \times 1600\text{ px}$ at 300 DPI) is available at [docs/figures/figure_3_6_flowchart.png](file:///C:/Users/CLm/Desktop/Sika%20Cuisine/docs/figures/figure_3_6_flowchart.png).
+Figure 3.6 illustrates the complete flowchart. A full-width, high-resolution rendering ($1920 \times 1360\text{ px}$ at 300 DPI) is available at [docs/figures/figure_3_6_flowchart.png](file:///C:/Users/CLm/Desktop/Sika%20Cuisine/docs/figures/figure_3_6_flowchart.png).
 
 ```mermaid
 flowchart TB
@@ -962,7 +871,7 @@ This chapter has detailed the software engineering methodology, requirements ana
 2. **Requirements:** Twelve functional requirements and five core non-functional requirements were established, emphasizing zero arithmetic drift, sub-second web performance, OWASP API security, and mobile offline fault tolerance.
 3. **UML Modeling:** Structural and behavioral models (Use Case, Domain Class, Sequence, and State Machine diagrams) formally defined actor boundaries, entity relationships, asynchronous checkout sequences, and immutable kitchen state transitions.
 4. **Architectural Design:** The modular monorepo architecture was delineated, illustrating how `@sika/shared` bridges the Next.js 16 web application and the Expo 58 mobile application with a PostgreSQL database and Paystack payment gateway.
-5. **Algorithmic Rigor:** Algorithm 3.1 and Figure 3.6 formalized the server-authoritative checkout pipeline and cryptographic HMAC SHA-512 webhook verification, eliminating client-side price tampering and floating-point drift.
+5. **Process Flow & Settlement Rigor:** Section 3.6 and Figure 3.6 formalized the server-authoritative checkout pipeline and cryptographic HMAC SHA-512 webhook verification, eliminating client-side price tampering and floating-point drift.
 
 The structural and architectural specifications established in this chapter provide the engineering blueprint for Chapter Four, which documents the technical implementation, code structures, and empirical evaluation of the Sika Cuisine platform.
 

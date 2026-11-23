@@ -13,18 +13,32 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import {
+  buildOrderStatusHistoryNote,
+  canConfirmOrFulfilOrder,
+  shouldAutoRefundOrder,
   updateOrderStatusSchema,
   isValidOrderTransition,
   isRoleAuthorizedForTransition,
 } from "@sika/shared";
 import { getAuthUser } from "@/lib/auth/session";
+import { verifySameOriginMutation } from "@/lib/auth/csrf";
 import { prisma } from "@/lib/prisma";
+import { recordAuditLog } from "@/lib/audit";
+import { notifyOrderStatusChanged } from "@/lib/notifications";
+import { initiateOrderRefund } from "@/lib/payments";
 
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    if (!verifySameOriginMutation(req)) {
+      return NextResponse.json(
+        { success: false, error: "Cross-origin request rejected." },
+        { status: 403 }
+      );
+    }
+
     const { id } = await params;
     const session = await getAuthUser(req);
 
@@ -101,6 +115,46 @@ export async function PATCH(
       );
     }
 
+    // 3. Enforce Server-Side Payment Gate on Online Orders
+    const paymentGate = canConfirmOrFulfilOrder(
+      order.paymentMethod as any,
+      order.paymentStatus as any,
+      targetStatus
+    );
+
+    if (!paymentGate.allowed) {
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            paymentGate.reason ||
+            "Online Paystack payment must be verified before confirming or preparing this order.",
+        },
+        { status: 409 }
+      );
+    }
+
+    // Ownership enforcement for non-admin operational actors
+    if (session.role === "DELIVERY_RIDER" && order.assignedRiderId !== session.id) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "You can only update delivery orders assigned to you.",
+        },
+        { status: 403 }
+      );
+    }
+
+    if (session.role === "CUSTOMER" && order.customerId !== session.id) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "You can only cancel your own orders.",
+        },
+        { status: 403 }
+      );
+    }
+
     // 3. Atomically Update Order and Append Status History
     const updatedOrder = await prisma.$transaction(async (tx) => {
       const updateData: any = {
@@ -114,9 +168,18 @@ export async function PATCH(
         updateData.cancellationReason = cancellationReason;
       }
 
+      if (
+        order.paymentStatus === "PENDING" &&
+        ((targetStatus === "DELIVERED" && order.paymentMethod === "CASH_ON_DELIVERY") ||
+          (targetStatus === "COLLECTED" && order.paymentMethod === "CASH_ON_COLLECTION"))
+      ) {
+        updateData.paymentStatus = "PAID";
+      }
+
       const o = await tx.order.update({
         where: { id: order.id },
         data: updateData,
+        include: { items: true },
       });
 
       await tx.orderStatusHistory.create({
@@ -124,13 +187,71 @@ export async function PATCH(
           orderId: order.id,
           fromStatus: currentStatus,
           toStatus: targetStatus,
-          note: note || `Status updated to ${targetStatus} by ${session.fullName}.`,
+          note:
+            note ||
+            buildOrderStatusHistoryNote(targetStatus, {
+              fulfilmentType: order.fulfilmentType,
+            }),
           changedByUserId: session.id,
         },
       });
 
       return o;
     });
+
+    await recordAuditLog({
+      userId: session.id,
+      action: "ORDER_STATUS_UPDATED",
+      entityType: "Order",
+      entityId: order.id,
+      metadata: {
+        orderNumber: order.orderNumber,
+        fromStatus: currentStatus,
+        toStatus: targetStatus,
+      },
+      req,
+    });
+
+    let refundSummary: {
+      initiated: boolean;
+      status?: string;
+      error?: string;
+    } | null = null;
+    let finalPaymentStatus = updatedOrder.paymentStatus;
+
+    if (
+      shouldAutoRefundOrder(
+        order.paymentMethod as any,
+        order.paymentStatus as any,
+        targetStatus
+      )
+    ) {
+      const refundReason =
+        rejectionReason ||
+        cancellationReason ||
+        note ||
+        `Order ${targetStatus.toLowerCase()} by ${session.fullName}`;
+
+      const refundRes = await initiateOrderRefund({
+        orderId: order.id,
+        reason: refundReason,
+        initiatedByUserId: session.id,
+        initiatedByName: session.fullName,
+        req,
+      });
+
+      if (refundRes.paymentStatus) {
+        finalPaymentStatus = refundRes.paymentStatus as typeof finalPaymentStatus;
+      }
+
+      refundSummary = {
+        initiated: refundRes.initiated,
+        status: refundRes.paymentStatus,
+        error: refundRes.error,
+      };
+    }
+
+    void notifyOrderStatusChanged(updatedOrder, targetStatus).catch(() => {});
 
     return NextResponse.json({
       success: true,
@@ -139,8 +260,10 @@ export async function PATCH(
         id: updatedOrder.id,
         orderNumber: updatedOrder.orderNumber,
         fulfilmentStatus: updatedOrder.fulfilmentStatus,
+        paymentStatus: finalPaymentStatus,
         updatedAt: updatedOrder.updatedAt,
       },
+      refund: refundSummary,
     });
   } catch (error: any) {
     console.error("[API v1 Update Status Error]:", error);

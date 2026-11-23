@@ -17,12 +17,13 @@ import { Select } from "@/components/ui/Select";
 import { StaggerContainer, StaggerItem } from "@/components/ui/MotionPrimitives";
 
 type SortMode = "featured" | "price-asc" | "price-desc" | "prep-asc";
+const WEB_MENU_PAGE_SIZE = 12;
 
 function MenuContent() {
   const searchParams = useSearchParams();
   const initialCategory = searchParams.get("category") || "all";
 
-  const { addItem, setIsCartOpen } = useCart();
+  const { addItem, setIsCartOpen, totalCount } = useCart();
   const { success } = useToast();
   const cardRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
 
@@ -38,6 +39,7 @@ function MenuContent() {
 
   const [activeDishForModal, setActiveDishForModal] = useState<MenuItem | null>(null);
   const [showBackToTop, setShowBackToTop] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(WEB_MENU_PAGE_SIZE);
 
   const loadMenu = useCallback(async () => {
     setLoading(true);
@@ -119,6 +121,17 @@ function MenuContent() {
       return a.sortOrder - b.sortOrder;
     });
   }, [menuItems, selectedCategory, searchQuery, availableOnly, maxSpice, sortMode]);
+
+  useEffect(() => {
+    setVisibleCount(WEB_MENU_PAGE_SIZE);
+  }, [selectedCategory, searchQuery, availableOnly, maxSpice, sortMode]);
+
+  const visibleDishes = useMemo(
+    () => filteredDishes.slice(0, visibleCount),
+    [filteredDishes, visibleCount]
+  );
+  const remainingCount = Math.max(0, filteredDishes.length - visibleDishes.length);
+  const hasOddVisibleCount = visibleDishes.length > 1 && visibleDishes.length % 2 === 1;
 
   const resetFilters = () => {
     setSelectedCategory("all");
@@ -309,21 +322,47 @@ function MenuContent() {
             }
           />
         ) : (
-          <StaggerContainer className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-5 lg:gap-6">
-            {filteredDishes.map((dish) => (
-              <StaggerItem key={dish.id}>
-                <DishCard
-                  dish={dish}
-                  cardRef={(el) => {
-                    cardRefs.current[dish.id] = el;
-                  }}
-                  onSelectDish={setActiveDishForModal}
-                  onQuickAdd={handleQuickAdd}
-                  className="h-full"
-                />
-              </StaggerItem>
-            ))}
-          </StaggerContainer>
+          <div className="space-y-8">
+            <StaggerContainer className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-5 lg:gap-6">
+              {visibleDishes.map((dish, idx) => (
+                <StaggerItem
+                  key={dish.id}
+                  className={
+                    hasOddVisibleCount && idx === 0
+                      ? "col-span-2 lg:col-span-1"
+                      : undefined
+                  }
+                >
+                  <DishCard
+                    dish={dish}
+                    cardRef={(el) => {
+                      cardRefs.current[dish.id] = el;
+                    }}
+                    onSelectDish={setActiveDishForModal}
+                    onQuickAdd={handleQuickAdd}
+                    className="h-full"
+                  />
+                </StaggerItem>
+              ))}
+            </StaggerContainer>
+
+            {remainingCount > 0 && (
+              <div className="flex flex-col items-center gap-3 pt-2">
+                <p className="font-mono text-xs text-[#A3A3A3]">
+                  Showing {visibleDishes.length} of {filteredDishes.length} dishes
+                </p>
+                <Button
+                  variant="secondary"
+                  size="md"
+                  onClick={() =>
+                    setVisibleCount((prev) => prev + WEB_MENU_PAGE_SIZE)
+                  }
+                >
+                  Load More Dishes ({remainingCount} remaining)
+                </Button>
+              </div>
+            )}
+          </div>
         )}
       </div>
 
@@ -338,7 +377,9 @@ function MenuContent() {
         <button
           type="button"
           onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-          className="fixed bottom-6 right-6 z-40 flex h-11 w-11 items-center justify-center rounded-full border border-[#333333] bg-[#D71920] text-white shadow-[0_6px_20px_rgba(215,25,32,0.45)] hover:bg-[#A91017] active:scale-95 transition-all"
+          className={`fixed right-5 z-40 flex h-11 w-11 items-center justify-center rounded-full border border-[#333333] bg-[#D71920] text-white shadow-[0_6px_20px_rgba(215,25,32,0.45)] hover:bg-[#A91017] active:scale-95 transition-all ${
+            totalCount > 0 ? "bottom-24 lg:bottom-6 lg:right-6" : "bottom-6 right-6"
+          }`}
           aria-label="Scroll to top"
         >
           <ArrowUp className="h-5 w-5" aria-hidden="true" />

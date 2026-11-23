@@ -1,0 +1,46 @@
+name: Sika Cuisine CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  quality-gate:
+    name: Validate Schema, Tests, Typecheck & Web Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Validate Prisma Schema
+        run: npx prisma validate
+
+      - name: Generate Prisma Client
+        run: npx prisma generate
+
+      - name: Run Shared Domain & Security Tests
+        run: npm test
+
+      - name: Typecheck Web Application
+        run: npx tsc --noEmit -p apps/web/tsconfig.json
+
+      - name: Typecheck Mobile Application
+        run: npm run typecheck --workspace=@sika/mobile
+
+      - name: Build Web Production Bundle
+        env:
+          AUTH_SECRET: "ci_only_ephemeral_32_byte_secret_for_build_check"
+          NEXT_PUBLIC_APP_URL: "https://sikacuisine.com"
+        run: npm run build --workspace=@sika/web

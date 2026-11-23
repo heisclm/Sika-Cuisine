@@ -1,12 +1,30 @@
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 import { Role } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
 
 const SESSION_COOKIE_NAME = "sika_session_token";
-const DEFAULT_SECRET = "sika_cuisine_super_secret_jwt_key_2026_sunyani_ghana_min_32_chars";
-const SECRET_KEY = new TextEncoder().encode(
-  process.env.AUTH_SECRET || process.env.JWT_SECRET || DEFAULT_SECRET
-);
+const DEV_FALLBACK_SECRET =
+  "sika_cuisine_dev_only_secret_key_sunyani_ghana_min_32_bytes";
+
+/**
+ * Resolves the HMAC-SHA256 signing key lazily at request time.
+ * Fails hard in production if AUTH_SECRET / JWT_SECRET is absent or under 32 characters.
+ */
+function getJwtSecretKey(): Uint8Array {
+  const configured = process.env.AUTH_SECRET || process.env.JWT_SECRET;
+  if (configured && configured.trim().length >= 32) {
+    return new TextEncoder().encode(configured.trim());
+  }
+
+  if (process.env.NODE_ENV === "production") {
+    throw new Error(
+      "Security configuration error: AUTH_SECRET or JWT_SECRET (min 32 chars) must be set in production."
+    );
+  }
+
+  return new TextEncoder().encode(DEV_FALLBACK_SECRET);
+}
 
 export interface SessionUser {
   id: string;
@@ -14,6 +32,43 @@ export interface SessionUser {
   fullName: string;
   phone: string;
   role: Role;
+  createdAt?: string;
+  tokenIssuedAt?: number;
+}
+
+export type AuthVerificationResult =
+  | { state: "authenticated"; user: SessionUser }
+  | { state: "unauthenticated" | "revoked" }
+  | { state: "db_unavailable"; fallbackUser: SessionUser };
+
+const USER_STATUS_CACHE_TTL_MS = 15_000;
+const MAX_USER_CACHE_ENTRIES = 500;
+const userStatusCache = new Map<
+  string,
+  { user: SessionUser | null; passwordChangedAtMs: number | null; expiresAt: number }
+>();
+
+/**
+ * Immediately clears a cached auth verification record after an account deactivation, password reset, or role change.
+ */
+export function invalidateUserSessionCache(userId: string): void {
+  userStatusCache.delete(userId);
+}
+
+function writeUserStatusCache(
+  userId: string,
+  user: SessionUser | null,
+  passwordChangedAtMs: number | null = null
+): void {
+  if (userStatusCache.size >= MAX_USER_CACHE_ENTRIES) {
+    const oldestKey = userStatusCache.keys().next().value;
+    if (oldestKey) userStatusCache.delete(oldestKey);
+  }
+  userStatusCache.set(userId, {
+    user,
+    passwordChangedAtMs,
+    expiresAt: Date.now() + USER_STATUS_CACHE_TTL_MS,
+  });
 }
 
 /**
@@ -30,7 +85,7 @@ export async function createSessionToken(user: SessionUser): Promise<string> {
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime("7d")
-    .sign(SECRET_KEY);
+    .sign(getJwtSecretKey());
 }
 
 /**
@@ -38,7 +93,7 @@ export async function createSessionToken(user: SessionUser): Promise<string> {
  */
 export async function verifySessionToken(token: string): Promise<SessionUser | null> {
   try {
-    const { payload } = await jwtVerify(token, SECRET_KEY, {
+    const { payload } = await jwtVerify(token, getJwtSecretKey(), {
       algorithms: ["HS256"],
     });
 
@@ -48,6 +103,7 @@ export async function verifySessionToken(token: string): Promise<SessionUser | n
       fullName: payload.fullName as string,
       phone: payload.phone as string,
       role: payload.role as Role,
+      tokenIssuedAt: typeof payload.iat === "number" ? payload.iat : undefined,
     };
   } catch {
     return null;
@@ -79,25 +135,114 @@ export async function getSession(): Promise<SessionUser | null> {
 }
 
 /**
- * Dual-mode authenticator: reads Authorization Bearer token (for mobile)
- * or falls back to HttpOnly cookie (for web).
+ * Verifies Bearer or HttpOnly cookie JWT and checks live account `isActive` + `role`
+ * against PostgreSQL (with a 15-second per-user cache to collapse concurrent dashboard bursts).
+ * Distinguishes explicit account deactivation (`revoked`) from transient DB connectivity failures
+ * (`db_unavailable`) so temporary network timeouts never wipe valid user cookies.
  */
-export async function getAuthUser(req?: Request): Promise<SessionUser | null> {
+export async function verifyAuthUserStatus(
+  req?: Request
+): Promise<AuthVerificationResult> {
+  let verified: SessionUser | null = null;
+
   if (req) {
     const authHeader = req.headers.get("authorization");
     if (authHeader && authHeader.startsWith("Bearer ")) {
       const bearerToken = authHeader.substring(7).trim();
-      const verified = await verifySessionToken(bearerToken);
-      if (verified) return verified;
+      verified = await verifySessionToken(bearerToken);
     }
   }
 
-  // Fallback to cookie
-  try {
-    return await getSession();
-  } catch {
-    return null;
+  if (!verified) {
+    try {
+      verified = await getSession();
+    } catch {
+      verified = null;
+    }
   }
+
+  if (!verified) {
+    return { state: "unauthenticated" };
+  }
+
+  if (!process.env.DATABASE_URL?.trim()) {
+    return { state: "authenticated", user: verified };
+  }
+
+  const isTokenRevokedByPasswordChange = (
+    passwordChangedAtMs: number | null,
+    tokenIssuedAt?: number
+  ): boolean => {
+    if (!passwordChangedAtMs || !tokenIssuedAt) return false;
+    // Allow 2s clock tolerance between token creation and passwordChangedAt write
+    return tokenIssuedAt < Math.floor(passwordChangedAtMs / 1000) - 2;
+  };
+
+  const cached = userStatusCache.get(verified.id);
+  if (cached && cached.expiresAt > Date.now()) {
+    if (
+      !cached.user ||
+      isTokenRevokedByPasswordChange(cached.passwordChangedAtMs, verified.tokenIssuedAt)
+    ) {
+      return { state: "revoked" };
+    }
+    return { state: "authenticated", user: cached.user };
+  }
+
+  try {
+    const dbUser = await prisma.user.findUnique({
+      where: { id: verified.id },
+      select: {
+        id: true,
+        email: true,
+        fullName: true,
+        phone: true,
+        role: true,
+        isActive: true,
+        passwordChangedAt: true,
+        createdAt: true,
+      },
+    });
+
+    if (!dbUser || !dbUser.isActive) {
+      writeUserStatusCache(verified.id, null, null);
+      return { state: "revoked" };
+    }
+
+    const passwordChangedAtMs = dbUser.passwordChangedAt
+      ? dbUser.passwordChangedAt.getTime()
+      : null;
+
+    const freshUser: SessionUser = {
+      id: dbUser.id,
+      email: dbUser.email,
+      fullName: dbUser.fullName,
+      phone: dbUser.phone,
+      role: dbUser.role,
+      createdAt: dbUser.createdAt.toISOString(),
+    };
+    writeUserStatusCache(verified.id, freshUser, passwordChangedAtMs);
+
+    if (isTokenRevokedByPasswordChange(passwordChangedAtMs, verified.tokenIssuedAt)) {
+      return { state: "revoked" };
+    }
+    return { state: "authenticated", user: freshUser };
+  } catch (err) {
+    console.warn("[AuthSession] Live DB verification failed:", err);
+    return { state: "db_unavailable", fallbackUser: verified };
+  }
+}
+
+/**
+ * Dual-mode fail-closed authenticator used across protected API routes.
+ * Returns the verified active user or `null`.
+ */
+export async function getAuthUser(req?: Request): Promise<SessionUser | null> {
+  const verification = await verifyAuthUserStatus(req);
+  if (verification.state === "authenticated") {
+    return verification.user;
+  }
+  return null;
 }
 
 /**

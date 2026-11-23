@@ -1,19 +1,25 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowRight, CheckCircle2, Eye, EyeOff, Lock, Mail, Phone, User } from "lucide-react";
+import { formatFirstName, resolveCustomerAuthRedirect } from "@sika/shared";
 import { Logo } from "@/components/brand/Logo";
 import { Button } from "@/components/ui/Button";
 import { PageReveal } from "@/components/ui/MotionPrimitives";
+import { useCart } from "@/context/CartContext";
+import { useToast } from "@/context/ToastContext";
 
 /**
  * Customer account registration page calling `POST /api/v1/auth/register`.
- * Validates password confirmation client-side and redirects directly to `/account`.
+ * Validates password confirmation client-side and redirects to `returnTo`, `/checkout` (if tray has items), or `/`.
  */
 export default function RegisterPage() {
   const router = useRouter();
+  const { syncCartSession } = useCart();
+  const { success: toastSuccess } = useToast();
+  const [returnTo, setReturnTo] = useState<string | null>(null);
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
@@ -24,6 +30,14 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [resolvedCartCount, setResolvedCartCount] = useState(0);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      setReturnTo(params.get("returnTo"));
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,11 +77,27 @@ export default function RegisterPage() {
         return;
       }
 
+      const firstName = formatFirstName(fullName, "Guest");
+      const cartCount = syncCartSession(
+        typeof data.user?.id === "string" ? data.user.id : null
+      );
+      setResolvedCartCount(cartCount);
+      const targetPath = resolveCustomerAuthRedirect({
+        returnTo,
+        cartItemCount: cartCount,
+      });
+
       setSuccess(true);
+      toastSuccess(
+        `Welcome to Sika Cuisine, ${firstName}`,
+        targetPath === "/checkout"
+          ? "Your new account details are pre-filled for checkout."
+          : "Your account is ready — let's find something delicious."
+      );
       setTimeout(() => {
-        router.push("/account");
+        router.push(targetPath);
         router.refresh();
-      }, 900);
+      }, 700);
     } catch {
       setError("Network connection error. Please check your internet and try again.");
       setLoading(false);
@@ -82,10 +112,10 @@ export default function RegisterPage() {
             <CheckCircle2 className="h-7 w-7" aria-hidden="true" />
           </div>
           <h1 className="font-serif text-2xl font-bold text-[#F5F1EA]">
-            Account Created
+            Welcome, {formatFirstName(fullName, "Guest")}!
           </h1>
           <p className="text-sm text-[#A3A3A3]">
-            Welcome to Sika Cuisine Sunyani. Opening your customer account...
+            Taking you to {resolvedCartCount > 0 ? "checkout" : "the Sika Cuisine menu"}...
           </p>
         </PageReveal>
       </div>

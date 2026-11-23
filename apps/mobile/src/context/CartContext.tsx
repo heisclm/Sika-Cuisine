@@ -12,8 +12,12 @@
  *    references, ensuring seamless React render cycles.
  */
 
-import React, { createContext, useContext, useState, useMemo } from "react";
-import { MenuItemDTO, calculateLineTotalPesewas } from "@sika/shared";
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { MenuItemDTO, calculateLineTotalPesewas, resolveCartOwnerTransition } from "@sika/shared";
+import { apiRequest } from "../services/api-client";
+
+export type MobileUnavailableReason = "SOLD_OUT" | "REMOVED";
 
 /**
  * Snapshot of a selected dish customization option (e.g. "Smoky Jollof Rice", "+GH₵ 0.00").
@@ -48,17 +52,140 @@ interface CartContextType {
   removeItem: (cartItemId: string) => void;
   updateQuantity: (cartItemId: string, newQuantity: number) => void;
   clearCart: () => void;
+  clearCartOnSignOut: () => Promise<void>;
+  syncCartOwner: (nextUserId: string | null) => Promise<number>;
+  unavailableMenuItemIds: Record<string, MobileUnavailableReason>;
+  unavailableCount: number;
+  checkingAvailability: boolean;
+  refreshCartAvailability: () => Promise<Record<string, MobileUnavailableReason>>;
+  markItemsUnavailable: (menuItemIds: string[], reason?: MobileUnavailableReason) => void;
+  removeUnavailableItems: () => void;
   cartSubtotalPesewas: number;
   totalItemCount: number;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
+const MOBILE_ACTIVE_CART_KEY = "@sika_mobile_cart_v1";
+const MOBILE_USER_CART_PREFIX = "@sika_mobile_cart_v1:user:";
+
+interface MobileCartEnvelope {
+  ownerUserId: string | null;
+  items: CartItem[];
+}
+
+async function readUserCartFromStorage(userId: string): Promise<CartItem[]> {
+  try {
+    const raw = await AsyncStorage.getItem(`${MOBILE_USER_CART_PREFIX}${userId}`);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? (parsed as CartItem[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+async function writeUserCartToStorage(userId: string, items: CartItem[]): Promise<void> {
+  try {
+    await AsyncStorage.setItem(`${MOBILE_USER_CART_PREFIX}${userId}`, JSON.stringify(items));
+  } catch {
+  }
+}
+
 /**
- * CartProvider wraps the mobile application to provide reactive cart state and math across all screens.
+ * CartProvider wraps the mobile application to provide reactive, user-scoped cart state
+ * persisted cleanly in AsyncStorage without leaking trays across account switches.
  */
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
+  const [ownerUserId, setOwnerUserId] = useState<string | null>(null);
+  const [isHydrated, setIsHydrated] = useState(false);
+  const [unavailableMenuItemIds, setUnavailableMenuItemIds] = useState<
+    Record<string, MobileUnavailableReason>
+  >({});
+  const [checkingAvailability, setCheckingAvailability] = useState(false);
+
+  const itemsRef = useRef<CartItem[]>(items);
+  const ownerUserIdRef = useRef<string | null>(ownerUserId);
+
+  useEffect(() => {
+    itemsRef.current = items;
+  }, [items]);
+
+  useEffect(() => {
+    ownerUserIdRef.current = ownerUserId;
+  }, [ownerUserId]);
+
+  useEffect(() => {
+    let active = true;
+    AsyncStorage.getItem(MOBILE_ACTIVE_CART_KEY)
+      .then((raw) => {
+        if (!active || !raw) return;
+        const parsed = JSON.parse(raw) as Partial<MobileCartEnvelope>;
+        if (Array.isArray(parsed.items)) {
+          itemsRef.current = parsed.items;
+          ownerUserIdRef.current =
+            typeof parsed.ownerUserId === "string" ? parsed.ownerUserId : null;
+          setItems(parsed.items);
+          setOwnerUserId(ownerUserIdRef.current);
+        }
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (active) setIsHydrated(true);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isHydrated) return;
+    const envelope: MobileCartEnvelope = { ownerUserId, items };
+    void AsyncStorage.setItem(MOBILE_ACTIVE_CART_KEY, JSON.stringify(envelope)).catch(
+      () => {}
+    );
+    if (ownerUserId) {
+      void writeUserCartToStorage(ownerUserId, items);
+    }
+  }, [items, ownerUserId, isHydrated]);
+
+  const syncCartOwner = useCallback(async (nextUserId: string | null): Promise<number> => {
+    const currentItems = itemsRef.current;
+    const currentOwnerId = ownerUserIdRef.current;
+    const nextUserSavedItems = nextUserId
+      ? await readUserCartFromStorage(nextUserId)
+      : [];
+
+    const transition = resolveCartOwnerTransition<CartItem>({
+      currentOwnerId,
+      nextOwnerId: nextUserId,
+      currentItems,
+      nextUserSavedItems,
+    });
+
+    if (transition.shouldPersistOutOwnerId) {
+      await writeUserCartToStorage(transition.shouldPersistOutOwnerId, currentItems);
+    }
+
+    ownerUserIdRef.current = transition.nextOwnerId;
+    itemsRef.current = transition.nextItems;
+    setOwnerUserId(transition.nextOwnerId);
+    setItems(transition.nextItems);
+
+    if (transition.nextOwnerId) {
+      await writeUserCartToStorage(transition.nextOwnerId, transition.nextItems);
+    }
+    const envelope: MobileCartEnvelope = {
+      ownerUserId: transition.nextOwnerId,
+      items: transition.nextItems,
+    };
+    await AsyncStorage.setItem(MOBILE_ACTIVE_CART_KEY, JSON.stringify(envelope)).catch(
+      () => {}
+    );
+
+    return transition.nextItems.reduce((sum, i) => sum + i.quantity, 0);
+  }, []);
 
   /**
    * Adds a portion of a dish to the cart. If an identical configuration already exists, increments its quantity.
@@ -148,9 +275,122 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   /**
    * Flushes all items from the cart.
    */
-  const clearCart = () => {
+  const clearCart = useCallback(() => {
     setItems([]);
-  };
+    setUnavailableMenuItemIds({});
+  }, []);
+
+  /**
+   * Clears the active tray and persisted active envelope on sign-out so the
+   * next account using the device starts cleanly without inheriting prior items.
+   */
+  const clearCartOnSignOut = useCallback(async () => {
+    if (ownerUserIdRef.current) {
+      await writeUserCartToStorage(ownerUserIdRef.current, []);
+    }
+    ownerUserIdRef.current = null;
+    itemsRef.current = [];
+    setOwnerUserId(null);
+    setItems([]);
+    setUnavailableMenuItemIds({});
+    await AsyncStorage.removeItem(MOBILE_ACTIVE_CART_KEY).catch(() => {});
+  }, []);
+
+  const markItemsUnavailable = useCallback(
+    (menuItemIds: string[], reason: MobileUnavailableReason = "SOLD_OUT") => {
+      if (!menuItemIds.length) return;
+      setUnavailableMenuItemIds((prev) => {
+        const next = { ...prev };
+        menuItemIds.forEach((id) => {
+          if (id) next[id] = reason;
+        });
+        return next;
+      });
+    },
+    []
+  );
+
+  const removeUnavailableItems = useCallback(() => {
+    setItems((prev) =>
+      prev.filter((item) => !unavailableMenuItemIds[item.menuItem.id])
+    );
+    setUnavailableMenuItemIds({});
+  }, [unavailableMenuItemIds]);
+
+  const refreshCartAvailability = useCallback(async (): Promise<
+    Record<string, MobileUnavailableReason>
+  > => {
+    if (itemsRef.current.length === 0) {
+      setUnavailableMenuItemIds({});
+      return {};
+    }
+
+    setCheckingAvailability(true);
+    try {
+      const res = await apiRequest<{ success: boolean; items: MenuItemDTO[] }>(
+        "/menu/items?includeUnavailable=true"
+      );
+      if (!res.success || !Array.isArray(res.data?.items)) {
+        return unavailableMenuItemIds;
+      }
+
+      const liveById = new Map<string, MenuItemDTO>(
+        res.data.items.map((m) => [m.id, m])
+      );
+      const nextUnavailable: Record<string, MobileUnavailableReason> = {};
+      let changed = false;
+
+      const updatedItems = itemsRef.current.map((cartItem) => {
+        const live = liveById.get(cartItem.menuItem.id);
+        if (!live) {
+          nextUnavailable[cartItem.menuItem.id] = "REMOVED";
+          return cartItem;
+        }
+        if (!live.isAvailable) {
+          nextUnavailable[cartItem.menuItem.id] = "SOLD_OUT";
+        }
+        if (
+          live.basePricePesewas !== cartItem.menuItem.basePricePesewas ||
+          live.imageUrl !== cartItem.menuItem.imageUrl ||
+          live.name !== cartItem.menuItem.name
+        ) {
+          changed = true;
+          const optionsDelta = cartItem.selectedOptions.reduce(
+            (acc, opt) => acc + opt.priceDeltaPesewas,
+            0
+          );
+          return {
+            ...cartItem,
+            menuItem: live,
+            unitPricePesewas: live.basePricePesewas + optionsDelta,
+            subtotalPesewas: calculateLineTotalPesewas(
+              live.basePricePesewas,
+              cartItem.quantity,
+              optionsDelta
+            ),
+          };
+        }
+        return cartItem;
+      });
+
+      if (changed) {
+        itemsRef.current = updatedItems;
+        setItems(updatedItems);
+      }
+
+      setUnavailableMenuItemIds(nextUnavailable);
+      return nextUnavailable;
+    } finally {
+      setCheckingAvailability(false);
+    }
+  }, [unavailableMenuItemIds]);
+
+  const unavailableCount = useMemo(
+    () =>
+      items.filter((item) => Boolean(unavailableMenuItemIds[item.menuItem.id]))
+        .length,
+    [items, unavailableMenuItemIds]
+  );
 
   /**
    * Running subtotal of all items in integer pesewas.
@@ -174,6 +414,14 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         removeItem,
         updateQuantity,
         clearCart,
+        clearCartOnSignOut,
+        syncCartOwner,
+        unavailableMenuItemIds,
+        unavailableCount,
+        checkingAvailability,
+        refreshCartAvailability,
+        markItemsUnavailable,
+        removeUnavailableItems,
         cartSubtotalPesewas,
         totalItemCount,
       }}

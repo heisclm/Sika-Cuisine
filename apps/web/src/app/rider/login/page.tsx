@@ -1,9 +1,20 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, ArrowRight, Bike, Eye, EyeOff, Lock, Mail } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Bike,
+  Eye,
+  EyeOff,
+  Lock,
+  LogOut,
+  Mail,
+  ShieldAlert,
+} from "lucide-react";
+import { getDashboardForRole } from "@sika/shared";
 import { Logo } from "@/components/brand/Logo";
 import { Button } from "@/components/ui/Button";
 import { PageReveal } from "@/components/ui/MotionPrimitives";
@@ -18,7 +29,56 @@ export default function RiderLoginPage() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [checkingSession, setCheckingSession] = useState(true);
+  const [customerSession, setCustomerSession] = useState<{
+    fullName: string;
+    email: string;
+  } | null>(null);
+  const [switchingAccount, setSwitchingAccount] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    fetch("/api/v1/auth/me", { cache: "no-store" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!active) return;
+        const user = data?.user;
+        if (
+          user &&
+          ["DELIVERY_RIDER", "ADMIN", "STAFF_CASHIER", "STAFF_KITCHEN"].includes(
+            user.role
+          )
+        ) {
+          router.replace(getDashboardForRole(user.role).path);
+          return;
+        }
+        if (user && user.role === "CUSTOMER") {
+          setCustomerSession({
+            fullName: user.fullName || "Customer",
+            email: user.email || "",
+          });
+        }
+        setCheckingSession(false);
+      })
+      .catch(() => {
+        if (active) setCheckingSession(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [router]);
+
+  const handleSwitchFromCustomer = async () => {
+    setSwitchingAccount(true);
+    try {
+      await fetch("/api/v1/auth/logout", { method: "POST" });
+      setCustomerSession(null);
+      router.refresh();
+    } finally {
+      setSwitchingAccount(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,6 +113,66 @@ export default function RiderLoginPage() {
       setLoading(false);
     }
   };
+
+  if (checkingSession) {
+    return (
+      <div className="min-h-[calc(100vh-80px)] bg-[#101010] px-4 py-12 flex items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#D71920] border-t-transparent" />
+      </div>
+    );
+  }
+
+  if (customerSession) {
+    return (
+      <div className="min-h-[calc(100vh-80px)] bg-[#101010] px-4 py-12 flex items-center justify-center">
+        <PageReveal className="w-full max-w-md rounded-3xl border border-[#333333] bg-[#1C1C1C] p-6 sm:p-8 shadow-2xl space-y-6 text-center">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full border border-[#EAB308]/40 bg-[#EAB308]/10 text-[#FACC15]">
+            <ShieldAlert className="h-7 w-7" aria-hidden="true" />
+          </div>
+
+          <div className="space-y-2">
+            <span className="inline-block rounded-full border border-[#EAB308]/35 bg-[#EAB308]/10 px-3 py-1 font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-[#FACC15]">
+              Customer Session Active
+            </span>
+            <h1 className="font-serif text-2xl sm:text-3xl font-bold text-white">
+              Rider Portal Restricted
+            </h1>
+            <p className="text-xs sm:text-sm text-[#A3A3A3] leading-relaxed">
+              You are currently signed in as{" "}
+              <strong className="text-[#F5F1EA]">{customerSession.fullName}</strong>
+              {customerSession.email ? ` (${customerSession.email})` : ""}. The
+              Rider Dispatch Portal requires an authorized courier account.
+            </p>
+          </div>
+
+          <div className="space-y-3 pt-2">
+            <Button
+              type="button"
+              variant="primary"
+              size="lg"
+              fullWidth
+              onClick={() => router.push("/")}
+            >
+              <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+              <span>Return to Storefront</span>
+            </Button>
+
+            <Button
+              type="button"
+              variant="secondary"
+              size="md"
+              fullWidth
+              loading={switchingAccount}
+              onClick={handleSwitchFromCustomer}
+            >
+              <LogOut className="h-4 w-4 text-[#F0444A]" aria-hidden="true" />
+              <span>Sign Out &amp; Switch to Rider Account</span>
+            </Button>
+          </div>
+        </PageReveal>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-[calc(100vh-80px)] bg-[#101010] px-4 py-12 flex items-center justify-center">

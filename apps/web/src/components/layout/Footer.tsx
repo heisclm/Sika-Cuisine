@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   MapPin,
   Phone,
@@ -12,11 +13,32 @@ import {
   Smartphone,
   Navigation,
 } from "lucide-react";
+import { getDashboardForRole } from "@sika/shared";
 import { Logo } from "@/components/brand/Logo";
 import { CUSTOMER_NAV_LINKS, RESTAURANT_INFO } from "@/lib/navigation";
+import { usePublicConfig } from "@/context/PublicConfigContext";
 
 export function Footer() {
-  const [isKitchenOpen, setIsKitchenOpen] = useState(true);
+  const pathname = usePathname();
+  const { restaurant } = usePublicConfig();
+  const [isWithinHours, setIsWithinHours] = useState(true);
+  const [sessionRole, setSessionRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    fetch("/api/v1/auth/me", { cache: "no-store" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!active) return;
+        setSessionRole(data?.user?.role || null);
+      })
+      .catch(() => {
+        if (active) setSessionRole(null);
+      });
+    return () => {
+      active = false;
+    };
+  }, [pathname]);
 
   // Compute Sunyani operating status cleanly against GMT / UTC+0
   useEffect(() => {
@@ -25,9 +47,9 @@ export function Footer() {
       const utcHours = now.getUTCHours();
       const utcDay = now.getUTCDay();
       if (utcDay === 0) {
-        setIsKitchenOpen(utcHours >= 12 && utcHours < 21);
+        setIsWithinHours(utcHours >= 12 && utcHours < 21);
       } else {
-        setIsKitchenOpen(utcHours >= 10 && utcHours < 22);
+        setIsWithinHours(utcHours >= 10 && utcHours < 22);
       }
     };
 
@@ -35,6 +57,8 @@ export function Footer() {
     const interval = window.setInterval(checkKitchenStatus, 60000);
     return () => window.clearInterval(interval);
   }, []);
+
+  const effectiveOpen = restaurant.isAcceptingOrders && isWithinHours;
 
   return (
     <footer className="w-full border-t border-[#333333] bg-[#101010] text-[#A3A3A3] pt-14 pb-10">
@@ -129,42 +153,46 @@ export function Footer() {
                 </h4>
                 <span
                   className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[10px] font-bold ${
-                    isKitchenOpen
+                    effectiveOpen
                       ? "border-[#22C55E]/35 bg-[#22C55E]/15 text-[#4ADE80]"
                       : "border-[#333333] bg-[#1C1C1C] text-[#A3A3A3]"
                   }`}
                 >
                   <span
                     className={`h-1.5 w-1.5 rounded-full ${
-                      isKitchenOpen ? "bg-[#22C55E]" : "bg-[#737373]"
+                      effectiveOpen ? "bg-[#22C55E]" : "bg-[#737373]"
                     }`}
                   />
-                  {isKitchenOpen ? "Open" : "Closed"}
+                  {effectiveOpen
+                    ? "Open"
+                    : !restaurant.isAcceptingOrders
+                    ? "Closed (Paused)"
+                    : "Closed"}
                 </span>
               </div>
 
               <div className="rounded-2xl border border-[#333333] bg-[#1C1C1C] p-3 text-xs space-y-1.5">
                 <div className="flex justify-between text-[#F5F1EA]">
                   <span className="font-medium">Mon — Sat</span>
-                  <span className="font-mono text-[#A3A3A3]">10:00 AM – 10:00 PM</span>
+                  <span className="font-mono text-[#A3A3A3]">{restaurant.weekdayHours}</span>
                 </div>
                 <div className="flex justify-between border-t border-[#333333] pt-1.5 text-[#F5F1EA]">
                   <span className="font-medium">Sunday</span>
-                  <span className="font-mono text-[#A3A3A3]">12:00 PM – 9:00 PM</span>
+                  <span className="font-mono text-[#A3A3A3]">{restaurant.sundayHours}</span>
                 </div>
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-2 text-xs">
               <a
-                href={`tel:${RESTAURANT_INFO.primaryPhoneIntl}`}
+                href={`tel:${restaurant.phone.replace(/\s+/g, "")}`}
                 className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-[#333333] bg-[#1C1C1C] hover:border-[#D71920]/50 px-3 py-2.5 font-mono font-semibold text-[#F5F1EA] transition-colors"
               >
                 <Phone className="h-3.5 w-3.5 text-[#F0444A]" aria-hidden="true" />
-                <span>{RESTAURANT_INFO.primaryPhone}</span>
+                <span>{restaurant.phone}</span>
               </a>
               <a
-                href={`${RESTAURANT_INFO.whatsappBaseUrl}?text=Hello%20Sika%20Cuisine,%20I%20would%20like%20to%20order`}
+                href={`https://wa.me/${restaurant.whatsapp.replace(/[^0-9]/g, "")}?text=Hello%20Sika%20Cuisine,%20I%20would%20like%20to%20order`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-[#22C55E]/35 bg-[#22C55E]/10 hover:bg-[#22C55E]/20 px-3 py-2.5 font-semibold text-[#4ADE80] transition-colors"
@@ -215,9 +243,25 @@ export function Footer() {
             <Link href="/privacy" className="hover:text-[#F5F1EA] transition-colors">
               Privacy
             </Link>
-            <Link href="/admin/login" className="hover:text-[#F5F1EA] transition-colors">
-              Staff Terminal
-            </Link>
+            {sessionRole === "CUSTOMER" ? (
+              <Link href="/account" className="hover:text-[#F5F1EA] transition-colors">
+                My Account
+              </Link>
+            ) : sessionRole &&
+              ["ADMIN", "STAFF_CASHIER", "STAFF_KITCHEN", "DELIVERY_RIDER"].includes(
+                sessionRole
+              ) ? (
+              <Link
+                href={getDashboardForRole(sessionRole).path}
+                className="font-semibold text-[#F0444A] hover:text-white transition-colors"
+              >
+                {getDashboardForRole(sessionRole).label}
+              </Link>
+            ) : (
+              <Link href="/admin/login" className="hover:text-[#F5F1EA] transition-colors">
+                Staff Terminal
+              </Link>
+            )}
           </div>
         </div>
       </div>

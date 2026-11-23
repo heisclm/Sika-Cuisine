@@ -1,6 +1,16 @@
 import React from "react";
+import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, ChefHat, Clock, Flame, MapPin, Phone, ShieldCheck, UtensilsCrossed } from "lucide-react";
+
+export const metadata: Metadata = {
+  title: "About Our Sunyani Kitchen",
+  description:
+    "Discover Sika Cuisine on Commercial Street in Sunyani Central — charcoal-grilled whole tilapia, smoky jollof rice, clay-pot Ghanaian soups, and doorstep delivery across Bono Region.",
+  alternates: {
+    canonical: "/about",
+  },
+};
 import { RESTAURANT_INFO } from "@/lib/navigation";
 import { SUNYANI_DELIVERY_ZONES } from "@/lib/delivery-zones";
 import { formatPesewasToGhs } from "@/lib/currency";
@@ -8,21 +18,21 @@ import { formatPesewasToGhs } from "@/lib/currency";
 const KITCHEN_PILLARS = [
   {
     icon: Flame,
-    title: "Charcoal & Clay-Pot Craft",
+    title: "Cooked Fresh Over Live Coals",
     description:
-      "Every whole tilapia is seasoned with Sunyani herbs and grilled to order over live hardwood coals, while local soups slow-simmer daily.",
+      "Our whole tilapia goes onto the charcoal grill only after you order, while our soups and party jollof are prepared in fresh daily batches — never reheated.",
   },
   {
     icon: ShieldCheck,
-    title: "Transparent Ghana Cedis Pricing",
+    title: "Generous Portions, Made Your Way",
     description:
-      "Menu prices, delivery zone tariffs across Sunyani, and payment methods are shown upfront before you confirm your order.",
+      "From extra shito and fresh green chilli to sharing platters for family and colleagues, every dish is packed just how you like it.",
   },
   {
     icon: Clock,
-    title: "Built for Pickup & Doorstep Delivery",
+    title: "From Commercial Road to Your Door",
     description:
-      "Collect directly from our Commercial Road counter at zero delivery charge, or dispatch a rider across Central Sunyani, Fiapre, and estates.",
+      "Dine in at our lounge, pick up warm at the counter, or have our riders deliver across Sunyani Central, Fiapre, and surrounding neighbourhoods.",
   },
 ];
 
@@ -38,10 +48,10 @@ export default function AboutPage() {
               Our Sunyani Kitchen
             </span>
             <h1 className="font-serif text-3xl sm:text-5xl font-black tracking-tight text-white leading-[1.08]">
-              Honest Ghanaian Hospitality, Crafted Fresh in Sunyani Central.
+              Good Food, Warm Hospitality, Right Here in Sunyani.
             </h1>
             <p className="text-sm sm:text-base text-[#A3A3A3] leading-relaxed">
-              Sika Cuisine brings together beloved Ghanaian classics — charcoal-grilled tilapia with banku, slow-cooked jollof, traditional fufu and aprapransa, spiced fruit rice, and stone-baked artisan pizzas — served from {RESTAURANT_INFO.address}.
+              From our kitchen on {RESTAURANT_INFO.address}, we serve the dishes people gather around — whole tilapia grilled over hardwood coals with hot banku, smoky party jollof, traditional fufu and aprapransa, spiced fruit rice, and stone-baked pizzas.
             </p>
             <div className="flex flex-wrap gap-3 pt-2">
               <Link

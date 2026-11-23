@@ -19,7 +19,12 @@ export type FulfilmentStatus =
   | "CANCELLED"
   | "REJECTED";
 
-export type PaymentStatus = "PENDING" | "PAID" | "FAILED" | "REFUNDED";
+export type PaymentStatus =
+  | "PENDING"
+  | "PAID"
+  | "FAILED"
+  | "REFUND_PENDING"
+  | "REFUNDED";
 
 export type PaymentMethod =
   | "PAYSTACK"
@@ -51,6 +56,7 @@ export interface OrderItemDTO {
   orderId?: string;
   menuItemId?: string | null;
   itemNameSnapshot: string;
+  imageUrl?: string | null;
   unitPricePesewas: number;
   quantity: number;
   subtotalPesewas: number;
@@ -91,6 +97,8 @@ export interface OrderDTO {
   rejectionReason?: string | null;
   cancellationReason?: string | null;
   estimatedDeliveryMinutes: number;
+  primaryImageUrl?: string | null;
+  latestPaymentReference?: string | null;
 
   deliveryAddress?: DeliveryAddressDTO | null;
   items: OrderItemDTO[];
@@ -108,6 +116,12 @@ export interface PublicOrderTrackingDTO {
   fulfilmentType: FulfilmentType;
   fulfilmentStatus: FulfilmentStatus;
   paymentStatus: PaymentStatus;
+  paymentMethod?: PaymentMethod;
+  totalPesewas?: number;
+  latestPaymentReference?: string | null;
+  primaryImageUrl?: string | null;
+  rejectionReason?: string | null;
+  cancellationReason?: string | null;
   estimatedDeliveryMinutes: number;
   createdAt: string;
   itemsSummary: {
@@ -119,4 +133,48 @@ export interface PublicOrderTrackingDTO {
     timestamp: string;
     note?: string | null;
   }[];
+}
+
+export interface ReorderItemDTO {
+  menuItem: {
+    id: string;
+    categoryId: string;
+    categoryName?: string;
+    name: string;
+    slug: string;
+    description: string;
+    basePricePesewas: number;
+    imageUrl: string;
+    isAvailable: boolean;
+    isFeatured: boolean;
+    spiceLevel: number;
+    preparationTimeMinutes: number;
+    sortOrder: number;
+  };
+  quantity: number;
+  selectedOptions: SelectedOptionDTO[];
+  specialInstructions?: string;
+  liveUnitPricePesewas: number;
+  liveLineTotalPesewas: number;
+  priceChanged: boolean;
+}
+
+export interface ReorderResponseDTO {
+  success: boolean;
+  orderNumber: string;
+  itemsToAdd: ReorderItemDTO[];
+  unavailableItems: Array<{ itemName: string; reason: string }>;
+  adjustedOptions: Array<{ itemName: string; droppedOption: string }>;
+}
+
+export interface InAppNotificationDTO {
+  id: string;
+  type: string;
+  title: string;
+  body: string;
+  orderNumber?: string | null;
+  actionUrl?: string | null;
+  isRead: boolean;
+  readAt?: string | null;
+  createdAt: string;
 }

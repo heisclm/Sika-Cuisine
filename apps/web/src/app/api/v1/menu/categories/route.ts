@@ -25,7 +25,7 @@ export async function GET() {
         },
       });
 
-      if (categories.length > 0) {
+      if (categories.length > 0 || process.env.NODE_ENV === "production") {
         return NextResponse.json({
           success: true,
           categories,
@@ -34,10 +34,23 @@ export async function GET() {
       }
     } catch (error) {
       console.warn(
-        "[API v1 Menu Categories] Database unreachable; serving local catalog categories:",
+        "[API v1 Menu Categories] Database error:",
         error instanceof Error ? error.message : error
       );
+      if (process.env.NODE_ENV === "production") {
+        return NextResponse.json(
+          { success: false, error: "Menu categories temporarily unavailable." },
+          { status: 503 }
+        );
+      }
     }
+  }
+
+  if (process.env.NODE_ENV === "production") {
+    return NextResponse.json(
+      { success: false, error: "Menu database is not configured." },
+      { status: 503 }
+    );
   }
 
   return NextResponse.json({

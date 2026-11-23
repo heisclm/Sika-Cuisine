@@ -1,6 +1,6 @@
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
-  Alert,
+  Animated,
   Image,
   Pressable,
   ScrollView,
@@ -9,6 +9,8 @@ import {
   View,
 } from "react-native";
 import {
+  AlertCircle,
+  ArrowLeft,
   ArrowRight,
   Minus,
   Plus,
@@ -18,6 +20,7 @@ import { RestaurantClocheIcon } from "../components/icons/RestaurantClocheIcon";
 import { formatPesewasToGhs } from "@sika/shared";
 import { Button } from "../components/ui/Button";
 import { EmptyState } from "../components/ui/EmptyState";
+import { SikaModal } from "../components/ui/SikaModal";
 import { useCart } from "../context/CartContext";
 import { useToast } from "../context/ToastContext";
 import { resolveDishImageSource } from "../data/dish-images";
@@ -41,27 +44,39 @@ export function CartScreen({
     removeItem,
     updateQuantity,
     clearCart,
+    unavailableMenuItemIds,
+    unavailableCount,
+    refreshCartAvailability,
+    removeUnavailableItems,
     cartSubtotalPesewas,
     totalItemCount,
   } = useCart();
   const { info } = useToast();
+  const [clearModalVisible, setClearModalVisible] = useState(false);
+  const totalPopScale = useRef(new Animated.Value(1)).current;
+  const prevSubtotalRef = useRef(cartSubtotalPesewas);
+
+  useEffect(() => {
+    if (items.length > 0) {
+      void refreshCartAvailability();
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (prevSubtotalRef.current !== cartSubtotalPesewas) {
+      totalPopScale.setValue(0.92);
+      Animated.spring(totalPopScale, {
+        toValue: 1,
+        damping: 14,
+        stiffness: 320,
+        useNativeDriver: true,
+      }).start();
+      prevSubtotalRef.current = cartSubtotalPesewas;
+    }
+  }, [cartSubtotalPesewas, totalPopScale]);
 
   const handleClearCart = () => {
-    Alert.alert(
-      "Clear Cart",
-      "Are you sure you want to remove all dishes from your tray?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Clear All",
-          style: "destructive",
-          onPress: () => {
-            clearCart();
-            info("Tray Cleared", "All dishes removed from your order.");
-          },
-        },
-      ]
-    );
+    setClearModalVisible(true);
   };
 
   if (items.length === 0) {
@@ -86,11 +101,26 @@ export function CartScreen({
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.headerRow}>
-          <View>
-            <Text style={styles.headerTitle}>Your Tray</Text>
-            <Text style={styles.headerSubtitle}>
-              {totalItemCount} {totalItemCount === 1 ? "portion" : "portions"} ready
-            </Text>
+          <View style={styles.headerLeft}>
+            <Pressable
+              onPress={onNavigateToMenu}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel="Back to menu"
+              style={({ pressed }) => [
+                styles.backPill,
+                pressed && { opacity: 0.8 },
+              ]}
+            >
+              <ArrowLeft size={14} color={SikaColors.warmWhite} />
+              <Text style={styles.backPillText}>Menu</Text>
+            </Pressable>
+            <View>
+              <Text style={styles.headerTitle}>Your Tray</Text>
+              <Text style={styles.headerSubtitle}>
+                {totalItemCount} {totalItemCount === 1 ? "portion" : "portions"} ready
+              </Text>
+            </View>
           </View>
           <Pressable
             onPress={handleClearCart}
@@ -103,21 +133,64 @@ export function CartScreen({
           </Pressable>
         </View>
 
+        {unavailableCount > 0 ? (
+          <View style={styles.soldOutBanner}>
+            <View style={styles.soldOutBannerTop}>
+              <AlertCircle size={16} color={SikaColors.error} />
+              <Text style={styles.soldOutBannerText}>
+                {unavailableCount === 1
+                  ? "1 dish in your tray is currently sold out."
+                  : `${unavailableCount} dishes in your tray are no longer available.`}
+              </Text>
+            </View>
+            <Pressable
+              onPress={() => {
+                removeUnavailableItems();
+                info("Tray Updated", "Sold-out dishes were removed from your tray.");
+              }}
+              style={({ pressed }) => [
+                styles.removeSoldOutBtn,
+                pressed && { opacity: 0.8 },
+              ]}
+            >
+              <Trash2 size={13} color="#FDA4AF" />
+              <Text style={styles.removeSoldOutText}>Remove Unavailable</Text>
+            </Pressable>
+          </View>
+        ) : null}
+
         <View style={styles.itemsList}>
-          {items.map((item) => (
-            <View key={item.id} style={styles.itemCard}>
+          {items.map((item) => {
+            const unavailableReason = unavailableMenuItemIds[item.menuItem.id];
+            const isUnavailable = Boolean(unavailableReason);
+            return (
+            <View
+              key={item.id}
+              style={[styles.itemCard, isUnavailable && styles.itemCardSoldOut]}
+            >
               <View style={styles.topRow}>
                 <Image
                   source={resolveDishImageSource(item.menuItem.imageUrl)}
-                  style={styles.thumb}
+                  style={[styles.thumb, isUnavailable && { opacity: 0.45 }]}
                   resizeMode="cover"
                 />
 
                 <View style={styles.infoCol}>
                   <View style={styles.titleRow}>
-                    <Text style={styles.itemName} numberOfLines={2}>
-                      {item.menuItem.name}
-                    </Text>
+                    <View style={{ flex: 1, minWidth: 0 }}>
+                      <Text style={styles.itemName} numberOfLines={2}>
+                        {item.menuItem.name}
+                      </Text>
+                      {isUnavailable ? (
+                        <View style={styles.soldOutPill}>
+                          <Text style={styles.soldOutPillText}>
+                            {unavailableReason === "REMOVED"
+                              ? "NO LONGER ON MENU"
+                              : "SOLD OUT"}
+                          </Text>
+                        </View>
+                      ) : null}
+                    </View>
                     <Pressable
                       onPress={() => removeItem(item.id)}
                       hitSlop={8}
@@ -163,10 +236,11 @@ export function CartScreen({
                   </Pressable>
                   <Text style={styles.qtyText}>{item.quantity}</Text>
                   <Pressable
+                    disabled={isUnavailable}
                     onPress={() => updateQuantity(item.id, item.quantity + 1)}
                     accessibilityRole="button"
                     accessibilityLabel={`Increase quantity of ${item.menuItem.name}`}
-                    style={styles.stepBtn}
+                    style={[styles.stepBtn, isUnavailable && { opacity: 0.35 }]}
                   >
                     <Plus size={14} color={SikaColors.warmWhite} />
                   </Pressable>
@@ -177,7 +251,8 @@ export function CartScreen({
                 </Text>
               </View>
             </View>
-          ))}
+            );
+          })}
         </View>
       </ScrollView>
 
@@ -185,23 +260,68 @@ export function CartScreen({
       <View style={styles.footer}>
         <View style={styles.summaryRow}>
           <Text style={styles.summaryLabel}>Food Subtotal</Text>
-          <Text style={styles.summaryValue}>
+          <Animated.Text
+            style={[
+              styles.summaryValue,
+              { transform: [{ scale: totalPopScale }] },
+            ]}
+          >
             {formatPesewasToGhs(cartSubtotalPesewas)}
-          </Text>
+          </Animated.Text>
         </View>
         <Text style={styles.feeHint}>
           Delivery zone fees or free pickup are finalized on the next step.
         </Text>
 
         <Button
-          title="Proceed to Checkout"
+          title={
+            unavailableCount > 0
+              ? "Remove Sold-Out Items to Checkout"
+              : "Proceed to Checkout"
+          }
           variant="primary"
           size="lg"
           fullWidth
-          trailingIcon={<ArrowRight size={17} color={SikaColors.text} />}
+          disabled={unavailableCount > 0}
+          trailingIcon={
+            unavailableCount > 0 ? undefined : (
+              <ArrowRight size={17} color={SikaColors.text} />
+            )
+          }
           onPress={onNavigateToCheckout}
         />
       </View>
+
+      {/* Branded Dark Clear Tray Confirmation Modal */}
+      <SikaModal
+        visible={clearModalVisible}
+        tone="error"
+        icon={<Trash2 size={24} color={SikaColors.error} />}
+        badgeLabel="Clear Order Tray"
+        badgeVariant="error"
+        title="Remove All Dishes?"
+        message="Are you sure you want to remove all dishes from your tray? You can always add them back from the Sika Cuisine menu."
+        metaRows={[
+          {
+            label: "Portions in Tray",
+            value: `${totalItemCount} ${totalItemCount === 1 ? "portion" : "portions"}`,
+          },
+          {
+            label: "Food Subtotal",
+            value: formatPesewasToGhs(cartSubtotalPesewas),
+            accent: true,
+          },
+        ]}
+        primaryLabel="Clear All Dishes"
+        onPrimaryPress={() => {
+          setClearModalVisible(false);
+          clearCart();
+          info("Tray Cleared", "All dishes removed from your order.");
+        }}
+        secondaryLabel="Keep My Tray"
+        onSecondaryPress={() => setClearModalVisible(false)}
+        onRequestClose={() => setClearModalVisible(false)}
+      />
     </View>
   );
 }
@@ -228,11 +348,35 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    gap: SikaSpace.sm,
     marginBottom: SikaSpace.lg,
+  },
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: SikaSpace.md,
+    flex: 1,
+    minWidth: 0,
+  },
+  backPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    borderRadius: SikaRadius.pill,
+    borderWidth: 1,
+    borderColor: SikaColors.border,
+    backgroundColor: SikaColors.surface,
+  },
+  backPillText: {
+    color: SikaColors.warmWhite,
+    fontSize: 12,
+    fontWeight: "700",
   },
   headerTitle: {
     color: SikaColors.text,
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: "900",
   },
   headerSubtitle: {
@@ -259,12 +403,69 @@ const styles = StyleSheet.create({
   itemsList: {
     gap: SikaSpace.md,
   },
+  soldOutBanner: {
+    borderRadius: SikaRadius.lg,
+    borderWidth: 1,
+    borderColor: SikaColors.errorBorder,
+    backgroundColor: SikaColors.errorBg,
+    padding: SikaSpace.md,
+    gap: 10,
+    marginBottom: SikaSpace.md,
+  },
+  soldOutBannerTop: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  soldOutBannerText: {
+    flex: 1,
+    color: "#FDA4AF",
+    fontSize: 12.5,
+    fontWeight: "700",
+    lineHeight: 17,
+  },
+  removeSoldOutBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    borderRadius: SikaRadius.md,
+    borderWidth: 1,
+    borderColor: SikaColors.errorBorder,
+    backgroundColor: "rgba(251, 113, 133, 0.14)",
+    paddingVertical: 8,
+  },
+  removeSoldOutText: {
+    color: "#FDA4AF",
+    fontSize: 12,
+    fontWeight: "800",
+  },
   itemCard: {
     borderRadius: SikaRadius.xl,
     borderWidth: 1,
     borderColor: SikaColors.border,
     backgroundColor: SikaColors.surface,
     padding: SikaSpace.md,
+  },
+  itemCardSoldOut: {
+    borderColor: SikaColors.errorBorder,
+    opacity: 0.78,
+  },
+  soldOutPill: {
+    alignSelf: "flex-start",
+    marginTop: 4,
+    borderRadius: SikaRadius.pill,
+    borderWidth: 1,
+    borderColor: SikaColors.errorBorder,
+    backgroundColor: SikaColors.errorBg,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  soldOutPillText: {
+    color: "#FDA4AF",
+    fontSize: 9.5,
+    fontWeight: "800",
+    letterSpacing: 0.5,
   },
   topRow: {
     flexDirection: "row",
@@ -351,7 +552,7 @@ const styles = StyleSheet.create({
     backgroundColor: SikaColors.surface,
     paddingHorizontal: SikaSpace.xl,
     paddingTop: SikaSpace.lg,
-    paddingBottom: SikaSpace.xl,
+    paddingBottom: 94,
   },
   summaryRow: {
     flexDirection: "row",

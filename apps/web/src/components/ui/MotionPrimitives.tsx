@@ -15,10 +15,10 @@ export function PageReveal({
 }) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 12 }}
+      initial={false}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: SikaMotion.emphasis / 1000, ease: SikaMotion.ease, delay }}
-      className={className}
+      className={`animate-in fade-in slide-in-from-bottom-2 duration-300 ${className}`}
     >
       {children}
     </motion.div>
@@ -34,7 +34,7 @@ export function StaggerContainer({
 }) {
   return (
     <motion.div
-      initial="hidden"
+      initial={false}
       animate="visible"
       variants={{
         hidden: {},

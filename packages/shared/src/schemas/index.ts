@@ -43,7 +43,7 @@ export const registerSchema = z.object({
       phoneRegex,
       "Please enter a valid Ghanaian phone number (e.g. 0244123456 or +233244123456)."
     ),
-  password: z.string().min(6, "Password must be at least 6 characters."),
+  password: z.string().min(8, "Password must be at least 8 characters."),
 });
 
 /**
@@ -97,6 +97,8 @@ export const createOrderSchema = z
       .array(orderItemInputSchema)
       .min(1, "Your cart must contain at least one dish."),
     customerNotes: z.string().trim().max(500).optional(),
+    clientPlatform: z.enum(["web", "mobile"]).optional().default("web"),
+    mobileReturnUrl: z.string().trim().max(300).optional(),
   })
   .superRefine((data, ctx) => {
     // Delivery orders require a destination

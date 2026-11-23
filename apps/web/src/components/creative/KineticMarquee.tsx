@@ -11,12 +11,12 @@ interface KineticMarqueeProps {
 
 const DEFAULT_MARQUEE_ITEMS = [
   "Charcoal-Grilled Whole Tilapia",
-  "Slow-Simmered Smoky Jollof",
-  "Hand-Pounded Fufu in Light Soup",
-  "Sunyani Pineapple & Coconut Fruit Rice",
-  "Stone-Baked Artisan Pizza",
+  "Smoky Party Jollof",
+  "Fresh Fufu & Goat Light Soup",
+  "Pineapple & Coconut Fried Rice",
+  "Stone-Baked Pizzas",
   "Tuo Zaafi with Ayoyo & Dawadawa",
-  "Direct Sunyani Kitchen Dispatch",
+  "Commercial Road · Sunyani",
 ];
 
 export function KineticMarquee({

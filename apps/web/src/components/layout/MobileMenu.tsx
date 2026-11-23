@@ -20,7 +20,12 @@ import {
 import { Logo } from "@/components/brand/Logo";
 import { CUSTOMER_NAV_LINKS, RESTAURANT_INFO } from "@/lib/navigation";
 import { useCart } from "@/context/CartContext";
-import { SikaMotion, WebNavIconKey } from "@sika/shared";
+import {
+  formatFirstName,
+  getDashboardForRole,
+  SikaMotion,
+  WebNavIconKey,
+} from "@sika/shared";
 
 interface MobileMenuProps {
   isOpen: boolean;
@@ -220,12 +225,22 @@ export function MobileMenu({
               {/* Consistent Customer Actions */}
               <div className="space-y-2.5 border-t border-[#333333] pt-5">
                 <Link
-                  href={sessionUser ? "/account" : "/login"}
+                  href={sessionUser ? getDashboardForRole(sessionUser.role).path : "/login"}
                   onClick={onClose}
                   className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#D71920] hover:bg-[#A91017] py-3.5 text-sm font-bold text-white transition-colors shadow-[0_6px_18px_rgba(215,25,32,0.35)]"
                 >
-                  <User className="h-4 w-4" aria-hidden="true" />
-                  <span>{sessionUser ? `Account (${sessionUser.fullName.split(" ")[0]})` : "Sign In / Register"}</span>
+                  <User className="h-4 w-4 shrink-0" aria-hidden="true" />
+                  <span className="truncate">
+                    {sessionUser
+                      ? sessionUser.role === "CUSTOMER"
+                        ? `Hi, ${formatFirstName(sessionUser.fullName, "Customer", 16)} · My Account`
+                        : `${getDashboardForRole(sessionUser.role).shortLabel} (${formatFirstName(
+                            sessionUser.fullName,
+                            "Staff",
+                            14
+                          )})`
+                      : "Sign In / Register"}
+                  </span>
                 </Link>
 
                 <button

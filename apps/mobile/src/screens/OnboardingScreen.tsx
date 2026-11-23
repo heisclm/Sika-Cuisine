@@ -13,13 +13,7 @@ import {
   View,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import {
-  ArrowLeft,
-  ArrowRight,
-  Bike,
-  Flame,
-  SlidersHorizontal,
-} from "lucide-react-native";
+import { ArrowLeft, ArrowRight, MapPin } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { MOBILE_IMAGE_ASSETS } from "../data/dish-images";
 import { SikaColors, SikaRadius, SikaSpace } from "../theme";
@@ -27,40 +21,44 @@ import { Button } from "../components/ui/Button";
 
 interface OnboardingSlide {
   id: string;
+  chapter: string;
   eyebrow: string;
   title: string;
   description: string;
+  footnote: string;
   image: ImageSourcePropType;
-  iconKey: "flame" | "customize" | "delivery";
 }
 
 const SLIDES: OnboardingSlide[] = [
   {
-    id: "discover",
-    eyebrow: "SUNYANI CULINARY CRAFT",
-    title: "Discover Great Food",
+    id: "kitchen",
+    chapter: "01 / 03",
+    eyebrow: "THE GRILL & KITCHEN",
+    title: "From Our Grill to Your Table.",
     description:
-      "Charcoal-grilled whole tilapia with banku, slow-simmered smoky jollof, local swallows, fruit rice, and stone-baked pizza prepared fresh to order.",
+      "Whole tilapia grilled over live charcoal, smoky party jollof, and traditional soups simmered fresh every day on Commercial Road.",
+    footnote: "Open Daily · 10:00 AM – 10:00 PM",
     image: MOBILE_IMAGE_ASSETS.heroPlate,
-    iconKey: "flame",
   },
   {
-    id: "order",
-    eyebrow: "EFFORTLESS CUSTOMIZATION",
-    title: "Order With Ease",
+    id: "tailored",
+    chapter: "02 / 03",
+    eyebrow: "MADE TO YOUR TASTE",
+    title: "Prepared the Way You Like It.",
     description:
-      "Choose portion sizes, proteins, spice preferences, and kitchen notes with clear upfront pricing in Ghana Cedis before confirming.",
+      "Extra green chilli with your banku, shito packed on the side, or a platter for the table — leave a note and our kitchen takes care of the rest.",
+    footnote: "Custom portions, sides & personal chef notes",
     image: MOBILE_IMAGE_ASSETS.signaturePlatter,
-    iconKey: "customize",
   },
   {
-    id: "fulfil",
-    eyebrow: "FAST SUNYANI DISPATCH",
-    title: "Delivery or Pickup",
+    id: "hospitality",
+    chapter: "03 / 03",
+    eyebrow: "TABLE TO DOORSTEP",
+    title: "Pick Up Warm, or Let Us Bring Dinner.",
     description:
-      "Track live kitchen progress across Sunyani delivery zones or collect directly from Commercial Road with zero delivery fee.",
+      "Collect straight from our counter on Commercial Road, or have our riders deliver warm to your home or office anywhere in Sunyani.",
+    footnote: "Mobile Money, Card, or Cash on Handover",
     image: MOBILE_IMAGE_ASSETS.loungeInterior,
-    iconKey: "delivery",
   },
 ];
 
@@ -69,18 +67,22 @@ interface OnboardingScreenProps {
 }
 
 /**
- * Three-screen swipeable customer onboarding carousel using authentic Sika photography,
- * gradient scrims, animated pagination indicators, and Skip/Back/Continue controls.
+ * Editorial restaurant welcome tour showcasing Sika Cuisine photography,
+ * warm hospitality storytelling, and smooth swipeable chapter transitions.
  */
 export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
   const insets = useSafeAreaInsets();
-  const { width } = useWindowDimensions();
+  const { width, height } = useWindowDimensions();
   const listRef = useRef<FlatList<OnboardingSlide>>(null);
   const scrollX = useRef(new Animated.Value(0)).current;
   const [activeIndex, setActiveIndex] = useState(0);
 
+  const heroHeight = Math.min(Math.max(height * 0.52, 300), 460);
+
   const handleMomentumEnd = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const nextIndex = Math.round(e.nativeEvent.contentOffset.x / Math.max(width, 1));
+    const nextIndex = Math.round(
+      e.nativeEvent.contentOffset.x / Math.max(width, 1)
+    );
     setActiveIndex(Math.max(0, Math.min(SLIDES.length - 1, nextIndex)));
   };
 
@@ -89,33 +91,42 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
     setActiveIndex(index);
   };
 
-  const renderSlideIcon = (iconKey: OnboardingSlide["iconKey"]) => {
-    if (iconKey === "flame") return <Flame size={18} color={SikaColors.accentLight} />;
-    if (iconKey === "customize")
-      return <SlidersHorizontal size={18} color={SikaColors.accentLight} />;
-    return <Bike size={18} color={SikaColors.accentLight} />;
-  };
-
   return (
     <View style={styles.root}>
-      {/* Top Bar: Brand + Skip */}
-      <View style={[styles.topBar, { paddingTop: Math.max(insets.top + 8, 16) }]}>
-        <View style={styles.brandRow}>
-          <Image source={MOBILE_IMAGE_ASSETS.logo} style={styles.logo} resizeMode="contain" />
-          <Text style={styles.brandName}>SIKA CUISINE</Text>
+      {/* Floating Editorial Top Bar over Full-Bleed Imagery */}
+      <View
+        style={[
+          styles.topBar,
+          { top: Math.max(insets.top + 8, 16) },
+        ]}
+      >
+        <View style={styles.brandBadge}>
+          <Image
+            source={MOBILE_IMAGE_ASSETS.logo}
+            style={styles.logo}
+            resizeMode="contain"
+          />
+          <View>
+            <Text style={styles.brandName}>SIKA CUISINE</Text>
+            <View style={styles.locationRow}>
+              <MapPin size={10} color={SikaColors.accentLight} />
+              <Text style={styles.locationText}>Sunyani Central</Text>
+            </View>
+          </View>
         </View>
+
         <Pressable
           onPress={onComplete}
           hitSlop={10}
           accessibilityRole="button"
-          accessibilityLabel="Skip onboarding"
+          accessibilityLabel="Skip introduction"
           style={styles.skipBtn}
         >
           <Text style={styles.skipText}>Skip</Text>
         </Pressable>
       </View>
 
-      {/* Horizontal Paging Slides */}
+      {/* Horizontal Editorial Chapters */}
       <Animated.FlatList
         ref={listRef}
         data={SLIDES}
@@ -132,30 +143,59 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
         scrollEventThrottle={16}
         renderItem={({ item }) => (
           <View style={[styles.slide, { width }]}>
-            <View style={styles.heroFrame}>
-              <Image source={item.image} style={styles.heroImage} resizeMode="cover" />
+            {/* Full-Bleed Photographic Canvas with Deep Obsidian Vignette */}
+            <View style={[styles.heroCanvas, { height: heroHeight }]}>
+              <Image
+                source={item.image}
+                style={styles.heroImage}
+                resizeMode="cover"
+              />
               <LinearGradient
-                colors={["rgba(16,16,16,0.1)", "rgba(16,16,16,0.55)", "#101010"]}
-                locations={[0, 0.55, 1]}
+                colors={[
+                  "rgba(16, 16, 16, 0.55)",
+                  "rgba(16, 16, 16, 0.12)",
+                  "rgba(16, 16, 16, 0.78)",
+                  "#101010",
+                ]}
+                locations={[0, 0.35, 0.8, 1]}
                 style={StyleSheet.absoluteFill}
               />
-              <View style={styles.floatingIconPill}>{renderSlideIcon(item.iconKey)}</View>
             </View>
 
+            {/* Restaurant Story & Editorial Typography */}
             <View style={styles.copyBlock}>
-              <Text style={styles.eyebrow}>{item.eyebrow}</Text>
+              <View style={styles.chapterRow}>
+                <Text style={styles.chapterNum}>{item.chapter}</Text>
+                <View style={styles.chapterRule} />
+                <Text style={styles.eyebrow}>{item.eyebrow}</Text>
+              </View>
+
               <Text style={styles.title}>{item.title}</Text>
               <Text style={styles.description}>{item.description}</Text>
+
+              <View style={styles.footnotePill}>
+                <View style={styles.footnoteDot} />
+                <Text style={styles.footnoteText}>{item.footnote}</Text>
+              </View>
             </View>
           </View>
         )}
       />
 
-      {/* Footer Pagination Dots + Controls */}
-      <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom + 16, 28) }]}>
+      {/* Footer Pagination & Navigation */}
+      <View
+        style={[
+          styles.footer,
+          { paddingBottom: Math.max(insets.bottom + 16, 26) },
+        ]}
+      >
         <View style={styles.dotsRow}>
           {SLIDES.map((slide, idx) => {
-            const inputRange = [(idx - 1) * width, idx * width, (idx + 1) * width];
+            const inputRange = [
+              (idx - 1) * width,
+              idx * width,
+              (idx + 1) * width,
+            ];
             const dotWidth = scrollX.interpolate({
               inputRange,
               outputRange: [8, 28, 8],
@@ -176,7 +216,9 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
                     width: dotWidth,
                     opacity: dotOpacity,
                     backgroundColor:
-                      idx === activeIndex ? SikaColors.accent : SikaColors.secondaryText,
+                      idx === activeIndex
+                        ? SikaColors.accent
+                        : SikaColors.secondaryText,
                   },
                 ]}
               />
@@ -197,7 +239,9 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
           ) : null}
 
           <Button
-            title={activeIndex === SLIDES.length - 1 ? "Get Started" : "Continue"}
+            title={
+              activeIndex === SLIDES.length - 1 ? "Explore the Menu" : "Next"
+            }
             variant="primary"
             size="lg"
             trailingIcon={<ArrowRight size={16} color={SikaColors.text} />}
@@ -222,100 +266,142 @@ const styles = StyleSheet.create({
     backgroundColor: SikaColors.background,
   },
   topBar: {
+    position: "absolute",
+    left: SikaSpace.lg,
+    right: SikaSpace.lg,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: SikaSpace.xl,
-    paddingBottom: SikaSpace.md,
-    zIndex: 10,
+    zIndex: 20,
   },
-  brandRow: {
+  brandBadge: {
     flexDirection: "row",
     alignItems: "center",
     gap: SikaSpace.sm,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: SikaRadius.pill,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.14)",
+    backgroundColor: "rgba(16, 16, 16, 0.72)",
   },
   logo: {
-    width: 30,
-    height: 30,
-    borderRadius: 8,
+    width: 26,
+    height: 26,
+    borderRadius: 7,
   },
   brandName: {
     color: SikaColors.warmWhite,
-    fontSize: 13,
-    fontWeight: "800",
-    letterSpacing: 1.5,
+    fontSize: 11.5,
+    fontWeight: "900",
+    letterSpacing: 1.4,
+  },
+  locationRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+    marginTop: 1,
+  },
+  locationText: {
+    color: SikaColors.secondaryText,
+    fontSize: 10,
+    fontWeight: "600",
   },
   skipBtn: {
-    paddingHorizontal: SikaSpace.md,
-    paddingVertical: SikaSpace.xs + 2,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
     borderRadius: SikaRadius.pill,
     borderWidth: 1,
-    borderColor: SikaColors.border,
-    backgroundColor: SikaColors.surface,
+    borderColor: "rgba(255, 255, 255, 0.14)",
+    backgroundColor: "rgba(16, 16, 16, 0.72)",
   },
   skipText: {
-    color: SikaColors.secondaryText,
+    color: SikaColors.warmWhite,
     fontSize: 12,
     fontWeight: "700",
   },
   slide: {
     flex: 1,
-    paddingHorizontal: SikaSpace.xl,
-    justifyContent: "space-between",
   },
-  heroFrame: {
-    flex: 1,
-    maxHeight: 380,
-    borderRadius: SikaRadius.xl,
+  heroCanvas: {
+    width: "100%",
     overflow: "hidden",
-    borderWidth: 1,
-    borderColor: SikaColors.border,
-    marginTop: SikaSpace.sm,
     backgroundColor: SikaColors.surface,
   },
   heroImage: {
     width: "100%",
     height: "100%",
   },
-  floatingIconPill: {
-    position: "absolute",
-    bottom: SikaSpace.lg,
-    left: SikaSpace.lg,
-    width: 44,
-    height: 44,
-    borderRadius: SikaRadius.md,
-    backgroundColor: "rgba(28, 28, 28, 0.9)",
-    borderWidth: 1,
-    borderColor: SikaColors.accentWash40,
-    alignItems: "center",
+  copyBlock: {
+    flex: 1,
+    paddingHorizontal: SikaSpace.xl,
+    paddingTop: SikaSpace.md,
     justifyContent: "center",
   },
-  copyBlock: {
-    paddingTop: SikaSpace.xl,
-    paddingBottom: SikaSpace.lg,
+  chapterRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    marginBottom: SikaSpace.sm + 2,
+  },
+  chapterNum: {
+    color: SikaColors.accentLight,
+    fontSize: 11.5,
+    fontWeight: "900",
+    letterSpacing: 1.2,
+    fontVariant: ["tabular-nums"],
+  },
+  chapterRule: {
+    width: 20,
+    height: 1.5,
+    backgroundColor: SikaColors.accent,
   },
   eyebrow: {
-    color: SikaColors.accentLight,
+    color: SikaColors.warmWhite,
     fontSize: 11,
     fontWeight: "800",
     letterSpacing: 1.8,
-    marginBottom: SikaSpace.sm,
   },
   title: {
     color: SikaColors.text,
-    fontSize: 30,
+    fontSize: 28,
+    lineHeight: 34,
     fontWeight: "900",
-    letterSpacing: -0.5,
-    marginBottom: SikaSpace.md,
+    letterSpacing: -0.4,
+    marginBottom: SikaSpace.sm + 2,
   },
   description: {
     color: SikaColors.secondaryText,
-    fontSize: 14,
+    fontSize: 14.5,
     lineHeight: 22,
+  },
+  footnotePill: {
+    alignSelf: "flex-start",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginTop: SikaSpace.lg,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: SikaRadius.pill,
+    borderWidth: 1,
+    borderColor: SikaColors.border,
+    backgroundColor: SikaColors.surface,
+  },
+  footnoteDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: SikaColors.accentLight,
+  },
+  footnoteText: {
+    color: SikaColors.warmWhite,
+    fontSize: 11.5,
+    fontWeight: "700",
   },
   footer: {
     paddingHorizontal: SikaSpace.xl,
-    gap: SikaSpace.lg,
+    gap: SikaSpace.md + 2,
   },
   dotsRow: {
     flexDirection: "row",
@@ -324,8 +410,8 @@ const styles = StyleSheet.create({
     gap: SikaSpace.sm,
   },
   dot: {
-    height: 7,
-    borderRadius: 4,
+    height: 6,
+    borderRadius: 3,
   },
   controlsRow: {
     flexDirection: "row",

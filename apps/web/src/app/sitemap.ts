@@ -1,9 +1,17 @@
 import type { MetadataRoute } from "next";
+import { getSiteOrigin } from "@/lib/env";
+import { prisma } from "@/lib/prisma";
 
-export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = "https://sikacuisine.com";
+export const revalidate = 3600;
 
-  return [
+/**
+ * Generates an authoritative XML sitemap combining public storefront pages
+ * with live dish detail routes (`/menu/[slug]`) queried from PostgreSQL.
+ */
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const baseUrl = getSiteOrigin();
+
+  const staticRoutes: MetadataRoute.Sitemap = [
     {
       url: baseUrl,
       lastModified: new Date(),
@@ -15,12 +23,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
       lastModified: new Date(),
       changeFrequency: "daily",
       priority: 0.9,
-    },
-    {
-      url: `${baseUrl}/orders`,
-      lastModified: new Date(),
-      changeFrequency: "hourly",
-      priority: 0.8,
     },
     {
       url: `${baseUrl}/about`,
@@ -47,4 +49,27 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.3,
     },
   ];
+
+  if (!process.env.DATABASE_URL?.trim()) {
+    return staticRoutes;
+  }
+
+  try {
+    const items = await prisma.menuItem.findMany({
+      where: { isAvailable: true },
+      select: { slug: true, updatedAt: true },
+      orderBy: { sortOrder: "asc" },
+    });
+
+    const dishRoutes: MetadataRoute.Sitemap = items.map((item) => ({
+      url: `${baseUrl}/menu/${encodeURIComponent(item.slug)}`,
+      lastModified: item.updatedAt,
+      changeFrequency: "weekly",
+      priority: 0.8,
+    }));
+
+    return [...staticRoutes, ...dishRoutes];
+  } catch {
+    return staticRoutes;
+  }
 }

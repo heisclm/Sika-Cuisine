@@ -1,19 +1,42 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, ArrowRight, Eye, EyeOff, Lock, Mail, ShieldCheck } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Eye,
+  EyeOff,
+  Lock,
+  LogOut,
+  Mail,
+  ShieldAlert,
+  ShieldCheck,
+} from "lucide-react";
+import { getDashboardForRole } from "@sika/shared";
 import { Logo } from "@/components/brand/Logo";
 import { Button } from "@/components/ui/Button";
 import { PageReveal } from "@/components/ui/MotionPrimitives";
 
-const ALLOWED_STAFF_ROLES = new Set(["ADMIN", "STAFF_CASHIER", "STAFF_KITCHEN"]);
+const ALLOWED_STAFF_ROLES = new Set([
+  "ADMIN",
+  "STAFF_CASHIER",
+  "STAFF_KITCHEN",
+  "DELIVERY_RIDER",
+]);
+
+interface ActiveCustomerSession {
+  fullName: string;
+  email: string;
+}
 
 /**
- * Kitchen & Admin Terminal Sign-In backed by `POST /api/v1/auth/login`.
- * Enforces staff role authorization before routing into `/admin`, revoking
- * customer/non-staff cookies immediately if an unauthorized role signs in here.
+ * Staff & Operations Sign-In backed by `POST /api/v1/auth/login`.
+ * Enforces staff/rider role authorization before routing to the user's exact
+ * operational workspace (`/admin`, `/cashier`, `/kitchen`, or `/rider`).
+ * If a user is already signed in as a Customer, guards their session and lets them
+ * return to the storefront or explicitly switch accounts.
  */
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -21,7 +44,50 @@ export default function AdminLoginPage() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [checkingSession, setCheckingSession] = useState(true);
+  const [customerSession, setCustomerSession] =
+    useState<ActiveCustomerSession | null>(null);
+  const [switchingAccount, setSwitchingAccount] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    fetch("/api/v1/auth/me", { cache: "no-store" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!active) return;
+        const user = data?.user;
+        if (user && ALLOWED_STAFF_ROLES.has(user.role)) {
+          const dest = getDashboardForRole(user.role);
+          router.replace(dest.path);
+          return;
+        }
+        if (user && user.role === "CUSTOMER") {
+          setCustomerSession({
+            fullName: user.fullName || "Customer",
+            email: user.email || "",
+          });
+        }
+        setCheckingSession(false);
+      })
+      .catch(() => {
+        if (active) setCheckingSession(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [router]);
+
+  const handleSwitchFromCustomer = async () => {
+    setSwitchingAccount(true);
+    try {
+      await fetch("/api/v1/auth/logout", { method: "POST" });
+      setCustomerSession(null);
+      router.refresh();
+    } finally {
+      setSwitchingAccount(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,18 +110,80 @@ export default function AdminLoginPage() {
 
       if (!ALLOWED_STAFF_ROLES.has(data.user?.role)) {
         await fetch("/api/v1/auth/logout", { method: "POST" }).catch(() => {});
-        setError("Access denied. This account does not have Admin or Kitchen Staff privileges.");
+        setError("Access denied. This account does not have staff or rider privileges.");
         setLoading(false);
         return;
       }
 
-      router.push("/admin");
+      const destination = getDashboardForRole(data.user?.role);
+      router.push(destination.path);
       router.refresh();
     } catch {
       setError("Network connection error. Unable to reach authentication server.");
       setLoading(false);
     }
   };
+
+  if (checkingSession) {
+    return (
+      <div className="min-h-[calc(100vh-80px)] bg-[#101010] px-4 py-12 flex items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#D71920] border-t-transparent" />
+      </div>
+    );
+  }
+
+  if (customerSession) {
+    return (
+      <div className="min-h-[calc(100vh-80px)] bg-[#101010] px-4 py-12 flex items-center justify-center">
+        <PageReveal className="w-full max-w-md rounded-3xl border border-[#333333] bg-[#1C1C1C] p-6 sm:p-8 shadow-2xl space-y-6 text-center">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full border border-[#EAB308]/40 bg-[#EAB308]/10 text-[#FACC15]">
+            <ShieldAlert className="h-7 w-7" aria-hidden="true" />
+          </div>
+
+          <div className="space-y-2">
+            <span className="inline-block rounded-full border border-[#EAB308]/35 bg-[#EAB308]/10 px-3 py-1 font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-[#FACC15]">
+              Customer Session Active
+            </span>
+            <h1 className="font-serif text-2xl sm:text-3xl font-bold text-white">
+              Staff Terminal Restricted
+            </h1>
+            <p className="text-xs sm:text-sm text-[#A3A3A3] leading-relaxed">
+              You are currently signed in as{" "}
+              <strong className="text-[#F5F1EA]">{customerSession.fullName}</strong>
+              {customerSession.email ? ` (${customerSession.email})` : ""}. The
+              Staff Terminal is reserved for authorized Sika Cuisine kitchen,
+              cashier, and management personnel.
+            </p>
+          </div>
+
+          <div className="space-y-3 pt-2">
+            <Button
+              type="button"
+              variant="primary"
+              size="lg"
+              fullWidth
+              onClick={() => router.push("/")}
+            >
+              <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+              <span>Return to Storefront</span>
+            </Button>
+
+            <Button
+              type="button"
+              variant="secondary"
+              size="md"
+              fullWidth
+              loading={switchingAccount}
+              onClick={handleSwitchFromCustomer}
+            >
+              <LogOut className="h-4 w-4 text-[#F0444A]" aria-hidden="true" />
+              <span>Sign Out &amp; Switch to Staff Account</span>
+            </Button>
+          </div>
+        </PageReveal>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-[calc(100vh-80px)] bg-[#101010] px-4 py-12 flex items-center justify-center">
@@ -112,12 +240,20 @@ export default function AdminLoginPage() {
           </div>
 
           <div>
-            <label
-              htmlFor="admin-password"
-              className="block text-xs font-semibold uppercase tracking-wider text-[#A3A3A3] mb-1.5"
-            >
-              Password
-            </label>
+            <div className="flex items-center justify-between mb-1.5">
+              <label
+                htmlFor="admin-password"
+                className="block text-xs font-semibold uppercase tracking-wider text-[#A3A3A3]"
+              >
+                Password
+              </label>
+              <Link
+                href="/forgot-password"
+                className="text-xs font-medium text-[#F0444A] hover:underline"
+              >
+                Forgot password?
+              </Link>
+            </div>
             <div className="relative">
               <Lock
                 className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#737373]"
@@ -149,37 +285,6 @@ export default function AdminLoginPage() {
             <ArrowRight className="h-4 w-4" aria-hidden="true" />
           </Button>
         </form>
-
-        {/* Quick-fill helpers matching prisma/seed.ts */}
-        <div className="rounded-2xl border border-[#333333] bg-[#262626]/70 p-3.5 space-y-2">
-          <p className="font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-[#A3A3A3]">
-            Seeded Demo Terminal Accounts
-          </p>
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={() => {
-                setEmail("admin@sikacuisine.com");
-                setPassword("Admin123!@#");
-              }}
-              className="rounded-xl border border-[#333333] bg-[#1C1C1C] hover:border-[#D71920]/50 px-3 py-2 text-left text-xs transition-colors"
-            >
-              <span className="font-semibold text-[#F5F1EA] block">Admin</span>
-              <span className="text-[11px] text-[#A3A3A3] truncate block">admin@sikacuisine.com</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setEmail("staff@sikacuisine.com");
-                setPassword("Staff123!@#");
-              }}
-              className="rounded-xl border border-[#333333] bg-[#1C1C1C] hover:border-[#D71920]/50 px-3 py-2 text-left text-xs transition-colors"
-            >
-              <span className="font-semibold text-[#F5F1EA] block">Kitchen Staff</span>
-              <span className="text-[11px] text-[#A3A3A3] truncate block">staff@sikacuisine.com</span>
-            </button>
-          </div>
-        </div>
 
         <div className="flex items-center justify-between border-t border-[#333333] pt-4 text-xs">
           <Link href="/" className="inline-flex items-center gap-1.5 text-[#A3A3A3] hover:text-white">

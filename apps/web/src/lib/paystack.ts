@@ -32,7 +32,7 @@ export interface VerifyPaystackResponse {
   data: {
     id: number;
     domain: string;
-    status: "success" | "failed" | "abandoned";
+    status: string;
     reference: string;
     amount: number;
     gateway_response: string;
@@ -131,6 +131,109 @@ export async function verifyPaystackTransaction(
   }
 
   return data as VerifyPaystackResponse;
+}
+
+export interface CreatePaystackRefundParams {
+  transaction: string;
+  amountPesewas?: number;
+  customerNote?: string;
+  merchantNote?: string;
+}
+
+export interface CreatePaystackRefundResponse {
+  status: boolean;
+  message: string;
+  data: {
+    id: number;
+    status: string;
+    reference?: string;
+    amount: number;
+    currency: string;
+    refunded_at?: string;
+    transaction?: {
+      id?: number;
+      reference?: string;
+    };
+  };
+}
+
+/**
+ * Initiates a Paystack refund via `POST https://api.paystack.co/refund`.
+ * Amount is passed strictly in integer pesewas when provided (omitted = full charge refund).
+ */
+export async function createPaystackRefund(
+  params: CreatePaystackRefundParams
+): Promise<CreatePaystackRefundResponse> {
+  const secretKey = getSecretKey();
+  const payload: Record<string, unknown> = {
+    transaction: params.transaction,
+    currency: "GHS",
+  };
+
+  if (typeof params.amountPesewas === "number" && params.amountPesewas > 0) {
+    payload.amount = pesewasToPaystackAmount(params.amountPesewas);
+  }
+  if (params.customerNote) {
+    payload.customer_note = params.customerNote.slice(0, 200);
+  }
+  if (params.merchantNote) {
+    payload.merchant_note = params.merchantNote.slice(0, 200);
+  }
+
+  const response = await fetch(`${PAYSTACK_BASE_URL}/refund`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${secretKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+    cache: "no-store",
+  });
+
+  const data = await response.json();
+
+  if (!response.ok || !data.status) {
+    throw new Error(
+      `Paystack refund failed: ${data.message || response.statusText}`
+    );
+  }
+
+  return data as CreatePaystackRefundResponse;
+}
+
+/**
+ * Retrieves the latest refund status directly from Paystack (`GET https://api.paystack.co/refund/:id`).
+ * Used to reconcile `REFUND_PENDING` orders automatically even when localhost cannot receive Paystack webhooks.
+ */
+export async function fetchPaystackRefund(
+  refundIdOrReference: number | string
+): Promise<CreatePaystackRefundResponse | null> {
+  const secretKey = getSecretKey();
+  const cleanId = String(refundIdOrReference).trim();
+  if (!cleanId) return null;
+
+  try {
+    const response = await fetch(
+      `${PAYSTACK_BASE_URL}/refund/${encodeURIComponent(cleanId)}`,
+      {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${secretKey}`,
+          "Content-Type": "application/json",
+        },
+        cache: "no-store",
+      }
+    );
+
+    const data = await response.json();
+    if (!response.ok || !data?.status || !data?.data) {
+      return null;
+    }
+
+    return data as CreatePaystackRefundResponse;
+  } catch {
+    return null;
+  }
 }
 
 /**

@@ -170,7 +170,7 @@ export function DishDetailModal({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.98 }}
             transition={{ duration: SikaMotion.standard / 1000, ease: SikaMotion.ease }}
-            className="relative z-10 flex w-full max-w-xl flex-col overflow-hidden rounded-t-3xl sm:rounded-3xl border border-[#333333] bg-[#1C1C1C] shadow-2xl max-h-[90dvh]"
+            className="relative z-10 flex w-full max-w-xl flex-col overflow-hidden rounded-t-3xl sm:rounded-3xl border border-[#333333] bg-[#1C1C1C] shadow-[0_28px_70px_rgba(0,0,0,0.9),inset_0_1px_0_rgba(255,255,255,0.07)] max-h-[90dvh]"
           >
             {/* Header Photo */}
             <div className="relative h-56 sm:h-64 w-full flex-shrink-0 bg-[#262626]">

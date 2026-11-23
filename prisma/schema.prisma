@@ -38,6 +38,7 @@ enum PaymentStatus {
   PENDING
   PAID
   FAILED
+  REFUND_PENDING
   REFUNDED
 }
 
@@ -55,23 +56,29 @@ enum PaymentAttemptStatus {
 }
 
 model User {
-  id           String   @id @default(cuid())
-  email        String   @unique
-  passwordHash String
-  fullName     String
-  phone        String
-  role         Role     @default(CUSTOMER)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id                String    @id @default(cuid())
+  email             String    @unique
+  passwordHash      String
+  passwordChangedAt DateTime?
+  fullName          String
+  phone             String
+  role              Role      @default(CUSTOMER)
+  isActive          Boolean   @default(true)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
-  orders        Order[]              @relation("CustomerOrders")
-  deliveries    Order[]              @relation("RiderDeliveries")
-  addresses     DeliveryAddress[]
-  auditLogs     AuditLog[]
-  statusChanges OrderStatusHistory[]
+  orders              Order[]              @relation("CustomerOrders")
+  deliveries          Order[]              @relation("RiderDeliveries")
+  addresses           DeliveryAddress[]
+  auditLogs           AuditLog[]
+  statusChanges       OrderStatusHistory[]
+  passwordResetTokens PasswordResetToken[]
+  pushDevices         PushDeviceToken[]
+  inAppNotifications  InAppNotification[]
 
   @@index([email])
   @@index([role])
+  @@index([isActive])
 }
 
 model MenuCategory {
@@ -193,6 +200,7 @@ model Order {
   deliveryAddressId        String?
   assignedRiderId          String?
   estimatedDeliveryMinutes Int              @default(45)
+  idempotencyKey           String?          @unique
 
   createdAt                DateTime         @default(now())
   updatedAt                DateTime         @updatedAt
@@ -206,10 +214,13 @@ model Order {
 
   @@index([orderNumber])
   @@index([customerId])
+  @@index([customerId, createdAt])
   @@index([assignedRiderId])
+  @@index([assignedRiderId, fulfilmentStatus])
   @@index([fulfilmentStatus])
   @@index([paymentStatus])
   @@index([createdAt])
+  @@index([idempotencyKey])
 }
 
 model OrderItem {
@@ -294,4 +305,98 @@ model AuditLog {
   @@index([userId])
   @@index([entityType, entityId])
   @@index([createdAt])
+}
+
+model DeliveryZone {
+  id               String   @id @default(cuid())
+  slug             String   @unique
+  name             String
+  description      String
+  feePesewas       Int
+  estimatedMinutes Int      @default(35)
+  localities       String[]
+  isActive         Boolean  @default(true)
+  sortOrder        Int      @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([isActive, sortOrder])
+}
+
+model RestaurantSettings {
+  id                  String   @id @default("default")
+  name                String   @default("Sika Cuisine")
+  tagline             String   @default("Sunyani, Ghana")
+  phone               String   @default("0533376760")
+  whatsapp            String   @default("+233533376760")
+  address             String   @default("Commercial Street, Sunyani Central, Bono Region, Ghana")
+  isAcceptingOrders   Boolean  @default(true)
+  isDeliveryEnabled   Boolean  @default(true)
+  isCollectionEnabled Boolean  @default(true)
+  weekdayHours        String   @default("10:00 AM - 10:00 PM")
+  sundayHours         String   @default("12:00 PM - 9:00 PM")
+  updatedAt           DateTime @updatedAt
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model PushDeviceToken {
+  id            String   @id @default(cuid())
+  userId        String?
+  expoPushToken String   @unique
+  platform      String   @default("unknown")
+  isActive      Boolean  @default(true)
+  lastSeenAt    DateTime @default(now())
+  createdAt     DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([isActive])
+}
+
+model NotificationLog {
+  id           String   @id @default(cuid())
+  channel      String
+  provider     String
+  recipient    String
+  eventType    String
+  orderId      String?
+  status       String
+  errorMessage String?
+  createdAt    DateTime @default(now())
+
+  @@index([orderId])
+  @@index([eventType])
+  @@index([createdAt])
+}
+
+model InAppNotification {
+  id          String    @id @default(cuid())
+  userId      String
+  type        String
+  title       String
+  body        String
+  orderNumber String?
+  actionUrl   String?
+  isRead      Boolean   @default(false)
+  readAt      DateTime?
+  createdAt   DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead, createdAt])
+  @@index([orderNumber])
 }

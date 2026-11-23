@@ -1,9 +1,14 @@
 /**
  * @file apps/mobile/src/data/dish-images.ts
- * @description Static asset bundler lookup mapping API imageUrl paths to bundled local photography.
+ * @description Resolves dish photography across bundled local assets, Supabase/HTTPS cloud URLs,
+ * and server-hosted Admin CMS uploads (`/images/uploads/...`).
  *
- * Ensures crisp zero-latency rendering on ordinary Android devices even when offline or over 3G.
+ * Bundled seed photography renders with zero latency offline, while newly uploaded Admin CMS
+ * images resolve cleanly against `WEB_ORIGIN` or their direct HTTPS URL.
  */
+
+import { ImageSourcePropType } from "react-native";
+import { WEB_ORIGIN } from "../services/api-client";
 
 export const MOBILE_IMAGE_ASSETS = {
   heroPlate: require("../../assets/dishes/hero-signature-plate.jpg"),
@@ -30,11 +35,30 @@ const DISH_IMAGE_BY_FILENAME: Record<string, number> = {
 };
 
 /**
- * Resolves a MenuItemDTO `imageUrl` string (e.g., `/images/dishes/tilapia-banku.jpg`)
- * into a local static asset ID with guaranteed fallback to the signature plate photo.
+ * Resolves a MenuItemDTO `imageUrl` into a React Native `ImageSourcePropType`:
+ * 1. Direct remote URLs (`https://...`, `http://...`, `data:...`) -> `{ uri }`
+ * 2. Bundled seed dish filenames (e.g. `/images/dishes/tilapia-banku.jpg`) -> local asset ID
+ * 3. Server-relative uploaded paths (e.g. `/images/uploads/dish-....jpg`) -> `{ uri: `${WEB_ORIGIN}${path}` }`
+ * 4. Missing/invalid values -> fallback signature plate photo.
  */
-export function resolveDishImageSource(imageUrl?: string | null): number {
-  if (!imageUrl) return MOBILE_IMAGE_ASSETS.heroPlate;
-  const filename = imageUrl.split("/").pop()?.trim() ?? "";
+export function resolveDishImageSource(imageUrl?: string | null): ImageSourcePropType {
+  const trimmed = typeof imageUrl === "string" ? imageUrl.trim() : "";
+  if (!trimmed) return MOBILE_IMAGE_ASSETS.heroPlate;
+
+  if (/^(https?:\/\/|data:image\/)/i.test(trimmed)) {
+    return { uri: trimmed };
+  }
+
+  const cleanPath = trimmed.split("?")[0];
+  const filename = cleanPath.split("/").pop()?.trim() ?? "";
+  if (!cleanPath.includes("/uploads/") && DISH_IMAGE_BY_FILENAME[filename]) {
+    return DISH_IMAGE_BY_FILENAME[filename];
+  }
+
+  if (trimmed.startsWith("/")) {
+    const cleanOrigin = WEB_ORIGIN.replace(/\/+$/, "");
+    return { uri: `${cleanOrigin}${trimmed}` };
+  }
+
   return DISH_IMAGE_BY_FILENAME[filename] ?? MOBILE_IMAGE_ASSETS.heroPlate;
 }

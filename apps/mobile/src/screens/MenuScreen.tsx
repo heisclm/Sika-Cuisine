@@ -27,11 +27,14 @@ import { useCart } from "../context/CartContext";
 import { useToast } from "../context/ToastContext";
 import { DEFAULT_MENU_CATEGORIES, DEFAULT_MENU_ITEMS } from "../data/default-menu";
 import { apiRequest } from "../services/api-client";
+import { getLiveMenuCache, saveLiveMenuCache } from "../services/offline-menu-cache";
 import { SikaColors, SikaRadius, SikaSpace } from "../theme";
+import { triggerLightHaptic } from "../utils/haptics";
 
 interface MenuScreenProps {
   initialCategoryId?: string;
   initialSearch?: string;
+  onOpenSearch?: () => void;
   onNavigateToCart: () => void;
 }
 
@@ -39,9 +42,12 @@ interface MenuScreenProps {
  * Searchable 2-column menu catalog synchronized with live `/menu/items` API
  * and seamless offline fallback to Sika Cuisine's bundled Sunyani dishes.
  */
+const MOBILE_MENU_PAGE_SIZE = 12;
+
 export function MenuScreen({
   initialCategoryId = "all",
   initialSearch = "",
+  onOpenSearch,
   onNavigateToCart,
 }: MenuScreenProps) {
   const { width } = useWindowDimensions();
@@ -61,6 +67,7 @@ export function MenuScreen({
   const [filters, setFilters] = useState<MenuFilterState>(DEFAULT_MENU_FILTERS);
   const [filterVisible, setFilterVisible] = useState(false);
   const [selectedDish, setSelectedDish] = useState<EnrichedMenuItem | null>(null);
+  const [visibleCount, setVisibleCount] = useState(MOBILE_MENU_PAGE_SIZE);
 
   useEffect(() => {
     setActiveCategory(initialCategoryId || "all");
@@ -80,11 +87,16 @@ export function MenuScreen({
 
     if (res.success && res.data?.items?.length) {
       setMenuItems(res.data.items);
+      void saveLiveMenuCache(res.data.items);
       setIsOffline(false);
       setLastSyncedAt(new Date().toISOString());
     } else {
-      setMenuItems(DEFAULT_MENU_ITEMS);
+      const cachedMenu = await getLiveMenuCache();
+      setMenuItems(cachedMenu?.items?.length ? cachedMenu.items : DEFAULT_MENU_ITEMS);
       setIsOffline(true);
+      if (cachedMenu?.savedAt) {
+        setLastSyncedAt(cachedMenu.savedAt);
+      }
     }
 
     setLoading(false);
@@ -152,6 +164,22 @@ export function MenuScreen({
     return list;
   }, [menuItems, activeCategory, searchQuery, filters, getCategoryName]);
 
+  useEffect(() => {
+    setVisibleCount(MOBILE_MENU_PAGE_SIZE);
+  }, [activeCategory, searchQuery, filters]);
+
+  const visibleItems = useMemo(
+    () => filteredItems.slice(0, visibleCount),
+    [filteredItems, visibleCount]
+  );
+  const remainingCount = Math.max(0, filteredItems.length - visibleItems.length);
+  const fullCardWidth = width - SikaSpace.md * 2;
+  const spotlightDish =
+    visibleItems.length > 0 && visibleItems.length % 2 === 1
+      ? visibleItems[0]
+      : null;
+  const gridItems = spotlightDish ? visibleItems.slice(1) : visibleItems;
+
   const hasActiveFilters =
     filters.sortBy !== "featured" ||
     filters.maxSpice !== "all" ||
@@ -167,30 +195,55 @@ export function MenuScreen({
     <View style={styles.root}>
       <OfflineBanner isOffline={isOffline} lastSynchronizedAt={lastSyncedAt} />
 
-      {/* Search & Filter Toolbar */}
+      {/* Search & Filter Toolbar — Tapping search opens dedicated SearchScreen */}
       <View style={styles.toolbar}>
         <View style={styles.searchRow}>
-          <View style={styles.searchBox}>
+          <Pressable
+            onPress={() => {
+              triggerLightHaptic();
+              onOpenSearch?.();
+            }}
+            accessibilityRole="search"
+            accessibilityLabel="Search menu dishes"
+            style={styles.searchBox}
+          >
             <Search size={16} color={SikaColors.muted} />
-            <TextInput
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              placeholder="Search dishes, sides, combos..."
-              placeholderTextColor={SikaColors.muted}
-              style={styles.searchInput}
-            />
+            <Text
+              style={[
+                styles.searchPlaceholderText,
+                searchQuery.length > 0 && styles.searchActiveText,
+              ]}
+              numberOfLines={1}
+            >
+              {searchQuery.length > 0
+                ? searchQuery
+                : "Search dishes, sides, combos..."}
+            </Text>
             {searchQuery.length > 0 ? (
-              <Pressable onPress={() => setSearchQuery("")} hitSlop={8}>
+              <Pressable
+                onPress={(e) => {
+                  e.stopPropagation();
+                  setSearchQuery("");
+                }}
+                hitSlop={8}
+              >
                 <X size={16} color={SikaColors.secondaryText} />
               </Pressable>
             ) : null}
-          </View>
+          </Pressable>
 
           <Pressable
-            onPress={() => setFilterVisible(true)}
+            onPress={() => {
+              triggerLightHaptic();
+              setFilterVisible(true);
+            }}
             accessibilityRole="button"
             accessibilityLabel="Open menu filters"
-            style={[styles.filterBtn, hasActiveFilters && styles.filterBtnActive]}
+            style={({ pressed }) => [
+              styles.filterBtn,
+              hasActiveFilters && styles.filterBtnActive,
+              pressed && { transform: [{ scale: 0.94 }] },
+            ]}
           >
             <SlidersHorizontal
               size={18}
@@ -210,8 +263,15 @@ export function MenuScreen({
             return (
               <Pressable
                 key={cat.id}
-                onPress={() => setActiveCategory(cat.id)}
-                style={[styles.chip, active && styles.chipActive]}
+                onPress={() => {
+                  triggerLightHaptic();
+                  setActiveCategory(cat.id);
+                }}
+                style={({ pressed }) => [
+                  styles.chip,
+                  active && styles.chipActive,
+                  pressed && { transform: [{ scale: 0.95 }] },
+                ]}
               >
                 <Text style={[styles.chipText, active && styles.chipTextActive]}>
                   {cat.name}
@@ -232,7 +292,7 @@ export function MenuScreen({
       ) : (
         <FlatList
           key="menu-grid-2col"
-          data={filteredItems}
+          data={gridItems}
           numColumns={2}
           keyExtractor={(item) => item.id}
           columnWrapperStyle={styles.gridRow}
@@ -247,17 +307,55 @@ export function MenuScreen({
             styles.listContent,
             totalItemCount > 0 && styles.listWithFloatingCart,
           ]}
+          ListHeaderComponent={
+            spotlightDish ? (
+              <View style={styles.spotlightWrap}>
+                <DishCard
+                  dish={spotlightDish}
+                  cardWidth={fullCardWidth}
+                  categoryLabel={getCategoryName(spotlightDish)}
+                  onPress={setSelectedDish}
+                  onQuickAdd={handleQuickAdd}
+                />
+              </View>
+            ) : undefined
+          }
+          ListFooterComponent={
+            remainingCount > 0 ? (
+              <View style={styles.loadMoreWrap}>
+                <Text style={styles.loadMoreMeta}>
+                  Showing {visibleItems.length} of {filteredItems.length} dishes
+                </Text>
+                <Pressable
+                  onPress={() => {
+                    triggerLightHaptic();
+                    setVisibleCount((prev) => prev + MOBILE_MENU_PAGE_SIZE);
+                  }}
+                  style={({ pressed }) => [
+                    styles.loadMoreBtn,
+                    pressed && { transform: [{ scale: 0.97 }] },
+                  ]}
+                >
+                  <Text style={styles.loadMoreBtnText}>
+                    Load More Dishes ({remainingCount} remaining)
+                  </Text>
+                </Pressable>
+              </View>
+            ) : undefined
+          }
           ListEmptyComponent={
-            <EmptyState
-              title="No Dishes Match"
-              description="Try clearing your search term or resetting spice and availability filters."
-              actionLabel="Reset All Filters"
-              onAction={() => {
-                setActiveCategory("all");
-                setSearchQuery("");
-                setFilters(DEFAULT_MENU_FILTERS);
-              }}
-            />
+            spotlightDish ? undefined : (
+              <EmptyState
+                title="No Dishes Match"
+                description="Try clearing your search term or resetting spice and availability filters."
+                actionLabel="Reset All Filters"
+                onAction={() => {
+                  setActiveCategory("all");
+                  setSearchQuery("");
+                  setFilters(DEFAULT_MENU_FILTERS);
+                }}
+              />
+            )
           }
           renderItem={({ item }) => (
             <DishCard
@@ -271,24 +369,6 @@ export function MenuScreen({
           )}
         />
       )}
-
-      {/* Floating Cart Bar */}
-      {totalItemCount > 0 ? (
-        <View style={styles.cartBarWrap}>
-          <Pressable onPress={onNavigateToCart} style={styles.cartBar}>
-            <View style={styles.cartBarLeft}>
-              <View style={styles.cartCountPill}>
-                <Text style={styles.cartCountText}>{totalItemCount}</Text>
-              </View>
-              <RestaurantClocheIcon size={18} color={SikaColors.text} />
-              <Text style={styles.cartLabel}>View Your Tray</Text>
-            </View>
-            <Text style={styles.cartPrice}>
-              {formatPesewasToGhs(cartSubtotalPesewas)}
-            </Text>
-          </Pressable>
-        </View>
-      ) : null}
 
       <DishDetailModal
         visible={Boolean(selectedDish)}
@@ -338,10 +418,14 @@ const styles = StyleSheet.create({
     backgroundColor: SikaColors.surface,
     paddingHorizontal: SikaSpace.md,
   },
-  searchInput: {
+  searchPlaceholderText: {
     flex: 1,
-    color: SikaColors.warmWhite,
+    color: SikaColors.muted,
     fontSize: 13,
+  },
+  searchActiveText: {
+    color: SikaColors.warmWhite,
+    fontWeight: "600",
   },
   filterBtn: {
     width: 44,
@@ -382,6 +466,33 @@ const styles = StyleSheet.create({
     borderColor: SikaColors.accent,
     backgroundColor: SikaColors.accent,
   },
+  spotlightWrap: {
+    marginBottom: SikaSpace.sm + 2,
+  },
+  loadMoreWrap: {
+    alignItems: "center",
+    paddingTop: SikaSpace.md,
+    paddingBottom: SikaSpace.sm,
+    gap: 8,
+  },
+  loadMoreMeta: {
+    color: SikaColors.secondaryText,
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  loadMoreBtn: {
+    borderRadius: SikaRadius.pill,
+    borderWidth: 1,
+    borderColor: SikaColors.accentWash40,
+    backgroundColor: SikaColors.accentWash12,
+    paddingHorizontal: 20,
+    paddingVertical: 11,
+  },
+  loadMoreBtnText: {
+    color: SikaColors.warmWhite,
+    fontSize: 13,
+    fontWeight: "800",
+  },
   chipText: {
     color: SikaColors.secondaryText,
     fontSize: 12,
@@ -405,10 +516,10 @@ const styles = StyleSheet.create({
   listContent: {
     paddingHorizontal: SikaSpace.md,
     paddingTop: SikaSpace.md,
-    paddingBottom: 24,
+    paddingBottom: 115,
   },
   listWithFloatingCart: {
-    paddingBottom: 92,
+    paddingBottom: 155,
   },
   cartBarWrap: {
     position: "absolute",
@@ -422,6 +533,8 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     borderRadius: SikaRadius.xl,
     backgroundColor: SikaColors.accent,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.14)",
     paddingHorizontal: SikaSpace.lg,
     paddingVertical: 13,
     shadowColor: "#000000",

@@ -2,10 +2,16 @@ import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Animated,
+  Easing,
   Image,
+  Keyboard,
+  LayoutAnimation,
+  Linking,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
+  UIManager,
   View,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -15,15 +21,23 @@ import {
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
 import {
+  ArrowRight,
   Home,
   Receipt,
   User,
   UtensilsCrossed,
 } from "lucide-react-native";
-import { MOBILE_TAB_NAV, MobileTabId } from "@sika/shared";
+import {
+  MOBILE_TAB_NAV,
+  MobileTabId,
+  UserDTO,
+  formatPesewasToGhs,
+} from "@sika/shared";
 import { RestaurantClocheIcon } from "./src/components/icons/RestaurantClocheIcon";
+import { MobileNotificationBell } from "./src/components/notifications/MobileNotificationBell";
+import { RiderShell } from "./src/components/rider/RiderShell";
 import { CartProvider, useCart } from "./src/context/CartContext";
-import { ToastProvider } from "./src/context/ToastContext";
+import { ToastProvider, useToast } from "./src/context/ToastContext";
 import { MOBILE_IMAGE_ASSETS } from "./src/data/dish-images";
 import { AuthScreen } from "./src/screens/AuthScreen";
 import { CartScreen } from "./src/screens/CartScreen";
@@ -34,13 +48,31 @@ import { OnboardingScreen } from "./src/screens/OnboardingScreen";
 import { OrdersScreen } from "./src/screens/OrdersScreen";
 import { OrderTrackingScreen } from "./src/screens/OrderTrackingScreen";
 import { ProfileScreen } from "./src/screens/ProfileScreen";
+import { SearchScreen } from "./src/screens/SearchScreen";
+import { StaffRedirectScreen } from "./src/screens/StaffRedirectScreen";
+import { apiRequest } from "./src/services/api-client";
+import { clearOrdersCache } from "./src/services/offline-order-cache";
+import {
+  getCurrentUser,
+  removeAuthToken,
+  saveCurrentUser,
+} from "./src/services/storage";
 import { SikaColors, SikaSpace } from "./src/theme";
+import { triggerLightHaptic } from "./src/utils/haptics";
 
 const ONBOARDING_STORAGE_KEY = "@sika_onboarding_seen_v2";
+
+if (
+  Platform.OS === "android" &&
+  UIManager.setLayoutAnimationEnabledExperimental
+) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 
 type ActiveScreen =
   | "home"
   | "menu"
+  | "search"
   | "cart"
   | "checkout"
   | "orders"
@@ -68,6 +100,8 @@ function getScreenSubtitle(screen: ActiveScreen): string {
       return "Sunyani Showcase";
     case "menu":
       return "Full Kitchen Menu";
+    case "search":
+      return "Search Dishes";
     case "cart":
       return "Order Tray";
     case "checkout":
@@ -85,30 +119,114 @@ function getScreenSubtitle(screen: ActiveScreen): string {
 
 function SikaMobileShell() {
   const insets = useSafeAreaInsets();
-  const { totalItemCount } = useCart();
+  const {
+    totalItemCount,
+    cartSubtotalPesewas,
+    syncCartOwner,
+    clearCartOnSignOut,
+  } = useCart();
+  const { info } = useToast();
 
   const [onboardingChecked, setOnboardingChecked] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [currentUser, setCurrentUser] = useState<UserDTO | null>(null);
 
   const [activeScreen, setActiveScreen] = useState<ActiveScreen>("home");
+  const [searchReturnScreen, setSearchReturnScreen] = useState<"home" | "menu">("home");
   const [menuCategoryId, setMenuCategoryId] = useState<string>("all");
   const [menuSearchQuery, setMenuSearchQuery] = useState<string>("");
   const [activeOrderNumber, setActiveOrderNumber] = useState<string>("");
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+
+  const openSearchScreen = (from: "home" | "menu", initialQuery = "") => {
+    triggerLightHaptic();
+    setSearchReturnScreen(from);
+    setMenuSearchQuery(initialQuery);
+    setActiveScreen("search");
+  };
 
   const badgeScale = useRef(new Animated.Value(1)).current;
   const previousCountRef = useRef(totalItemCount);
+  const stageOpacity = useRef(new Animated.Value(1)).current;
+  const stageTranslateY = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    AsyncStorage.getItem(ONBOARDING_STORAGE_KEY)
-      .then((seen) => {
+    stageOpacity.setValue(0.86);
+    stageTranslateY.setValue(8);
+    Animated.parallel([
+      Animated.timing(stageOpacity, {
+        toValue: 1,
+        duration: 185,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.timing(stageTranslateY, {
+        toValue: 0,
+        duration: 195,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [activeScreen, stageOpacity, stageTranslateY]);
+
+  // Hide floating bottom dock whenever software keyboard is open (standard mobile UX)
+  useEffect(() => {
+    const showEvent =
+      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+    const hideEvent =
+      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
+
+    const showSub = Keyboard.addListener(showEvent, () =>
+      setIsKeyboardVisible(true)
+    );
+    const hideSub = Keyboard.addListener(hideEvent, () =>
+      setIsKeyboardVisible(false)
+    );
+
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    Promise.all([
+      AsyncStorage.getItem(ONBOARDING_STORAGE_KEY),
+      getCurrentUser(),
+    ])
+      .then(async ([seen, localUser]) => {
+        if (!active) return;
         setShowOnboarding(seen !== "true");
+        if (localUser) {
+          setCurrentUser(localUser);
+          const meRes = await apiRequest<{ success: boolean; user?: UserDTO }>(
+            "/auth/me"
+          );
+          if (!active) return;
+          if (meRes.status === 401 || meRes.status === 403) {
+            await removeAuthToken();
+            setCurrentUser(null);
+            await syncCartOwner(null);
+          } else if (meRes.success && meRes.data?.user) {
+            await saveCurrentUser(meRes.data.user);
+            setCurrentUser(meRes.data.user);
+            await syncCartOwner(meRes.data.user.id);
+          }
+        } else {
+          await syncCartOwner(null);
+        }
       })
       .catch(() => {
-        setShowOnboarding(false);
+        if (active) setShowOnboarding(false);
       })
       .finally(() => {
-        setOnboardingChecked(true);
+        if (active) setOnboardingChecked(true);
       });
+
+    return () => {
+      active = false;
+    };
   }, []);
 
   // Spring pop animation on header Cloche pill whenever item count increases
@@ -146,6 +264,53 @@ function SikaMobileShell() {
     setActiveScreen("tracking");
   };
 
+  useEffect(() => {
+    const handleDeepLinkUrl = (rawUrl: string | null | undefined) => {
+      if (!rawUrl || !rawUrl.includes("payment-callback")) return;
+      const match = /[?&]orderNumber=([^&]+)/i.exec(rawUrl);
+      if (match?.[1]) {
+        const orderNum = decodeURIComponent(match[1]).trim().toUpperCase();
+        if (orderNum) {
+          navigateToTracking(orderNum);
+        }
+      }
+    };
+
+    void Linking.getInitialURL().then(handleDeepLinkUrl).catch(() => {});
+    const subscription = Linking.addEventListener("url", (event) => {
+      handleDeepLinkUrl(event.url);
+    });
+    return () => subscription.remove();
+  }, []);
+
+  const handleGlobalSignOut = async () => {
+    const userId = currentUser?.id;
+    await apiRequest("/auth/logout", { method: "POST" }).catch(() => {});
+    await removeAuthToken();
+    if (userId) {
+      await clearOrdersCache(userId);
+    }
+    await clearCartOnSignOut();
+    setCurrentUser(null);
+    setActiveScreen("home");
+    info("Signed Out", "You've been signed out of Sika Cuisine. See you next time.");
+  };
+
+  const handleSessionRevoked = async () => {
+    const userId = currentUser?.id;
+    await removeAuthToken();
+    if (userId) {
+      await clearOrdersCache(userId);
+    }
+    await clearCartOnSignOut();
+    setCurrentUser(null);
+    setActiveScreen("auth");
+    info(
+      "Session Ended",
+      "Please sign in again or contact dispatch management."
+    );
+  };
+
   if (!onboardingChecked) {
     return (
       <View style={styles.bootSplash}>
@@ -156,6 +321,28 @@ function SikaMobileShell() {
 
   if (showOnboarding) {
     return <OnboardingScreen onComplete={handleFinishOnboarding} />;
+  }
+
+  if (currentUser?.role === "DELIVERY_RIDER") {
+    return (
+      <RiderShell
+        user={currentUser}
+        onSignOut={handleGlobalSignOut}
+        onSessionRevoked={handleSessionRevoked}
+      />
+    );
+  }
+
+  if (
+    currentUser &&
+    ["ADMIN", "STAFF_KITCHEN", "STAFF_CASHIER"].includes(currentUser.role)
+  ) {
+    return (
+      <StaffRedirectScreen
+        user={currentUser}
+        onSignOut={handleGlobalSignOut}
+      />
+    );
   }
 
   const activeTab: MobileTabId =
@@ -187,37 +374,70 @@ function SikaMobileShell() {
             style={styles.logo}
             resizeMode="contain"
           />
-          <View>
-            <Text style={styles.brandTitle}>SIKA CUISINE.</Text>
-            <Text style={styles.brandSubtitle}>{getScreenSubtitle(activeScreen)}</Text>
+          <View style={styles.brandTextWrap}>
+            <Text style={styles.brandTitle} numberOfLines={1}>
+              SIKA CUISINE.
+            </Text>
+            <Text style={styles.brandSubtitle} numberOfLines={1}>
+              {getScreenSubtitle(activeScreen)}
+            </Text>
           </View>
         </Pressable>
 
-        {/* Circular Dining Cloche Tray Button matching Web Navbar */}
-        <Animated.View style={{ transform: [{ scale: badgeScale }] }}>
-          <Pressable
-            onPress={() => setActiveScreen("cart")}
-            accessibilityRole="button"
-            accessibilityLabel={`Open tray with ${totalItemCount} items`}
-            style={styles.cartHeaderBtn}
-          >
-            <RestaurantClocheIcon size={20} color={SikaColors.warmWhite} />
-            {totalItemCount > 0 ? (
-              <View style={styles.cartBadge}>
-                <Text style={styles.cartBadgeText}>{totalItemCount}</Text>
-              </View>
-            ) : null}
-          </Pressable>
-        </Animated.View>
+        {/* Top-Right Notifications + Cloche Tray Button */}
+        <View style={styles.headerActionsRow}>
+          <MobileNotificationBell
+            enabled={Boolean(currentUser)}
+            onSelectNotification={(item) => {
+              if (item.orderNumber) {
+                navigateToTracking(item.orderNumber);
+              } else {
+                setActiveScreen("orders");
+              }
+            }}
+          />
+          <Animated.View style={{ transform: [{ scale: badgeScale }] }}>
+            <Pressable
+              onPress={() => {
+                triggerLightHaptic();
+                setActiveScreen("cart");
+              }}
+              accessibilityRole="button"
+              accessibilityLabel={`Open tray with ${totalItemCount} items`}
+              style={({ pressed }) => [
+                styles.cartHeaderBtn,
+                pressed && { transform: [{ scale: 0.95 }] },
+              ]}
+            >
+              <RestaurantClocheIcon size={20} color={SikaColors.warmWhite} />
+              {totalItemCount > 0 ? (
+                <View style={styles.cartBadge}>
+                  <Text style={styles.cartBadgeText}>{totalItemCount}</Text>
+                </View>
+              ) : null}
+            </Pressable>
+          </Animated.View>
+        </View>
       </View>
 
       {/* Main Content Stage */}
-      <View style={styles.stage}>
+      <Animated.View
+        style={[
+          styles.stage,
+          {
+            opacity: stageOpacity,
+            transform: [{ translateY: stageTranslateY }],
+          },
+        ]}
+      >
         {activeScreen === "home" && (
           <HomeScreen
+            currentUser={currentUser}
             onNavigateToMenu={navigateToMenu}
+            onOpenSearch={() => openSearchScreen("home")}
             onOpenCart={() => setActiveScreen("cart")}
             onOpenOrders={() => setActiveScreen("orders")}
+            onTrackOrder={navigateToTracking}
           />
         )}
 
@@ -225,7 +445,19 @@ function SikaMobileShell() {
           <MenuScreen
             initialCategoryId={menuCategoryId}
             initialSearch={menuSearchQuery}
+            onOpenSearch={() => openSearchScreen("menu", menuSearchQuery)}
             onNavigateToCart={() => setActiveScreen("cart")}
+          />
+        )}
+
+        {activeScreen === "search" && (
+          <SearchScreen
+            initialQuery={menuSearchQuery}
+            onBack={() => {
+              setMenuSearchQuery("");
+              setActiveScreen(searchReturnScreen);
+            }}
+            onOpenCart={() => setActiveScreen("cart")}
           />
         )}
 
@@ -247,6 +479,7 @@ function SikaMobileShell() {
           <OrdersScreen
             onTrackOrder={navigateToTracking}
             onBrowseMenu={() => navigateToMenu("all")}
+            onOpenCart={() => setActiveScreen("cart")}
           />
         )}
 
@@ -254,6 +487,7 @@ function SikaMobileShell() {
           <OrderTrackingScreen
             orderNumber={activeOrderNumber}
             onBack={() => setActiveScreen("orders")}
+            onOpenCart={() => setActiveScreen("cart")}
           />
         )}
 
@@ -262,57 +496,128 @@ function SikaMobileShell() {
             onNavigateToAuth={() => setActiveScreen("auth")}
             onNavigateToOrders={() => setActiveScreen("orders")}
             onReplayOnboarding={handleReplayOnboarding}
+            onSignedOut={() => setCurrentUser(null)}
           />
         )}
 
         {activeScreen === "auth" && (
           <AuthScreen
-            onAuthSuccess={() => setActiveScreen("account")}
+            onAuthSuccess={(user) => {
+              void (async () => {
+                const resolvedCount = await syncCartOwner(user.id);
+                setCurrentUser(user);
+                LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+                if (user.role === "CUSTOMER") {
+                  setActiveScreen(resolvedCount > 0 ? "checkout" : "home");
+                } else {
+                  setActiveScreen("home");
+                }
+              })();
+            }}
             onCancel={() => setActiveScreen("account")}
             onTrackAsGuest={() => setActiveScreen("orders")}
           />
         )}
-      </View>
+      </Animated.View>
 
-      {/* Floating Capsule Bottom Navigation Dock */}
-      <View
-        style={[
-          styles.dockWrapper,
-          { paddingBottom: Math.max(insets.bottom, 10) },
-        ]}
-      >
-        <View style={styles.dockPill}>
-          {MOBILE_TAB_NAV.map((tab) => {
-            const focused = activeTab === tab.id;
-            const iconColor = focused ? SikaColors.text : SikaColors.secondaryText;
+      {/* True Floating Capsule Bottom Navigation Dock (Only on Primary Tabs & Cart, When Keyboard Closed) */}
+      {!isKeyboardVisible &&
+      (activeScreen === "home" ||
+        activeScreen === "menu" ||
+        activeScreen === "cart" ||
+        activeScreen === "orders" ||
+        activeScreen === "account") ? (
+        <View
+          pointerEvents="box-none"
+          style={[
+            styles.dockWrapper,
+            { bottom: Math.max(insets.bottom + 6, 14) },
+          ]}
+        >
+          {totalItemCount > 0 &&
+          (activeScreen === "home" || activeScreen === "menu") ? (
+            <Pressable
+              onPress={() => {
+                triggerLightHaptic();
+                setActiveScreen("cart");
+              }}
+              accessibilityRole="button"
+              accessibilityLabel={`View order tray with ${totalItemCount} items, subtotal ${formatPesewasToGhs(
+                cartSubtotalPesewas
+              )}`}
+              style={({ pressed }) => [
+                styles.floatingTrayBar,
+                pressed && { transform: [{ scale: 0.985 }] },
+              ]}
+            >
+              <View style={styles.floatingTrayLeft}>
+                <View style={styles.floatingTrayCountPill}>
+                  <Text style={styles.floatingTrayCountText}>
+                    {totalItemCount}
+                  </Text>
+                </View>
+                <View>
+                  <Text style={styles.floatingTrayTitle}>View Order Tray</Text>
+                  <Text style={styles.floatingTraySub}>
+                    Ready for Sunyani delivery or pickup
+                  </Text>
+                </View>
+              </View>
 
-            return (
-              <Pressable
-                key={tab.id}
-                onPress={() => {
-                  if (tab.id === "home") setActiveScreen("home");
-                  else if (tab.id === "menu") navigateToMenu("all", "");
-                  else if (tab.id === "orders") setActiveScreen("orders");
-                  else setActiveScreen("account");
-                }}
-                accessibilityRole="tab"
-                accessibilityLabel={tab.accessibilityLabel}
-                accessibilityState={{ selected: focused }}
-                style={[styles.tabItem, focused && styles.tabItemActive]}
-              >
-                {renderTabIcon(tab.id, iconColor, focused)}
-                <Text
-                  style={[styles.tabLabel, focused && styles.tabLabelActive]}
-                  numberOfLines={1}
-                >
-                  {tab.label}
+              <View style={styles.floatingTrayRight}>
+                <Text style={styles.floatingTrayAmount}>
+                  {formatPesewasToGhs(cartSubtotalPesewas)}
                 </Text>
-                {focused ? <View style={styles.activeDot} /> : null}
-              </Pressable>
-            );
-          })}
+                <ArrowRight size={15} color={SikaColors.text} />
+              </View>
+            </Pressable>
+          ) : null}
+
+          <View style={styles.dockPill}>
+            {MOBILE_TAB_NAV.map((tab) => {
+              const focused = activeTab === tab.id;
+              const iconColor = focused
+                ? SikaColors.text
+                : SikaColors.secondaryText;
+
+              return (
+                <Pressable
+                  key={tab.id}
+                  onPress={() => {
+                    triggerLightHaptic();
+                    LayoutAnimation.configureNext(
+                      LayoutAnimation.create(
+                        220,
+                        LayoutAnimation.Types.easeInEaseOut,
+                        LayoutAnimation.Properties.opacity
+                      )
+                    );
+                    if (tab.id === "home") setActiveScreen("home");
+                    else if (tab.id === "menu") navigateToMenu("all", "");
+                    else if (tab.id === "orders") setActiveScreen("orders");
+                    else setActiveScreen("account");
+                  }}
+                  accessibilityRole="tab"
+                  accessibilityLabel={tab.accessibilityLabel}
+                  accessibilityState={{ selected: focused }}
+                  style={({ pressed }) => [
+                    styles.tabItem,
+                    focused && styles.tabItemActive,
+                    pressed && { transform: [{ scale: 0.96 }] },
+                  ]}
+                >
+                  {renderTabIcon(tab.id, iconColor, focused)}
+                  {focused ? (
+                    <Text style={styles.tabLabelActive} numberOfLines={1}>
+                      {tab.label}
+                    </Text>
+                  ) : null}
+                </Pressable>
+              );
+            })}
+          </View>
         </View>
-      </View>
+      ) : null}
     </View>
   );
 }
@@ -352,9 +657,16 @@ const styles = StyleSheet.create({
     backgroundColor: SikaColors.surface,
   },
   brandCluster: {
+    flex: 1,
+    minWidth: 0,
     flexDirection: "row",
     alignItems: "center",
     gap: SikaSpace.sm + 2,
+    paddingRight: SikaSpace.sm,
+  },
+  brandTextWrap: {
+    flex: 1,
+    minWidth: 0,
   },
   logo: {
     width: 36,
@@ -373,12 +685,18 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     marginTop: 1,
   },
+  headerActionsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
   cartHeaderBtn: {
     width: 42,
     height: 42,
     borderRadius: 21,
     borderWidth: 1,
     borderColor: SikaColors.border,
+    borderTopColor: "rgba(255, 255, 255, 0.12)",
     backgroundColor: SikaColors.elevated,
     alignItems: "center",
     justifyContent: "center",
@@ -407,54 +725,113 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   dockWrapper: {
-    backgroundColor: SikaColors.background,
-    paddingHorizontal: 14,
-    paddingTop: 6,
+    position: "absolute",
+    left: 18,
+    right: 18,
+    gap: 10,
+    zIndex: 30,
   },
-  dockPill: {
+  floatingTrayBar: {
     flexDirection: "row",
     alignItems: "center",
-    borderRadius: 28,
-    backgroundColor: "#181818",
+    justifyContent: "space-between",
+    borderRadius: 22,
+    backgroundColor: SikaColors.accent,
     borderWidth: 1,
-    borderColor: SikaColors.border,
-    padding: 5,
+    borderColor: "rgba(255, 255, 255, 0.22)",
+    paddingHorizontal: 14,
+    paddingVertical: 11,
     shadowColor: "#000000",
     shadowOpacity: 0.55,
     shadowRadius: 16,
     shadowOffset: { width: 0, height: 8 },
     elevation: 12,
   },
-  tabItem: {
+  floatingTrayLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
     flex: 1,
+  },
+  floatingTrayCountPill: {
+    minWidth: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: "rgba(16, 16, 16, 0.32)",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.22)",
     alignItems: "center",
     justifyContent: "center",
-    paddingTop: 7,
-    paddingBottom: 10,
-    borderRadius: 22,
+    paddingHorizontal: 6,
+  },
+  floatingTrayCountText: {
+    color: SikaColors.text,
+    fontSize: 12,
+    fontWeight: "900",
+    fontVariant: ["tabular-nums"],
+  },
+  floatingTrayTitle: {
+    color: SikaColors.text,
+    fontSize: 13.5,
+    fontWeight: "900",
+  },
+  floatingTraySub: {
+    color: "rgba(255, 255, 255, 0.82)",
+    fontSize: 10.5,
+    fontWeight: "600",
+    marginTop: 1,
+  },
+  floatingTrayRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: "rgba(16, 16, 16, 0.26)",
+    paddingHorizontal: 11,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  floatingTrayAmount: {
+    color: SikaColors.text,
+    fontSize: 13,
+    fontWeight: "900",
+    fontVariant: ["tabular-nums"],
+  },
+  dockPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderRadius: 999,
+    backgroundColor: "rgba(24, 24, 24, 0.96)",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.14)",
+    paddingHorizontal: 8,
+    paddingVertical: 7,
+    shadowColor: "#000000",
+    shadowOpacity: 0.65,
+    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 16,
+  },
+  tabItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 11,
+    paddingHorizontal: 16,
+    borderRadius: 999,
     borderWidth: 1,
     borderColor: "transparent",
-    gap: 3,
+    gap: 8,
   },
   tabItemActive: {
-    backgroundColor: "rgba(215, 25, 32, 0.18)",
-    borderColor: "rgba(215, 25, 32, 0.50)",
-  },
-  tabLabel: {
-    color: SikaColors.secondaryText,
-    fontSize: 10.5,
-    fontWeight: "700",
+    backgroundColor: "#2B1416",
+    borderColor: "rgba(215, 25, 32, 0.65)",
+    paddingHorizontal: 20,
   },
   tabLabelActive: {
     color: SikaColors.text,
+    fontSize: 13,
     fontWeight: "800",
-  },
-  activeDot: {
-    position: "absolute",
-    bottom: 3,
-    width: 14,
-    height: 2.5,
-    borderRadius: 2,
-    backgroundColor: SikaColors.accent,
+    letterSpacing: 0.2,
   },
 });

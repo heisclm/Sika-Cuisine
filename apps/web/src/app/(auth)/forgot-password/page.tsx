@@ -2,25 +2,46 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, CheckCircle2, Mail, MessageCircle, Phone, ShieldAlert } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Mail, MessageCircle, Phone } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
 import { Button } from "@/components/ui/Button";
 import { PageReveal } from "@/components/ui/MotionPrimitives";
 import { RESTAURANT_INFO } from "@/lib/navigation";
 
 /**
- * Customer password assistance page.
- * Automated email/SMS reset tokens are not yet provisioned in this release, so requests
- * surface direct phone and WhatsApp verification channels with Sika Cuisine Sunyani.
+ * Self-service customer & staff password recovery request page.
+ * Issues expiring SHA-256 hashed reset links via `/api/v1/auth/forgot-password`.
  */
 export default function ForgotPasswordPage() {
   const [identifier, setIdentifier] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!identifier.trim()) return;
-    setSubmitted(true);
+    const clean = identifier.trim();
+    if (!clean) return;
+
+    setErrorMessage(null);
+    setSubmitting(true);
+    try {
+      const res = await fetch("/api/v1/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ identifier: clean }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        setErrorMessage(data.error || "Unable to send password reset instructions right now.");
+        return;
+      }
+      setSubmitted(true);
+    } catch {
+      setErrorMessage("Network error while contacting recovery service. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -34,29 +55,31 @@ export default function ForgotPasswordPage() {
             Account Recovery
           </span>
           <h1 className="font-serif text-2xl sm:text-3xl font-bold text-[#F5F1EA]">
-            Need Password Help?
+            Reset Your Password
           </h1>
           <p className="text-xs sm:text-sm text-[#A3A3A3] leading-relaxed">
-            Self-service automated password resets are not active yet. Verify your account details with our Sunyani desk for manual assistance.
+            Enter your registered email address or Ghanaian phone number and we will email a secure password reset link.
           </p>
         </div>
 
-        <div className="rounded-2xl border border-[#EAB308]/30 bg-[#EAB308]/10 p-4 flex items-start gap-3">
-          <ShieldAlert className="h-5 w-5 text-[#FACC15] flex-shrink-0 mt-0.5" aria-hidden="true" />
-          <p className="text-xs leading-relaxed text-[#F5F1EA]/90">
-            For security, no automated reset emails or SMS codes are dispatched from this form. Contact our kitchen counter directly to verify your phone number.
-          </p>
-        </div>
+        {errorMessage && (
+          <div
+            role="alert"
+            className="rounded-2xl border border-[#FB7185]/40 bg-[#FB7185]/10 px-4 py-3 text-xs text-[#FDA4AF]"
+          >
+            {errorMessage}
+          </div>
+        )}
 
         {submitted ? (
           <div className="rounded-2xl border border-[#22C55E]/35 bg-[#22C55E]/10 p-5 text-center space-y-4">
             <CheckCircle2 className="h-8 w-8 text-[#4ADE80] mx-auto" aria-hidden="true" />
             <div className="space-y-1.5">
               <h2 className="font-serif text-lg font-bold text-[#F5F1EA]">
-                Ready for Direct Verification
+                Check Your Email
               </h2>
               <p className="text-xs text-[#A3A3A3] leading-relaxed">
-                Reach out to Sika Cuisine Sunyani mentioning <strong className="text-white">{identifier}</strong> so our team can assist with access restoration.
+                If an active account matches <strong className="text-white">{identifier}</strong>, a reset link expiring in <strong className="text-white">30 minutes</strong> has been sent to the account&apos;s email.
               </p>
             </div>
 
@@ -70,7 +93,7 @@ export default function ForgotPasswordPage() {
               </a>
               <a
                 href={`${RESTAURANT_INFO.whatsappBaseUrl}?text=${encodeURIComponent(
-                  `Hello Sika Cuisine, I need help resetting password for account: ${identifier}`
+                  `Hello Sika Cuisine, I need support accessing my account: ${identifier}`
                 )}`}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -107,8 +130,8 @@ export default function ForgotPasswordPage() {
               </div>
             </div>
 
-            <Button type="submit" variant="primary" size="lg" fullWidth>
-              Get Password Assistance
+            <Button type="submit" variant="primary" size="lg" fullWidth loading={submitting}>
+              Send Reset Instructions
             </Button>
           </form>
         )}

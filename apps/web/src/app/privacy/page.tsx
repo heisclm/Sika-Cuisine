@@ -1,6 +1,16 @@
 import React from "react";
+import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft, ShieldCheck, Lock, Eye } from "lucide-react";
+
+export const metadata: Metadata = {
+  title: "Privacy Policy",
+  description:
+    "How Sika Cuisine Sunyani collects, protects, and uses customer contact, delivery address, and payment records under Ghanaian data protection standards.",
+  alternates: {
+    canonical: "/privacy",
+  },
+};
 
 export default function PrivacyPolicyPage() {
   return (

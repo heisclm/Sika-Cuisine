@@ -13,7 +13,12 @@
  */
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { FulfilmentStatus, FulfilmentType } from "@sika/shared";
+import {
+  FulfilmentStatus,
+  FulfilmentType,
+  PaymentMethod,
+  PaymentStatus,
+} from "@sika/shared";
 
 /**
  * Compact order representation stored in local device cache.
@@ -23,6 +28,12 @@ export interface CachedOrderSummary {
   orderNumber: string;
   fulfilmentType: FulfilmentType;
   lastKnownStatus: FulfilmentStatus;
+  paymentMethod?: PaymentMethod;
+  paymentStatus?: PaymentStatus;
+  createdAt?: string;
+  primaryImageUrl?: string | null;
+  rejectionReason?: string | null;
+  cancellationReason?: string | null;
   statusHistory: Array<{
     status: FulfilmentStatus;
     timestamp: string;

@@ -14,18 +14,35 @@
 import Constants from "expo-constants";
 import { getAuthToken } from "./storage";
 
-/** Default fallback points to Android emulator loopback addressing workstation localhost */
+/**
+ * Resolves the REST API base URL in priority order:
+ * 1. EXPO_PUBLIC_API_URL (set in apps/mobile/.env or EAS Build environment)
+ * 2. app.json extra.apiUrl override
+ * 3. Android emulator host loopback pointing to local Next.js server
+ */
 const API_BASE_URL =
-  Constants.expoConfig?.extra?.apiUrl || "http://10.0.2.2:3000/api/v1";
+  process.env.EXPO_PUBLIC_API_URL ||
+  Constants.expoConfig?.extra?.apiUrl ||
+  "http://10.0.2.2:3000/api/v1";
+
+/**
+ * Origin of the paired Sika Cuisine Web Operations Console (`WEB_ORIGIN`).
+ */
+export const WEB_ORIGIN = API_BASE_URL.replace(/\/api\/v1\/?$/, "");
 
 /**
  * Standard envelope returned by apiRequest across all HTTP interactions.
  */
 export interface ApiResponse<T = any> {
   success: boolean;
+  status?: number;
   data?: T;
   error?: string;
   isOffline?: boolean;
+}
+
+export interface ApiRequestOptions extends RequestInit {
+  timeoutMs?: number;
 }
 
 /**
@@ -33,13 +50,14 @@ export interface ApiResponse<T = any> {
  *
  * @template T - Expected shape of response payload
  * @param endpoint - Relative path (e.g., "/orders" or "menu/items")
- * @param options - Fetch options (method, body, custom headers)
+ * @param options - Fetch options (method, body, custom headers, optional timeoutMs)
  * @returns Promise<ApiResponse<T>> - Normalized response envelope
  */
 export async function apiRequest<T = any>(
   endpoint: string,
-  options: RequestInit = {}
+  options: ApiRequestOptions = {}
 ): Promise<ApiResponse<T>> {
+  const { timeoutMs = 12000, ...fetchOptions } = options;
   const url = `${API_BASE_URL}${endpoint.startsWith("/") ? endpoint : `/${endpoint}`}`;
 
   // Automatically attach authenticated customer JWT if stored
@@ -47,7 +65,7 @@ export async function apiRequest<T = any>(
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     Accept: "application/json",
-    ...(options.headers as Record<string, string>),
+    ...(fetchOptions.headers as Record<string, string>),
   };
 
   if (token) {
@@ -55,12 +73,12 @@ export async function apiRequest<T = any>(
   }
 
   try {
-    // 12-second defensive timeout for mobile cellular networks in Ghana
+    // Defensive timeout for mobile cellular networks in Ghana (30s for payment init, 12s default)
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 12000);
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
     const response = await fetch(url, {
-      ...options,
+      ...fetchOptions,
       headers,
       signal: controller.signal,
     });
@@ -71,12 +89,15 @@ export async function apiRequest<T = any>(
     if (!response.ok) {
       return {
         success: false,
+        status: response.status,
+        data: json,
         error: json.error || `Server returned error (${response.status})`,
       };
     }
 
     return {
       success: true,
+      status: response.status,
       data: json,
     };
   } catch (error: any) {

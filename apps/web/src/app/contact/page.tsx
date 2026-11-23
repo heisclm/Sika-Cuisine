@@ -1,26 +1,85 @@
 "use client";
 
-import React, { useState } from "react";
-import { CheckCircle2, Clock, MapPin, MessageCircle, Phone, Send } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { CheckCircle2, Clock, Mail, MapPin, MessageCircle, Phone, Send } from "lucide-react";
 import { RESTAURANT_INFO } from "@/lib/navigation";
 import { Button } from "@/components/ui/Button";
 import { PageReveal } from "@/components/ui/MotionPrimitives";
+import { useToast } from "@/context/ToastContext";
 
 /**
  * Contact & Sunyani location page.
- * Prepares customer inquiries locally and routes direct confirmation via WhatsApp or telephone.
+ * Submits customer inquiries directly to `POST /api/v1/contact` (email + Admin alert)
+ * while also offering direct WhatsApp & telephone shortcuts.
  */
 export default function ContactPage() {
+  const { success: toastSuccess, error: toastError } = useToast();
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Prefill contact fields when the customer is signed in
+  useEffect(() => {
+    let active = true;
+    fetch("/api/v1/auth/me", { cache: "no-store" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!active || !data?.success || !data.user) return;
+        setName((prev) => prev || data.user.fullName || "");
+        setPhone((prev) => prev || data.user.phone || "");
+        setEmail((prev) => prev || data.user.email || "");
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMessage(null);
     if (!name.trim() || !phone.trim() || !message.trim()) return;
-    setSubmitted(true);
+
+    setSubmitting(true);
+    try {
+      const res = await fetch("/api/v1/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: name.trim(),
+          phone: phone.trim(),
+          email: email.trim() || undefined,
+          subject: subject.trim() || undefined,
+          message: message.trim(),
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        const msg =
+          data.error || "Unable to send your inquiry right now. Please try again.";
+        setErrorMessage(msg);
+        toastError("Send Failed", msg);
+        return;
+      }
+
+      setSubmitted(true);
+      toastSuccess(
+        "Inquiry Sent",
+        "Our Sunyani hospitality desk has received your message."
+      );
+    } catch {
+      const msg = "Network error while sending your message. Please try again or use WhatsApp.";
+      setErrorMessage(msg);
+      toastError("Network Error", msg);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const whatsappInquiryUrl = `${RESTAURANT_INFO.whatsappBaseUrl}?text=${encodeURIComponent(
@@ -113,21 +172,30 @@ export default function ContactPage() {
           <div className="lg:col-span-7">
             <div className="rounded-3xl border border-[#333333] bg-[#1C1C1C] p-6 sm:p-8">
               <h2 className="font-serif text-xl sm:text-2xl font-bold text-[#F5F1EA]">
-                Prepare a Kitchen Inquiry
+                Send Us a Message
               </h2>
               <p className="mt-1 text-xs sm:text-sm text-[#A3A3A3] mb-6">
-                Compose your catering or order question below, then launch WhatsApp or call directly for immediate response.
+                Send your catering, reservation, or order question directly to our Sunyani hospitality desk.
               </p>
+
+              {errorMessage && (
+                <div
+                  role="alert"
+                  className="mb-4 rounded-xl border border-[#FB7185]/40 bg-[#FB7185]/10 px-4 py-3 text-xs sm:text-sm text-[#FDA4AF]"
+                >
+                  {errorMessage}
+                </div>
+              )}
 
               {submitted ? (
                 <div className="rounded-2xl border border-[#22C55E]/35 bg-[#22C55E]/10 p-6 text-center space-y-4">
                   <CheckCircle2 className="h-9 w-9 text-[#4ADE80] mx-auto" aria-hidden="true" />
                   <div className="space-y-1.5">
                     <h3 className="font-serif text-lg font-bold text-[#F5F1EA]">
-                      Message Draft Ready
+                      Message Delivered
                     </h3>
                     <p className="text-xs sm:text-sm text-[#A3A3A3]">
-                      Send your pre-filled note directly to Sika Cuisine on WhatsApp or call {RESTAURANT_INFO.primaryPhone}.
+                      Thank you, <strong className="text-white">{name}</strong>. Our Sunyani hospitality desk has received your inquiry{email.trim() ? " and emailed you a confirmation copy" : ""}.
                     </p>
                   </div>
 
@@ -139,14 +207,18 @@ export default function ContactPage() {
                       className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-[#D71920] hover:bg-[#A91017] px-5 py-2.5 text-xs sm:text-sm font-semibold text-white transition-colors"
                     >
                       <MessageCircle className="h-4 w-4" aria-hidden="true" />
-                      <span>Send via WhatsApp</span>
+                      <span>Also Chat on WhatsApp</span>
                     </a>
                     <Button
                       variant="secondary"
                       size="sm"
-                      onClick={() => setSubmitted(false)}
+                      onClick={() => {
+                        setSubmitted(false);
+                        setSubject("");
+                        setMessage("");
+                      }}
                     >
-                      Edit Message
+                      Send Another Message
                     </Button>
                   </div>
                 </div>
@@ -189,21 +261,45 @@ export default function ContactPage() {
                     </div>
                   </div>
 
-                  <div>
-                    <label
-                      htmlFor="contact-subject"
-                      className="block text-xs font-semibold uppercase tracking-wider text-[#A3A3A3] mb-1.5"
-                    >
-                      Subject
-                    </label>
-                    <input
-                      id="contact-subject"
-                      type="text"
-                      value={subject}
-                      onChange={(e) => setSubject(e.target.value)}
-                      placeholder="e.g. Event Catering / Group Pickup"
-                      className="w-full rounded-xl border border-[#333333] bg-[#262626] p-3 text-sm text-[#F5F1EA] placeholder-[#737373] focus:outline-none focus:border-[#D71920]"
-                    />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label
+                        htmlFor="contact-email"
+                        className="block text-xs font-semibold uppercase tracking-wider text-[#A3A3A3] mb-1.5"
+                      >
+                        Email Address (Optional)
+                      </label>
+                      <div className="relative">
+                        <Mail
+                          className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#737373]"
+                          aria-hidden="true"
+                        />
+                        <input
+                          id="contact-email"
+                          type="email"
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          placeholder="you@example.com"
+                          className="w-full rounded-xl border border-[#333333] bg-[#262626] pl-10 pr-3 py-3 text-sm text-[#F5F1EA] placeholder-[#737373] focus:outline-none focus:border-[#D71920]"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label
+                        htmlFor="contact-subject"
+                        className="block text-xs font-semibold uppercase tracking-wider text-[#A3A3A3] mb-1.5"
+                      >
+                        Subject
+                      </label>
+                      <input
+                        id="contact-subject"
+                        type="text"
+                        value={subject}
+                        onChange={(e) => setSubject(e.target.value)}
+                        placeholder="e.g. Event Catering / Group Pickup"
+                        className="w-full rounded-xl border border-[#333333] bg-[#262626] p-3 text-sm text-[#F5F1EA] placeholder-[#737373] focus:outline-none focus:border-[#D71920]"
+                      />
+                    </div>
                   </div>
 
                   <div>
@@ -224,9 +320,9 @@ export default function ContactPage() {
                     />
                   </div>
 
-                  <Button type="submit" variant="primary" size="lg">
+                  <Button type="submit" variant="primary" size="lg" loading={submitting}>
                     <Send className="h-4 w-4" aria-hidden="true" />
-                    <span>Prepare Inquiry</span>
+                    <span>{submitting ? "Sending..." : "Send Message"}</span>
                   </Button>
                 </form>
               )}

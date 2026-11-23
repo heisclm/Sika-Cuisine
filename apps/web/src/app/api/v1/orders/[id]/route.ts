@@ -37,19 +37,55 @@ export async function GET(
       );
     }
 
-    // IDOR Defense: verify order ownership or staff privileges
-    const isStaff = ["ADMIN", "STAFF_CASHIER", "STAFF_KITCHEN", "DELIVERY_RIDER"].includes(
-      session.role
-    );
-    const isOwner =
-      order.customerId === session.id ||
-      (order.guestEmail && order.guestEmail.toLowerCase() === session.email.toLowerCase());
+    // Role-strict access control & IDOR isolation
+    const isAdminOrCashier =
+      session.role === "ADMIN" || session.role === "STAFF_CASHIER";
+    const isKitchenStaff = session.role === "STAFF_KITCHEN";
+    const isAssignedRider =
+      session.role === "DELIVERY_RIDER" && order.assignedRiderId === session.id;
+    const isCustomerOwner =
+      session.role === "CUSTOMER" && order.customerId === session.id;
 
-    if (!isStaff && !isOwner) {
+    if (
+      !isAdminOrCashier &&
+      !isKitchenStaff &&
+      !isAssignedRider &&
+      !isCustomerOwner
+    ) {
       return NextResponse.json(
-        { success: false, error: "Access denied. You do not have permission to view this order." },
+        {
+          success: false,
+          error: "Access denied. You do not have permission to view this order.",
+        },
         { status: 403 }
       );
+    }
+
+    if (isKitchenStaff) {
+      return NextResponse.json({
+        success: true,
+        order: {
+          id: order.id,
+          orderNumber: order.orderNumber,
+          guestName: order.guestName,
+          fulfilmentType: order.fulfilmentType,
+          fulfilmentStatus: order.fulfilmentStatus,
+          customerNotes: order.customerNotes,
+          createdAt: order.createdAt,
+          updatedAt: order.updatedAt,
+          deliveryAddress: order.deliveryAddress
+            ? { areaLocality: order.deliveryAddress.areaLocality }
+            : null,
+          statusHistory: order.statusHistory,
+          items: order.items.map((item) => ({
+            id: item.id,
+            itemNameSnapshot: item.itemNameSnapshot,
+            quantity: item.quantity,
+            selectedOptionsSnapshot: item.selectedOptionsSnapshot,
+            specialInstructions: item.specialInstructions,
+          })),
+        },
+      });
     }
 
     return NextResponse.json({

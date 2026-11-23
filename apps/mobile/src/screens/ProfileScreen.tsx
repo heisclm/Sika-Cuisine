@@ -11,6 +11,7 @@ import {
   ChevronRight,
   Clock,
   LogOut,
+  Mail,
   MapPin,
   Phone,
   Receipt,
@@ -22,10 +23,16 @@ import {
   RESTAURANT_INFO,
   SUNYANI_DELIVERY_ZONES,
   UserDTO,
+  formatFirstName,
+  formatInitials,
   formatPesewasToGhs,
+  formatTimeOfDayGreeting,
 } from "@sika/shared";
 import { Badge } from "../components/ui/Badge";
 import { Button } from "../components/ui/Button";
+import { ScalePressable } from "../components/ui/ScalePressable";
+import { SikaModal } from "../components/ui/SikaModal";
+import { useCart } from "../context/CartContext";
 import { useToast } from "../context/ToastContext";
 import { apiRequest } from "../services/api-client";
 import { clearOrdersCache } from "../services/offline-order-cache";
@@ -36,6 +43,7 @@ interface ProfileScreenProps {
   onNavigateToAuth: () => void;
   onNavigateToOrders: () => void;
   onReplayOnboarding: () => void;
+  onSignedOut?: () => void;
 }
 
 /**
@@ -45,9 +53,13 @@ export function ProfileScreen({
   onNavigateToAuth,
   onNavigateToOrders,
   onReplayOnboarding,
+  onSignedOut,
 }: ProfileScreenProps) {
+  const { clearCartOnSignOut } = useCart();
   const { info } = useToast();
   const [user, setUser] = useState<UserDTO | null>(null);
+  const [signOutModalVisible, setSignOutModalVisible] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
 
   const loadUser = useCallback(async () => {
     const localUser = await getCurrentUser();
@@ -58,15 +70,23 @@ export function ProfileScreen({
     loadUser();
   }, [loadUser]);
 
-  const handleSignOut = async () => {
-    const current = await getCurrentUser();
-    await apiRequest("/auth/logout", { method: "POST" }).catch(() => {});
-    await removeAuthToken();
-    if (current?.id) {
-      await clearOrdersCache(current.id);
+  const handleConfirmSignOut = async () => {
+    setSigningOut(true);
+    try {
+      const current = await getCurrentUser();
+      await apiRequest("/auth/logout", { method: "POST" }).catch(() => {});
+      await removeAuthToken();
+      if (current?.id) {
+        await clearOrdersCache(current.id);
+      }
+      await clearCartOnSignOut();
+      setSignOutModalVisible(false);
+      setUser(null);
+      onSignedOut?.();
+      info("Signed Out", "You've been signed out of Sika Cuisine. See you next time.");
+    } finally {
+      setSigningOut(false);
     }
-    setUser(null);
-    info("Signed Out", "Your device credentials have been cleared.");
   };
 
   return (
@@ -75,20 +95,65 @@ export function ProfileScreen({
       contentContainerStyle={styles.scrollContent}
       showsVerticalScrollIndicator={false}
     >
-      {/* Account Identity Card */}
+      {/* Account Identity Card (2-Zone Editorial Layout) */}
       <View style={styles.card}>
         {user ? (
-          <View style={styles.profileHeader}>
-            <View style={styles.avatar}>
-              <UserIcon size={24} color={SikaColors.accentLight} />
-            </View>
-            <View style={styles.profileInfo}>
-              <View style={styles.nameRow}>
-                <Text style={styles.name}>{user.fullName}</Text>
-                <Badge label={user.role.replace(/_/g, " ")} variant="brand" />
+          <View>
+            <View style={styles.profileHeader}>
+              <View style={styles.avatar}>
+                <Text style={styles.avatarInitials}>
+                  {formatInitials(user.fullName)}
+                </Text>
               </View>
-              <Text style={styles.metaText}>{user.email}</Text>
-              <Text style={styles.metaMono}>{user.phone}</Text>
+              <View style={styles.profileInfo}>
+                <View style={styles.badgeWrap}>
+                  <Badge
+                    label={
+                      user.role === "CUSTOMER"
+                        ? "CUSTOMER ACCOUNT"
+                        : user.role.replace(/_/g, " ")
+                    }
+                    variant="brand"
+                  />
+                </View>
+                <Text style={styles.name} numberOfLines={1}>
+                  {formatTimeOfDayGreeting(user.fullName)}
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.profileDivider} />
+
+            <View style={styles.contactGrid}>
+              <View style={styles.contactRow}>
+                <View style={styles.contactLeft}>
+                  <UserIcon size={13} color={SikaColors.muted} />
+                  <Text style={styles.contactLabel}>Full Name</Text>
+                </View>
+                <Text style={styles.contactValue} numberOfLines={1}>
+                  {user.fullName}
+                </Text>
+              </View>
+
+              <View style={styles.contactRow}>
+                <View style={styles.contactLeft}>
+                  <Mail size={13} color={SikaColors.muted} />
+                  <Text style={styles.contactLabel}>Email</Text>
+                </View>
+                <Text style={styles.contactValue} numberOfLines={1}>
+                  {user.email}
+                </Text>
+              </View>
+
+              <View style={styles.contactRow}>
+                <View style={styles.contactLeft}>
+                  <Phone size={13} color={SikaColors.muted} />
+                  <Text style={styles.contactLabel}>Mobile</Text>
+                </View>
+                <Text style={styles.contactValueMono} numberOfLines={1}>
+                  {user.phone}
+                </Text>
+              </View>
             </View>
           </View>
         ) : (
@@ -117,34 +182,37 @@ export function ProfileScreen({
 
       {/* Quick Shortcuts */}
       <View style={styles.card}>
-        <Pressable onPress={onNavigateToOrders} style={styles.actionRow}>
+        <ScalePressable onPress={onNavigateToOrders} style={styles.actionRow}>
           <View style={styles.actionLeft}>
             <Receipt size={18} color={SikaColors.accentLight} />
             <Text style={styles.actionText}>View &amp; Track Orders</Text>
           </View>
           <ChevronRight size={17} color={SikaColors.muted} />
-        </Pressable>
+        </ScalePressable>
 
         <View style={styles.divider} />
 
-        <Pressable onPress={onReplayOnboarding} style={styles.actionRow}>
+        <ScalePressable onPress={onReplayOnboarding} style={styles.actionRow}>
           <View style={styles.actionLeft}>
             <RotateCcw size={18} color={SikaColors.accentLight} />
             <Text style={styles.actionText}>Replay Onboarding Tour</Text>
           </View>
           <ChevronRight size={17} color={SikaColors.muted} />
-        </Pressable>
+        </ScalePressable>
 
         {user ? (
           <>
             <View style={styles.divider} />
-            <Pressable onPress={handleSignOut} style={styles.actionRow}>
+            <ScalePressable
+              onPress={() => setSignOutModalVisible(true)}
+              style={styles.actionRow}
+            >
               <View style={styles.actionLeft}>
                 <LogOut size={18} color={SikaColors.error} />
                 <Text style={[styles.actionText, { color: "#FDA4AF" }]}>Sign Out</Text>
               </View>
               <ChevronRight size={17} color={SikaColors.error} />
-            </Pressable>
+            </ScalePressable>
           </>
         ) : null}
       </View>
@@ -171,21 +239,23 @@ export function ProfileScreen({
         </View>
 
         <View style={styles.phoneBtnsRow}>
-          <Pressable
+          <ScalePressable
+            containerStyle={styles.phoneChipContainer}
             onPress={() => Linking.openURL(`tel:${RESTAURANT_INFO.primaryPhoneIntl}`)}
             style={styles.phoneChip}
           >
             <Phone size={14} color={SikaColors.accentLight} />
             <Text style={styles.phoneChipText}>{RESTAURANT_INFO.primaryPhone}</Text>
-          </Pressable>
+          </ScalePressable>
 
-          <Pressable
+          <ScalePressable
+            containerStyle={styles.phoneChipContainer}
             onPress={() => Linking.openURL(`tel:${RESTAURANT_INFO.secondaryPhoneIntl}`)}
             style={styles.phoneChip}
           >
             <Phone size={14} color={SikaColors.accentLight} />
             <Text style={styles.phoneChipText}>{RESTAURANT_INFO.secondaryPhone}</Text>
-          </Pressable>
+          </ScalePressable>
         </View>
       </View>
 
@@ -214,6 +284,34 @@ export function ProfileScreen({
       <Text style={styles.footerVersion}>
         Sika Cuisine Mobile &bull; Expo SDK 58 &bull; Sunyani, Ghana
       </Text>
+
+      <SikaModal
+        visible={signOutModalVisible}
+        tone="error"
+        icon={<LogOut size={24} color={SikaColors.error} />}
+        badgeLabel="Session Control"
+        badgeVariant="error"
+        title="Sign Out of Account?"
+        message="You can still browse the menu and place guest orders, or sign back in anytime to view your saved history."
+        metaRows={
+          user
+            ? [
+                { label: "Account", value: formatFirstName(user.fullName) },
+                { label: "Email", value: user.email },
+              ]
+            : undefined
+        }
+        primaryLabel="Sign Out"
+        primaryLoading={signingOut}
+        onPrimaryPress={() => void handleConfirmSignOut()}
+        secondaryLabel="Stay Signed In"
+        onSecondaryPress={() => {
+          if (!signingOut) setSignOutModalVisible(false);
+        }}
+        onRequestClose={() => {
+          if (!signingOut) setSignOutModalVisible(false);
+        }}
+      />
     </ScrollView>
   );
 }
@@ -226,7 +324,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: SikaSpace.lg,
     gap: SikaSpace.lg,
-    paddingBottom: 36,
+    paddingBottom: 115,
   },
   card: {
     borderRadius: SikaRadius.xl,
@@ -249,8 +347,8 @@ const styles = StyleSheet.create({
     gap: SikaSpace.md,
   },
   avatar: {
-    width: 52,
-    height: 52,
+    width: 54,
+    height: 54,
     borderRadius: SikaRadius.lg,
     borderWidth: 1,
     borderColor: SikaColors.accentWash40,
@@ -258,30 +356,74 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  avatarInitials: {
+    color: SikaColors.warmWhite,
+    fontSize: 18,
+    fontWeight: "900",
+    letterSpacing: 1.1,
+  },
   profileInfo: {
     flex: 1,
+    minWidth: 0,
+    gap: 4,
   },
-  nameRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    flexWrap: "wrap",
-    gap: SikaSpace.sm,
+  badgeWrap: {
+    alignSelf: "flex-start",
   },
   name: {
     color: SikaColors.text,
-    fontSize: 18,
+    fontSize: 19,
+    fontWeight: "900",
+  },
+  profileDivider: {
+    height: 1,
+    backgroundColor: SikaColors.border,
+    marginVertical: SikaSpace.md,
+  },
+  contactGrid: {
+    gap: 8,
+  },
+  contactRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: SikaSpace.md,
+    borderRadius: SikaRadius.md,
+    borderWidth: 1,
+    borderColor: SikaColors.border,
+    backgroundColor: SikaColors.elevated,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+  },
+  contactLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 7,
+    flexShrink: 0,
+  },
+  contactLabel: {
+    color: SikaColors.secondaryText,
+    fontSize: 11.5,
+    fontWeight: "600",
+  },
+  contactValue: {
+    color: SikaColors.warmWhite,
+    fontSize: 12.5,
+    fontWeight: "700",
+    flex: 1,
+    textAlign: "right",
+  },
+  contactValueMono: {
+    color: SikaColors.warmWhite,
+    fontSize: 12.5,
     fontWeight: "800",
+    fontVariant: ["tabular-nums"],
+    textAlign: "right",
   },
   metaText: {
     color: SikaColors.secondaryText,
-    fontSize: 13,
-    marginTop: 3,
-  },
-  metaMono: {
-    color: SikaColors.muted,
-    fontSize: 12,
+    fontSize: 12.5,
     marginTop: 2,
-    fontWeight: "600",
   },
   actionRow: {
     flexDirection: "row",
@@ -335,8 +477,10 @@ const styles = StyleSheet.create({
     gap: SikaSpace.sm,
     marginTop: SikaSpace.xs,
   },
-  phoneChip: {
+  phoneChipContainer: {
     flex: 1,
+  },
+  phoneChip: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",

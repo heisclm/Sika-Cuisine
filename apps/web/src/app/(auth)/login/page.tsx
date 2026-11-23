@@ -1,24 +1,42 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Compass, Eye, EyeOff, Lock, Mail, UserPlus } from "lucide-react";
+import {
+  formatFirstName,
+  getDashboardForRole,
+  resolveCustomerAuthRedirect,
+} from "@sika/shared";
 import { Logo } from "@/components/brand/Logo";
 import { Button } from "@/components/ui/Button";
 import { PageReveal } from "@/components/ui/MotionPrimitives";
+import { useCart } from "@/context/CartContext";
+import { useToast } from "@/context/ToastContext";
 
 /**
  * Customer sign-in page backed by `POST /api/v1/auth/login`.
- * Stores HTTP-only session cookies on the server and routes signed-in guests to `/account`.
+ * Stores HTTP-only session cookies on the server and routes signed-in customers
+ * to their active `returnTo` destination, `/checkout` (if tray has items), or `/` Storefront Home.
  */
 export default function LoginPage() {
   const router = useRouter();
+  const { syncCartSession } = useCart();
+  const { success } = useToast();
+  const [returnTo, setReturnTo] = useState<string | null>(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      setReturnTo(params.get("returnTo"));
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,7 +57,32 @@ export default function LoginPage() {
         return;
       }
 
-      router.push("/account");
+      const role = data.user?.role;
+      const firstName = formatFirstName(data.user?.fullName, "Guest");
+      const resolvedCartCount = syncCartSession(
+        typeof data.user?.id === "string" ? data.user.id : null
+      );
+
+      if (role && role !== "CUSTOMER") {
+        const destination = getDashboardForRole(role);
+        success(`Welcome back, ${firstName}`, `Opening ${destination.title}.`);
+        router.push(destination.path);
+        router.refresh();
+        return;
+      }
+
+      const targetPath = resolveCustomerAuthRedirect({
+        returnTo,
+        cartItemCount: resolvedCartCount,
+      });
+
+      success(
+        `Welcome back, ${firstName}`,
+        targetPath === "/checkout"
+          ? "Your details are ready for checkout."
+          : "Good to see you again — explore today's menu."
+      );
+      router.push(targetPath);
       router.refresh();
     } catch {
       setError("Network connection error. Please check your internet and try again.");
@@ -148,7 +191,11 @@ export default function LoginPage() {
           <p className="text-xs text-[#A3A3A3]">
             Don&apos;t have an account yet?{" "}
             <Link
-              href="/register"
+              href={
+                returnTo
+                  ? `/register?returnTo=${encodeURIComponent(returnTo)}`
+                  : "/register"
+              }
               className="inline-flex items-center gap-1 font-semibold text-[#F0444A] hover:underline"
             >
               <UserPlus className="h-3.5 w-3.5" aria-hidden="true" />

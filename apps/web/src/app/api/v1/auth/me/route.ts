@@ -1,39 +1,38 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAuthUser } from "@/lib/auth/session";
-import { prisma } from "@/lib/prisma";
+import { clearSession, verifyAuthUserStatus } from "@/lib/auth/session";
 
 export async function GET(req: NextRequest) {
   try {
-    const session = await getAuthUser(req);
-    if (!session) {
+    const verification = await verifyAuthUserStatus(req);
+
+    if (verification.state === "revoked") {
+      await clearSession().catch(() => {});
+      return NextResponse.json(
+        { success: false, error: "Account has been deactivated or removed." },
+        { status: 401 }
+      );
+    }
+
+    if (verification.state === "db_unavailable") {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Database temporarily unreachable. Please retry in a moment.",
+        },
+        { status: 503 }
+      );
+    }
+
+    if (verification.state !== "authenticated") {
       return NextResponse.json(
         { success: false, error: "Authentication required." },
         { status: 401 }
       );
     }
 
-    const user = await prisma.user.findUnique({
-      where: { id: session.id },
-      select: {
-        id: true,
-        email: true,
-        fullName: true,
-        phone: true,
-        role: true,
-        createdAt: true,
-      },
-    });
-
-    if (!user) {
-      return NextResponse.json(
-        { success: false, error: "User account not found." },
-        { status: 404 }
-      );
-    }
-
     return NextResponse.json({
       success: true,
-      user,
+      user: verification.user,
     });
   } catch (error: any) {
     console.error("[API v1 Auth Me Error]:", error);
