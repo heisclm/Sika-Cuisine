@@ -1,16 +1,28 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { RESTAURANT_INFO, SUNYANI_DELIVERY_ZONES } from "@sika/shared";
+import {
+  evaluateKitchenOpenStatus,
+  RESTAURANT_INFO,
+  SUNYANI_DELIVERY_ZONES,
+} from "@sika/shared";
 
 export const dynamic = "force-dynamic";
 
 /**
  * GET /api/v1/config/public
  * Serves live restaurant operating settings and active Sunyani delivery zones from PostgreSQL,
- * falling back transparently to `@sika/shared` defaults when unconfigured.
+ * automatically evaluating Ghana GMT operating hours + Admin manual overrides.
  */
 export async function GET() {
   const hasDatabaseUrl = Boolean(process.env.DATABASE_URL?.trim());
+  const defaultWeekdayHours = "10:00 AM - 10:00 PM";
+  const defaultSundayHours = "12:00 PM - 9:00 PM";
+  const fallbackStatus = evaluateKitchenOpenStatus({
+    scheduleMode: "AUTO",
+    isAcceptingOrders: true,
+    weekdayHours: defaultWeekdayHours,
+    sundayHours: defaultSundayHours,
+  });
 
   const fallbackResponse = {
     success: true,
@@ -23,11 +35,14 @@ export async function GET() {
         process.env.NEXT_PUBLIC_RESTAURANT_WHATSAPP || RESTAURANT_INFO.primaryPhoneIntl,
       address:
         process.env.NEXT_PUBLIC_RESTAURANT_ADDRESS || RESTAURANT_INFO.address,
-      isAcceptingOrders: true,
+      isAcceptingOrders: fallbackStatus.isOpen,
+      kitchenScheduleMode: fallbackStatus.mode,
+      isWithinScheduledHours: fallbackStatus.isWithinScheduledHours,
+      kitchenStatusReason: fallbackStatus.reason,
       isDeliveryEnabled: true,
       isCollectionEnabled: true,
-      weekdayHours: "10:00 AM - 10:00 PM",
-      sundayHours: "12:00 PM - 9:00 PM",
+      weekdayHours: defaultWeekdayHours,
+      sundayHours: defaultSundayHours,
     },
     deliveryZones: SUNYANI_DELIVERY_ZONES,
   };
@@ -45,6 +60,15 @@ export async function GET() {
       }),
     ]);
 
+    const liveStatus = settings
+      ? evaluateKitchenOpenStatus({
+          scheduleMode: settings.kitchenScheduleMode,
+          isAcceptingOrders: settings.isAcceptingOrders,
+          weekdayHours: settings.weekdayHours,
+          sundayHours: settings.sundayHours,
+        })
+      : fallbackStatus;
+
     return NextResponse.json(
       {
         success: true,
@@ -56,7 +80,10 @@ export async function GET() {
               phone: settings.phone,
               whatsapp: settings.whatsapp,
               address: settings.address,
-              isAcceptingOrders: settings.isAcceptingOrders,
+              isAcceptingOrders: liveStatus.isOpen,
+              kitchenScheduleMode: liveStatus.mode,
+              isWithinScheduledHours: liveStatus.isWithinScheduledHours,
+              kitchenStatusReason: liveStatus.reason,
               isDeliveryEnabled: settings.isDeliveryEnabled,
               isCollectionEnabled: settings.isCollectionEnabled,
               weekdayHours: settings.weekdayHours,

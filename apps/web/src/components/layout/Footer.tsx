@@ -21,7 +21,6 @@ import { usePublicConfig } from "@/context/PublicConfigContext";
 export function Footer() {
   const pathname = usePathname();
   const { restaurant } = usePublicConfig();
-  const [isWithinHours, setIsWithinHours] = useState(true);
   const [sessionRole, setSessionRole] = useState<string | null>(null);
 
   useEffect(() => {
@@ -40,25 +39,7 @@ export function Footer() {
     };
   }, [pathname]);
 
-  // Compute Sunyani operating status cleanly against GMT / UTC+0
-  useEffect(() => {
-    const checkKitchenStatus = () => {
-      const now = new Date();
-      const utcHours = now.getUTCHours();
-      const utcDay = now.getUTCDay();
-      if (utcDay === 0) {
-        setIsWithinHours(utcHours >= 12 && utcHours < 21);
-      } else {
-        setIsWithinHours(utcHours >= 10 && utcHours < 22);
-      }
-    };
-
-    checkKitchenStatus();
-    const interval = window.setInterval(checkKitchenStatus, 60000);
-    return () => window.clearInterval(interval);
-  }, []);
-
-  const effectiveOpen = restaurant.isAcceptingOrders && isWithinHours;
+  const effectiveOpen = restaurant.isAcceptingOrders;
 
   return (
     <footer className="w-full border-t border-[#333333] bg-[#101010] text-[#A3A3A3] pt-14 pb-10">

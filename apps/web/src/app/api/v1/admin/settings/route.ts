@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { RESTAURANT_INFO } from "@sika/shared";
+import {
+  evaluateKitchenOpenStatus,
+  RESTAURANT_INFO,
+} from "@sika/shared";
 import { prisma } from "@/lib/prisma";
 import { getAuthUser } from "@/lib/auth/session";
 import { verifySameOriginMutation } from "@/lib/auth/csrf";
@@ -16,6 +19,7 @@ const updateSettingsSchema = z
     whatsapp: z.string().min(6).max(40).optional(),
     address: z.string().min(4).max(240).optional(),
     isAcceptingOrders: z.boolean().optional(),
+    kitchenScheduleMode: z.enum(["AUTO", "MANUAL_OPEN", "MANUAL_CLOSED"]).optional(),
     isDeliveryEnabled: z.boolean().optional(),
     isCollectionEnabled: z.boolean().optional(),
     weekdayHours: z.string().min(4).max(80).optional(),
@@ -36,6 +40,7 @@ function getDefaultSettings() {
     address:
       process.env.NEXT_PUBLIC_RESTAURANT_ADDRESS || RESTAURANT_INFO.address,
     isAcceptingOrders: true,
+    kitchenScheduleMode: "AUTO" as const,
     isDeliveryEnabled: true,
     isCollectionEnabled: true,
     weekdayHours: "10:00 AM - 10:00 PM",
@@ -135,12 +140,41 @@ export async function PATCH(req: NextRequest) {
     }
 
     const defaults = getDefaultSettings();
+    const existing = await prisma.restaurantSettings.findUnique({
+      where: { id: "default" },
+    });
+
+    const nextMode =
+      parsed.data.kitchenScheduleMode ??
+      existing?.kitchenScheduleMode ??
+      defaults.kitchenScheduleMode;
+    const nextWeekdayHours =
+      parsed.data.weekdayHours ?? existing?.weekdayHours ?? defaults.weekdayHours;
+    const nextSundayHours =
+      parsed.data.sundayHours ?? existing?.sundayHours ?? defaults.sundayHours;
+
+    const evaluated = evaluateKitchenOpenStatus({
+      scheduleMode: nextMode,
+      isAcceptingOrders:
+        parsed.data.isAcceptingOrders ??
+        existing?.isAcceptingOrders ??
+        defaults.isAcceptingOrders,
+      weekdayHours: nextWeekdayHours,
+      sundayHours: nextSundayHours,
+    });
+
+    const updatePayload = {
+      ...parsed.data,
+      kitchenScheduleMode: evaluated.mode,
+      isAcceptingOrders: evaluated.isOpen,
+    };
+
     const settings = await prisma.restaurantSettings.upsert({
       where: { id: "default" },
-      update: parsed.data,
+      update: updatePayload,
       create: {
         ...defaults,
-        ...parsed.data,
+        ...updatePayload,
       },
     });
 
@@ -149,11 +183,14 @@ export async function PATCH(req: NextRequest) {
       action: "RESTAURANT_SETTINGS_UPDATED",
       entityType: "RestaurantSettings",
       entityId: "default",
-      metadata: parsed.data as Record<string, unknown>,
+      metadata: updatePayload as Record<string, unknown>,
       req,
     });
 
-    return NextResponse.json({ success: true, settings }, { status: 200 });
+    return NextResponse.json(
+      { success: true, settings, effectiveKitchenStatus: evaluated },
+      { status: 200 }
+    );
   } catch (error) {
     console.error("[API v1 Admin Settings PATCH Error]:", error);
     return NextResponse.json(

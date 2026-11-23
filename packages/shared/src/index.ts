@@ -8,6 +8,7 @@ export * from "./utils/role-routes";
 export * from "./utils/payment-guards";
 export * from "./utils/order-filters";
 export * from "./utils/order-labels";
+export * from "./utils/kitchen-hours";
 export * from "./utils/analytics";
 export * from "./schemas/index";
 export * from "./design-tokens";

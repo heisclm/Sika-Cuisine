@@ -1,17 +1,27 @@
 "use client";
 
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Bike,
   Clock,
   Edit3,
+  Lock,
   MapPin,
   Plus,
   Power,
   Save,
   Store,
+  Unlock,
   X,
 } from "lucide-react";
+import {
+  evaluateKitchenOpenStatus,
+  formatHoursRangeFrom24Hour,
+  formatMinutesTo24Hour,
+  KitchenScheduleMode,
+  normalizeKitchenScheduleMode,
+  parseHoursRange,
+} from "@sika/shared";
 import { formatPesewasToGhs } from "@/lib/currency";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -25,6 +35,7 @@ interface RestaurantSettingsForm {
   whatsapp: string;
   address: string;
   isAcceptingOrders: boolean;
+  kitchenScheduleMode: KitchenScheduleMode;
   isDeliveryEnabled: boolean;
   isCollectionEnabled: boolean;
   weekdayHours: string;
@@ -57,11 +68,52 @@ export function AdminSettingsZonesPanel() {
     whatsapp: "+233533376760",
     address: "Commercial Street, Sunyani Central, Bono Region, Ghana",
     isAcceptingOrders: true,
+    kitchenScheduleMode: "AUTO",
     isDeliveryEnabled: true,
     isCollectionEnabled: true,
     weekdayHours: "10:00 AM - 10:00 PM",
     sundayHours: "12:00 PM - 9:00 PM",
   });
+  const [clockTick, setClockTick] = useState(() => Date.now());
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setClockTick(Date.now()), 30_000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  const liveKitchenStatus = useMemo(
+    () =>
+      evaluateKitchenOpenStatus({
+        scheduleMode: settings.kitchenScheduleMode,
+        isAcceptingOrders: settings.isAcceptingOrders,
+        weekdayHours: settings.weekdayHours,
+        sundayHours: settings.sundayHours,
+        now: new Date(clockTick),
+      }),
+    [
+      settings.kitchenScheduleMode,
+      settings.isAcceptingOrders,
+      settings.weekdayHours,
+      settings.sundayHours,
+      clockTick,
+    ]
+  );
+
+  const weekdayRange = useMemo(() => {
+    const parsed = parseHoursRange(settings.weekdayHours);
+    return {
+      open: parsed ? formatMinutesTo24Hour(parsed.openMinutes) : "10:00",
+      close: parsed ? formatMinutesTo24Hour(parsed.closeMinutes) : "22:00",
+    };
+  }, [settings.weekdayHours]);
+
+  const sundayRange = useMemo(() => {
+    const parsed = parseHoursRange(settings.sundayHours);
+    return {
+      open: parsed ? formatMinutesTo24Hour(parsed.openMinutes) : "12:00",
+      close: parsed ? formatMinutesTo24Hour(parsed.closeMinutes) : "21:00",
+    };
+  }, [settings.sundayHours]);
 
   const [zones, setZones] = useState<AdminDeliveryZone[]>([]);
   const [zoneFormOpen, setZoneFormOpen] = useState(false);
@@ -88,7 +140,15 @@ export function AdminSettingsZonesPanel() {
       ]);
 
       if (settingsRes.ok && settingsData.success && settingsData.settings) {
-        setSettings((prev) => ({ ...prev, ...settingsData.settings }));
+        const s = settingsData.settings;
+        setSettings((prev) => ({
+          ...prev,
+          ...s,
+          kitchenScheduleMode: normalizeKitchenScheduleMode(
+            s.kitchenScheduleMode,
+            s.isAcceptingOrders
+          ),
+        }));
       }
       if (zonesRes.ok && zonesData.success) {
         setZones(zonesData.zones ?? []);
@@ -244,42 +304,122 @@ export function AdminSettingsZonesPanel() {
           </Button>
         </div>
 
-        {/* Operational Toggles */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <button
-            type="button"
-            onClick={() =>
-              setSettings((prev) => ({
-                ...prev,
-                isAcceptingOrders: !prev.isAcceptingOrders,
-              }))
-            }
-            aria-pressed={settings.isAcceptingOrders}
-            className={`rounded-2xl border p-4 text-left transition-colors ${
-              settings.isAcceptingOrders
-                ? "border-emerald-500/40 bg-emerald-500/10"
-                : "border-[#D71920]/50 bg-[#D71920]/10"
-            }`}
-          >
-            <div className="flex items-center justify-between gap-2">
-              <Power
-                className={`h-5 w-5 ${
-                  settings.isAcceptingOrders ? "text-emerald-400" : "text-[#F0444A]"
-                }`}
-                aria-hidden="true"
-              />
-              <Badge variant={settings.isAcceptingOrders ? "success" : "error"}>
-                {settings.isAcceptingOrders ? "Open" : "Paused"}
-              </Badge>
+        {/* Kitchen Schedule Mode (Auto Hours + Manual Override) */}
+        <div className="rounded-2xl border border-[#333333] bg-[#161616] p-4 sm:p-5 space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <p className="text-sm font-bold text-white flex items-center gap-2">
+                <Power
+                  className={`h-4 w-4 ${
+                    liveKitchenStatus.isOpen ? "text-emerald-400" : "text-[#F0444A]"
+                  }`}
+                  aria-hidden="true"
+                />
+                <span>Kitchen Open / Close Control</span>
+              </p>
+              <p className="text-xs text-[#A3A3A3] mt-0.5">
+                {liveKitchenStatus.reason}
+              </p>
             </div>
-            <p className="mt-3 text-sm font-bold text-white">Online Ordering</p>
-            <p className="text-xs text-[#A3A3A3] mt-0.5">
-              {settings.isAcceptingOrders
-                ? "Kitchen is accepting live orders."
-                : "All Web & Mobile checkouts paused."}
-            </p>
-          </button>
+            <Badge variant={liveKitchenStatus.isOpen ? "success" : "error"}>
+              {liveKitchenStatus.isOpen ? "LIVE: OPEN" : "LIVE: CLOSED"}
+            </Badge>
+          </div>
 
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+            <button
+              type="button"
+              onClick={() =>
+                setSettings((prev) => ({
+                  ...prev,
+                  kitchenScheduleMode: "AUTO",
+                }))
+              }
+              aria-pressed={settings.kitchenScheduleMode === "AUTO"}
+              className={`rounded-xl border p-3.5 text-left transition-all ${
+                settings.kitchenScheduleMode === "AUTO"
+                  ? "border-emerald-500/60 bg-emerald-500/10 text-white"
+                  : "border-[#333333] bg-[#222222] text-[#A3A3A3] hover:border-[#555555]"
+              }`}
+            >
+              <div className="flex items-center justify-between gap-2">
+                <Clock className="h-4 w-4 text-emerald-400" aria-hidden="true" />
+                {settings.kitchenScheduleMode === "AUTO" && (
+                  <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-emerald-400">
+                    Active
+                  </span>
+                )}
+              </div>
+              <p className="mt-2 text-xs font-bold text-white">Auto Schedule</p>
+              <p className="text-[11px] text-[#A3A3A3] mt-0.5">
+                Opens &amp; closes automatically by GMT hours below.
+              </p>
+            </button>
+
+            <button
+              type="button"
+              onClick={() =>
+                setSettings((prev) => ({
+                  ...prev,
+                  kitchenScheduleMode: "MANUAL_OPEN",
+                  isAcceptingOrders: true,
+                }))
+              }
+              aria-pressed={settings.kitchenScheduleMode === "MANUAL_OPEN"}
+              className={`rounded-xl border p-3.5 text-left transition-all ${
+                settings.kitchenScheduleMode === "MANUAL_OPEN"
+                  ? "border-amber-400/60 bg-amber-500/10 text-white"
+                  : "border-[#333333] bg-[#222222] text-[#A3A3A3] hover:border-[#555555]"
+              }`}
+            >
+              <div className="flex items-center justify-between gap-2">
+                <Unlock className="h-4 w-4 text-amber-400" aria-hidden="true" />
+                {settings.kitchenScheduleMode === "MANUAL_OPEN" && (
+                  <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-amber-400">
+                    Override
+                  </span>
+                )}
+              </div>
+              <p className="mt-2 text-xs font-bold text-white">Manual Open</p>
+              <p className="text-[11px] text-[#A3A3A3] mt-0.5">
+                Force kitchen open now, even outside set hours.
+              </p>
+            </button>
+
+            <button
+              type="button"
+              onClick={() =>
+                setSettings((prev) => ({
+                  ...prev,
+                  kitchenScheduleMode: "MANUAL_CLOSED",
+                  isAcceptingOrders: false,
+                }))
+              }
+              aria-pressed={settings.kitchenScheduleMode === "MANUAL_CLOSED"}
+              className={`rounded-xl border p-3.5 text-left transition-all ${
+                settings.kitchenScheduleMode === "MANUAL_CLOSED"
+                  ? "border-[#D71920]/70 bg-[#D71920]/15 text-white"
+                  : "border-[#333333] bg-[#222222] text-[#A3A3A3] hover:border-[#555555]"
+              }`}
+            >
+              <div className="flex items-center justify-between gap-2">
+                <Lock className="h-4 w-4 text-[#F0444A]" aria-hidden="true" />
+                {settings.kitchenScheduleMode === "MANUAL_CLOSED" && (
+                  <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#F0444A]">
+                    Override
+                  </span>
+                )}
+              </div>
+              <p className="mt-2 text-xs font-bold text-white">Manual Closed</p>
+              <p className="text-[11px] text-[#A3A3A3] mt-0.5">
+                Pause all Web &amp; Mobile orders immediately.
+              </p>
+            </button>
+          </div>
+        </div>
+
+        {/* Fulfilment Toggles */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <button
             type="button"
             onClick={() =>
@@ -345,34 +485,105 @@ export function AdminSettingsZonesPanel() {
           </button>
         </div>
 
-        {/* Hours & Contact Details */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-[#A3A3A3] mb-1.5">
-              Mon — Sat Hours
-            </label>
-            <input
-              type="text"
-              value={settings.weekdayHours}
-              onChange={(e) =>
-                setSettings((prev) => ({ ...prev, weekdayHours: e.target.value }))
-              }
-              className="w-full rounded-xl border border-[#333333] bg-[#262626] px-3.5 py-2.5 text-sm font-mono text-[#F5F1EA] focus:outline-none focus:border-[#D71920]"
-            />
+        {/* Operating Hours Time Pickers (Ghana GMT) */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="rounded-2xl border border-[#333333] bg-[#222222]/60 p-4 space-y-3">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs font-semibold uppercase tracking-wider text-white">
+                Mon — Sat Hours (GMT)
+              </span>
+              <span className="font-mono text-xs text-emerald-400">
+                {settings.weekdayHours}
+              </span>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-[11px] font-medium text-[#A3A3A3] mb-1">
+                  Opens At
+                </label>
+                <input
+                  type="time"
+                  value={weekdayRange.open}
+                  onChange={(e) => {
+                    const next = formatHoursRangeFrom24Hour(
+                      e.target.value,
+                      weekdayRange.close
+                    );
+                    setSettings((prev) => ({ ...prev, weekdayHours: next }));
+                  }}
+                  className="w-full rounded-xl border border-[#333333] bg-[#161616] px-3 py-2 text-sm font-mono text-[#F5F1EA] focus:outline-none focus:border-[#D71920]"
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] font-medium text-[#A3A3A3] mb-1">
+                  Closes At
+                </label>
+                <input
+                  type="time"
+                  value={weekdayRange.close}
+                  onChange={(e) => {
+                    const next = formatHoursRangeFrom24Hour(
+                      weekdayRange.open,
+                      e.target.value
+                    );
+                    setSettings((prev) => ({ ...prev, weekdayHours: next }));
+                  }}
+                  className="w-full rounded-xl border border-[#333333] bg-[#161616] px-3 py-2 text-sm font-mono text-[#F5F1EA] focus:outline-none focus:border-[#D71920]"
+                />
+              </div>
+            </div>
           </div>
-          <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-[#A3A3A3] mb-1.5">
-              Sunday Hours
-            </label>
-            <input
-              type="text"
-              value={settings.sundayHours}
-              onChange={(e) =>
-                setSettings((prev) => ({ ...prev, sundayHours: e.target.value }))
-              }
-              className="w-full rounded-xl border border-[#333333] bg-[#262626] px-3.5 py-2.5 text-sm font-mono text-[#F5F1EA] focus:outline-none focus:border-[#D71920]"
-            />
+
+          <div className="rounded-2xl border border-[#333333] bg-[#222222]/60 p-4 space-y-3">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs font-semibold uppercase tracking-wider text-white">
+                Sunday Hours (GMT)
+              </span>
+              <span className="font-mono text-xs text-emerald-400">
+                {settings.sundayHours}
+              </span>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-[11px] font-medium text-[#A3A3A3] mb-1">
+                  Opens At
+                </label>
+                <input
+                  type="time"
+                  value={sundayRange.open}
+                  onChange={(e) => {
+                    const next = formatHoursRangeFrom24Hour(
+                      e.target.value,
+                      sundayRange.close
+                    );
+                    setSettings((prev) => ({ ...prev, sundayHours: next }));
+                  }}
+                  className="w-full rounded-xl border border-[#333333] bg-[#161616] px-3 py-2 text-sm font-mono text-[#F5F1EA] focus:outline-none focus:border-[#D71920]"
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] font-medium text-[#A3A3A3] mb-1">
+                  Closes At
+                </label>
+                <input
+                  type="time"
+                  value={sundayRange.close}
+                  onChange={(e) => {
+                    const next = formatHoursRangeFrom24Hour(
+                      sundayRange.open,
+                      e.target.value
+                    );
+                    setSettings((prev) => ({ ...prev, sundayHours: next }));
+                  }}
+                  className="w-full rounded-xl border border-[#333333] bg-[#161616] px-3 py-2 text-sm font-mono text-[#F5F1EA] focus:outline-none focus:border-[#D71920]"
+                />
+              </div>
+            </div>
           </div>
+        </div>
+
+        {/* Contact Details */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wider text-[#A3A3A3] mb-1.5">
               Phone Line

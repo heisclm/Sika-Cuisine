@@ -1,7 +1,13 @@
 "use client";
 
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { RESTAURANT_INFO, SUNYANI_DELIVERY_ZONES, calculateDeliveryFeePesewas } from "@sika/shared";
+import {
+  RESTAURANT_INFO,
+  SUNYANI_DELIVERY_ZONES,
+  calculateDeliveryFeePesewas,
+  evaluateKitchenOpenStatus,
+  KitchenScheduleMode,
+} from "@sika/shared";
 
 export interface PublicRestaurantConfig {
   name: string;
@@ -10,6 +16,9 @@ export interface PublicRestaurantConfig {
   whatsapp: string;
   address: string;
   isAcceptingOrders: boolean;
+  kitchenScheduleMode: KitchenScheduleMode;
+  isWithinScheduledHours: boolean;
+  kitchenStatusReason: string;
   isDeliveryEnabled: boolean;
   isCollectionEnabled: boolean;
   weekdayHours: string;
@@ -40,6 +49,9 @@ const DEFAULT_RESTAURANT: PublicRestaurantConfig = {
   whatsapp: RESTAURANT_INFO.primaryPhoneIntl,
   address: RESTAURANT_INFO.address,
   isAcceptingOrders: true,
+  kitchenScheduleMode: "AUTO",
+  isWithinScheduledHours: true,
+  kitchenStatusReason: "Kitchen is open (10:00 AM - 10:00 PM GMT).",
   isDeliveryEnabled: true,
   isCollectionEnabled: true,
   weekdayHours: "10:00 AM - 10:00 PM",
@@ -82,6 +94,38 @@ export function PublicConfigProvider({ children }: { children: React.ReactNode }
   useEffect(() => {
     refreshConfig();
   }, [refreshConfig]);
+
+  // Automatically flip live kitchen open/closed status on the client when opening/closing time arrives
+  useEffect(() => {
+    const syncSchedule = () => {
+      setRestaurant((prev) => {
+        const status = evaluateKitchenOpenStatus({
+          scheduleMode: prev.kitchenScheduleMode,
+          isAcceptingOrders: prev.isAcceptingOrders,
+          weekdayHours: prev.weekdayHours,
+          sundayHours: prev.sundayHours,
+        });
+        if (
+          prev.isAcceptingOrders === status.isOpen &&
+          prev.isWithinScheduledHours === status.isWithinScheduledHours &&
+          prev.kitchenStatusReason === status.reason
+        ) {
+          return prev;
+        }
+        return {
+          ...prev,
+          isAcceptingOrders: status.isOpen,
+          kitchenScheduleMode: status.mode,
+          isWithinScheduledHours: status.isWithinScheduledHours,
+          kitchenStatusReason: status.reason,
+        };
+      });
+    };
+
+    syncSchedule();
+    const timer = window.setInterval(syncSchedule, 30_000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   const resolveZoneFeePesewas = useCallback(
     (zoneIdOrNameOrLocality: string): number => {

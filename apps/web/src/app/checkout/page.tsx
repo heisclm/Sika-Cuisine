@@ -162,7 +162,8 @@ export default function CheckoutPage() {
 
     if (!restaurant.isAcceptingOrders) {
       setFormError(
-        "Sika Cuisine kitchen is currently paused for new online orders. Please check back shortly."
+        restaurant.kitchenStatusReason ||
+          "Sika Cuisine kitchen is currently closed for new online orders. Please check back during operating hours."
       );
       return;
     }
@@ -365,7 +366,8 @@ export default function CheckoutPage() {
                 role="status"
                 className="rounded-2xl border border-[#F59E0B]/45 bg-[#F59E0B]/10 px-4 py-3.5 text-sm text-[#FDE68A]"
               >
-                Kitchen ordering is currently paused. Check back during service hours ({restaurant.weekdayHours}).
+                {restaurant.kitchenStatusReason ||
+                  `Kitchen ordering is currently closed. Check back during service hours (${restaurant.weekdayHours}).`}
               </div>
             )}
 

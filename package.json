@@ -12,7 +12,7 @@
     "postinstall": "prisma generate --schema=./prisma/schema.prisma",
     "start": "npm run start --workspace=@sika/web",
     "lint": "npm run lint --workspace=@sika/web",
-    "test": "npx tsx --test packages/shared/tests/shared.test.ts packages/shared/tests/api-integration.test.ts packages/shared/tests/security-production.test.ts",
+    "test": "npx tsx --test packages/shared/tests/shared.test.ts packages/shared/tests/api-integration.test.ts packages/shared/tests/security-production.test.ts packages/shared/tests/kitchen-hours.test.ts",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",

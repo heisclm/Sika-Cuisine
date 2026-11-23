@@ -5,8 +5,13 @@
     "scheme": "sikacuisine",
     "version": "1.0.0",
     "orientation": "portrait",
-    "platforms": ["ios", "android"],
-    "plugins": ["expo-web-browser"],
+    "platforms": [
+      "ios",
+      "android"
+    ],
+    "plugins": [
+      "expo-web-browser"
+    ],
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
     "splash": {
@@ -28,7 +33,11 @@
       "versionCode": 1
     },
     "extra": {
-      "apiUrl": "https://sika-cuisine.vercel.app//api/v1"
-    }
+      "apiUrl": "https://sika-cuisine.vercel.app//api/v1",
+      "eas": {
+        "projectId": "06eb3b3a-1343-411d-b713-7f18273777d9"
+      }
+    },
+    "owner": "heisclm"
   }
 }

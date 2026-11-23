@@ -185,6 +185,7 @@ export function Navbar() {
         pathname={pathname}
         returnFocusRef={menuTriggerRef}
         sessionUser={sessionUser}
+        onSignedOut={() => setSessionUser(null)}
       />
     </header>
   );

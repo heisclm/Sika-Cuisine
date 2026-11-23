@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Bell, CheckCheck, ChevronRight, Trash2 } from "lucide-react";
+import { Bell, CheckCheck, ChevronRight, Trash2, X } from "lucide-react";
 import { InAppNotificationDTO } from "@sika/shared";
 import { useToast } from "@/context/ToastContext";
 
@@ -188,7 +188,7 @@ export function NotificationBell({ userId }: { userId: string }) {
         <div
           role="dialog"
           aria-label="In-app notifications"
-          className="absolute right-0 mt-2.5 w-80 sm:w-96 max-h-[72vh] flex flex-col rounded-2xl border border-[#333333] bg-[#1C1C1C] shadow-[0_24px_60px_rgba(0,0,0,0.85)] overflow-hidden z-50"
+          className="fixed left-3 right-3 top-[72px] sm:left-auto sm:right-0 sm:top-auto sm:absolute sm:mt-2.5 sm:w-96 max-h-[calc(100dvh-96px)] sm:max-h-[72vh] flex flex-col rounded-2xl border border-[#333333] bg-[#1C1C1C] shadow-[0_24px_60px_rgba(0,0,0,0.85)] overflow-hidden z-50"
         >
           <div className="flex items-center justify-between gap-2 border-b border-[#333333] bg-[#161616] px-4 py-3">
             <div className="flex items-center gap-2 min-w-0">
@@ -225,6 +225,14 @@ export function NotificationBell({ userId }: { userId: string }) {
                   <span>{clearingAll ? "Clearing..." : "Clear"}</span>
                 </button>
               )}
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                aria-label="Close notifications"
+                className="sm:hidden flex h-7 w-7 items-center justify-center rounded-full border border-[#333333] bg-[#1F1F1F] text-[#A3A3A3] hover:text-white transition-colors"
+              >
+                <X className="h-3.5 w-3.5" aria-hidden="true" />
+              </button>
             </div>
           </div>
 

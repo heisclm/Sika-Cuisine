@@ -19,6 +19,7 @@ import {
   calculateLineTotalPesewas,
   calculateOrderTotalPesewas,
   calculateDeliveryFeePesewas,
+  evaluateKitchenOpenStatus,
 } from "@sika/shared";
 import { prisma } from "@/lib/prisma";
 import { getAuthUser } from "@/lib/auth/session";
@@ -196,17 +197,22 @@ export async function POST(req: NextRequest) {
     const input = validated.data;
     const session = await getAuthUser(req);
 
-    // Enforce live kitchen operating & fulfilment toggles from PostgreSQL
+    // Enforce live kitchen operating schedule + Admin manual override from PostgreSQL
     try {
       const settings = await prisma.restaurantSettings.findUnique({
         where: { id: "default" },
       });
-      if (settings && !settings.isAcceptingOrders) {
+      const kitchenStatus = evaluateKitchenOpenStatus({
+        scheduleMode: settings?.kitchenScheduleMode,
+        isAcceptingOrders: settings?.isAcceptingOrders,
+        weekdayHours: settings?.weekdayHours,
+        sundayHours: settings?.sundayHours,
+      });
+      if (!kitchenStatus.isOpen) {
         return NextResponse.json(
           {
             success: false,
-            error:
-              "Sika Cuisine kitchen is currently closed for new online orders. Please check back during operating hours.",
+            error: kitchenStatus.reason,
           },
           { status: 403 }
         );

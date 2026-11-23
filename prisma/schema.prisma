@@ -331,6 +331,7 @@ model RestaurantSettings {
   whatsapp            String   @default("+233533376760")
   address             String   @default("Commercial Street, Sunyani Central, Bono Region, Ghana")
   isAcceptingOrders   Boolean  @default(true)
+  kitchenScheduleMode String   @default("AUTO")
   isDeliveryEnabled   Boolean  @default(true)
   isCollectionEnabled Boolean  @default(true)
   weekdayHours        String   @default("10:00 AM - 10:00 PM")

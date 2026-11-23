@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   X,
@@ -16,10 +17,12 @@ import {
   UtensilsCrossed,
   Receipt,
   Info,
+  LogOut,
 } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
 import { CUSTOMER_NAV_LINKS, RESTAURANT_INFO } from "@/lib/navigation";
 import { useCart } from "@/context/CartContext";
+import { useToast } from "@/context/ToastContext";
 import {
   formatFirstName,
   getDashboardForRole,
@@ -38,6 +41,7 @@ interface MobileMenuProps {
     email: string;
     role: string;
   } | null;
+  onSignedOut?: () => void;
 }
 
 const NAV_ICONS: Record<WebNavIconKey, React.ComponentType<{ className?: string }>> = {
@@ -64,11 +68,33 @@ export function MobileMenu({
   pathname,
   returnFocusRef,
   sessionUser,
+  onSignedOut,
 }: MobileMenuProps) {
-  const { totalCount, setIsCartOpen } = useCart();
+  const router = useRouter();
+  const { totalCount, setIsCartOpen, clearCartOnSignOut } = useCart();
+  const { info, error: toastError } = useToast();
   const [mounted, setMounted] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
   const panelRef = useRef<HTMLElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
+
+  const handleSignOut = async () => {
+    if (signingOut) return;
+    setSigningOut(true);
+    try {
+      await fetch("/api/v1/auth/logout", { method: "POST" });
+      clearCartOnSignOut();
+      onSignedOut?.();
+      onClose();
+      info("Signed Out", "You have been signed out of Sika Cuisine.");
+      router.push("/");
+      router.refresh();
+    } catch {
+      toastError("Sign Out Failed", "Could not sign out right now. Please try again.");
+    } finally {
+      setSigningOut(false);
+    }
+  };
 
   useEffect(() => {
     setMounted(true);
@@ -259,6 +285,18 @@ export function MobileMenu({
                     </span>
                   )}
                 </button>
+
+                {sessionUser && (
+                  <button
+                    type="button"
+                    disabled={signingOut}
+                    onClick={handleSignOut}
+                    className="flex w-full items-center justify-center gap-2 rounded-2xl border border-[#D71920]/35 bg-[#D71920]/10 hover:bg-[#D71920]/20 py-3 text-sm font-semibold text-[#FCA5A5] transition-colors disabled:opacity-50"
+                  >
+                    <LogOut className="h-4 w-4 text-[#F0444A]" aria-hidden="true" />
+                    <span>{signingOut ? "Signing Out..." : "Sign Out"}</span>
+                  </button>
+                )}
               </div>
             </div>
 
