@@ -100,16 +100,17 @@ Requirements elicitation was conducted through structured interviews, contextual
 
 ### 3.3.2 Functional Requirements
 
-Functional requirements define the core operational behaviors, input-output transformations, and interactive workflows of the system across its four primary actor personas:
+Functional requirements define the core operational behaviors, input-output transformations, and interactive workflows of the system across its five primary actor personas:
 
 ```mermaid
 flowchart TD
     FR["Sika Cuisine Functional Requirements"]
     
     FR --> CUST["1. Customer Subsystem (Web & Mobile)"]
-    FR --> KITCH["2. Kitchen Subsystem (Chef Display)"]
-    FR --> RIDE["3. Dispatch Subsystem (Rider Portal)"]
-    FR --> ADMN["4. Administrative Subsystem (Management)"]
+    FR --> CASH["2. Cashier Subsystem (Front Counter)"]
+    FR --> KITCH["3. Kitchen Subsystem (Chef Display)"]
+    FR --> RIDE["4. Dispatch Subsystem (Rider Portal)"]
+    FR --> ADMN["5. Administrative Subsystem (Management)"]
     
     CUST --> C1["FR-C01: Menu Catalog & Dietary Filtering"]
     CUST --> C2["FR-C02: Dish Customization (Spice & Options)"]
@@ -117,6 +118,9 @@ flowchart TD
     CUST --> C4["FR-C04: Server-Authoritative Checkout & Paystack"]
     CUST --> C5["FR-C05: Live Timeline Fulfilment Tracking"]
     CUST --> C6["FR-C06: Mobile Offline Menu Caching"]
+
+    CASH --> CA1["FR-CA01: Walk-in / Cash Order Confirmation"]
+    CASH --> CA2["FR-CA02: Counter Pickup Handover (COLLECTED)"]
     
     KITCH --> K1["FR-K01: Real-Time Order Stream & Audio Cue"]
     KITCH --> K2["FR-K02: One-Touch State Transitions"]
@@ -150,7 +154,7 @@ The specific requirements are formalized in Table 3.1:
 | **FR-04** | Customer (Web & Mobile) | The system must enforce server-authoritative checkout pricing, ignoring all client-transmitted monetary figures. | Next.js Server Action queries authoritative database prices, recalculates totals, and snapshots values immutably into `OrderItem`. |
 | **FR-05** | Customer (Web & Mobile) | The system must integrate Paystack Ghana to process cashless settlements via MTN Mobile Money, Telecel Cash, AT Money, and Visa/Mastercard. | Server initializes transaction with Paystack API in integer pesewas and delivers checkout redirect or embedded webview. |
 | **FR-06** | System / Security | The system must authenticate Paystack webhook events using HMAC SHA-512 signatures and process events idempotently. | Header `x-paystack-signature` verified against raw payload using `crypto.timingSafeEqual()`; events logged in `PaystackWebhookEvent`. |
-| **FR-07** | Customer (Web & Mobile) | The system must provide real-time, visual order progress tracking across discrete operational milestones. | Visual timeline renders states: `PENDING` $\rightarrow$ `CONFIRMED` $\rightarrow$ `PREPARING` $\rightarrow$ `OUT_FOR_DELIVERY` / `READY_FOR_PICKUP` $\rightarrow$ `COMPLETED`. |
+| **FR-07** | Customer (Web & Mobile) | The system must provide real-time, visual order progress tracking across discrete operational milestones. | Visual timeline renders states: `PENDING` $\rightarrow$ `CONFIRMED` $\rightarrow$ `PREPARING` $\rightarrow$ `OUT_FOR_DELIVERY` / `READY_FOR_PICKUP` $\rightarrow$ `DELIVERED` / `COLLECTED`. |
 | **FR-08** | Customer (Mobile App) | The mobile client must cache menu items locally and allow offline browsing during campus network dropouts. | Menu cached in `@react-native-async-storage/async-storage` with timestamp invalidation; offline alert displayed when offline. |
 | **FR-09** | Kitchen Staff | Kitchen personnel must receive instant notifications of newly confirmed orders and advance orders through the cooking lifecycle. | Kitchen display screen highlights active tickets; state transitions trigger database updates and audit entries. |
 | **FR-10** | Delivery Courier | Couriers must access an assigned dispatch manifest showing customer delivery locality, landmark notes, and phone contact. | Dispatch screen displays recipient details and one-tap cellular dialer; allows marking order as `DELIVERED`. |
@@ -191,20 +195,22 @@ To establish a standard, formal, and unambiguous specification of the Sika Cuisi
 
 The Use Case Diagram defines the behavioral boundaries of the Sika Cuisine system by capturing the functional relationships between external human actors and the primary capabilities provided by the application.
 
-Four distinct primary actors interact with the system:
-1. **Customer (Web & Mobile Client):** Discovers culinary offerings, customizes meal configurations, calculates municipal delivery fees, initiates cashless or cash payment, and tracks meal preparation in real time.
-2. **Kitchen Staff (Chef & Expediter):** Monitors incoming order tickets, accepts or rejects orders based on kitchen capacity and ingredient availability, and transitions meals through culinary preparation stages.
-3. **Delivery Courier (Campus Dispatch Rider):** Accesses assigned delivery manifests, navigates to customer delivery landmarks in Sunyani, contacts recipients, and logs successful delivery handovers.
-4. **System Administrator (Restaurant Owner / Manager):** Governs culinary catalog data, configures locality fee rates, audits financial ledgers, and oversees security and webhook audit logs.
+Five distinct primary actors interact with the system, matching the five `Role` permissions in `prisma/schema.prisma`:
+1. **Customer (`CUSTOMER`, Web & Mobile Client):** Discovers culinary offerings, customizes meal configurations, calculates municipal delivery fees, initiates cashless or cash payment, and tracks meal preparation in real time.
+2. **Cashier (`STAFF_CASHIER`, Front Counter Staff):** Confirms walk-in and cash-on-delivery/collection orders, processes counter pickup handovers (`COLLECTED`), and handles pre-preparation order rejections or cancellations.
+3. **Kitchen Staff (`STAFF_KITCHEN`, Chef & Expediter):** Monitors incoming confirmed order tickets and transitions meals through culinary preparation stages (`PREPARING`, `READY_FOR_DISPATCH`, `READY_FOR_PICKUP`).
+4. **Delivery Courier (`DELIVERY_RIDER`, Campus Dispatch Rider):** Accesses assigned delivery manifests, navigates to customer delivery landmarks in Sunyani, contacts recipients, and logs successful delivery handovers (`DELIVERED`).
+5. **System Administrator (`ADMIN`, Restaurant Owner / Manager):** Governs culinary catalog data, configures locality fee rates, assigns riders, issues refunds, audits financial ledgers, and oversees staff and webhook audit logs.
 
 Figure 3.1 illustrates the complete Use Case model. A full-width, high-resolution rendering is available at [docs/figures/figure_3_1_use_case.png](file:///C:/Users/CLm/Desktop/Sika%20Cuisine/docs/figures/figure_3_1_use_case.png).
 
 ```mermaid
 flowchart LR
-    subgraph ACTORS_LEFT ["Client Actors"]
+    subgraph ACTORS_LEFT ["Client & Counter Actors"]
         direction TB
         CUST["Customer<br/>(Web & Mobile Client)"]
-        RIDER["Delivery Courier<br/>(Campus Dispatch Rider)"]
+        CASH["Cashier<br/>(STAFF_CASHIER)"]
+        RIDER["Delivery Courier<br/>(DELIVERY_RIDER)"]
     end
 
     subgraph SYSTEM_BOUNDARY ["System Boundary: Sika Cuisine Multi-Platform Enterprise Platform"]
@@ -212,66 +218,63 @@ flowchart LR
         subgraph UC_CUST ["Customer Capabilities"]
             UC01(["UC-01: Browse Categorized Ghanaian Menu"])
             UC02(["UC-02: Customize Dish & Spice Level"])
-            UC03(["UC-03: Manage Cart & Flying Animation"])
-            UC04(["UC-04: Select Sunyani Locality & Delivery Fee"])
-            UC05(["UC-05: Pay via Paystack (MoMo / Card)"])
-            UC06(["UC-06: Track Live Order Fulfillment"])
-            UC07(["UC-07: Offline Menu Caching (Mobile)"])
+            UC03(["UC-03: Manage Cart & Locality Fee"])
+            UC04(["UC-04: Place Order & Checkout"])
+            UC05(["UC-05: Track Live Order Status"])
+            UC06(["UC-06: Cache Menu Offline (Mobile)"])
         end
 
-        subgraph UC_KITCH ["Kitchen Capabilities"]
-            UC08(["UC-08: Real-Time Order Stream & Audio Cue"])
-            UC09(["UC-09: Accept / Reject Pending Orders"])
-            UC10(["UC-10: Update Culinary State (PREPARING)"])
-            UC11(["UC-11: Mark Order READY_FOR_DISPATCH"])
+        subgraph UC_CASH ["Cashier Capabilities"]
+            UC07(["UC-07: Confirm Cash / Walk-In Orders"])
+            UC08(["UC-08: Counter Pickup Handover (COLLECTED)"])
+            UC09(["UC-09: Reject / Cancel Pending Order"])
         end
 
         subgraph UC_RIDE ["Courier Capabilities"]
-            UC12(["UC-12: View Assigned Delivery Manifest"])
-            UC13(["UC-13: Access Recipient Phone & Landmark"])
-            UC14(["UC-14: Confirm Order Delivered & Collect Cash"])
+            UC10(["UC-10: View Assigned Delivery Manifest"])
+            UC11(["UC-11: Access Recipient Phone & Landmark"])
+            UC12(["UC-12: Confirm Delivery & Collect Cash"])
+        end
+
+        subgraph UC_KITCH ["Kitchen Capabilities"]
+            UC13(["UC-13: View Real-Time Order Stream"])
+            UC14(["UC-14: Advance Prep State (PREPARING)"])
+            UC15(["UC-15: Mark Ready (Dispatch / Pickup)"])
+        end
+
+        subgraph UC_PAY ["Payment & Verification"]
+            UC16(["UC-16: Pay via Paystack (MoMo / Card)"])
+            UC17(["UC-17: Server Price & HMAC Verify"])
         end
 
         subgraph UC_ADMN ["Administrative Capabilities"]
-            UC15(["UC-15: Manage Menu Items, Stock & Pricing"])
-            UC16(["UC-16: Configure Sunyani Delivery Zones"])
-            UC17(["UC-17: Audit Integer Pesewas Ledgers"])
-            UC18(["UC-18: Monitor Webhook Logs & User Roles"])
+            UC18(["UC-18: Manage Menu Items & Availability"])
+            UC19(["UC-19: Configure Sunyani Delivery Zones"])
+            UC20(["UC-20: Assign Riders & Issue Refunds"])
+            UC21(["UC-21: Audit Integer Pesewas Ledgers"])
+            UC22(["UC-22: Manage Staff & Webhook Logs"])
         end
     end
 
     subgraph ACTORS_RIGHT ["Operations Actors"]
         direction TB
-        CHEF["Kitchen Staff<br/>(Chef & Expediter)"]
-        ADMIN["System Admin<br/>(Restaurant Manager)"]
+        CHEF["Kitchen Staff<br/>(STAFF_KITCHEN)"]
+        ADMIN["System Admin<br/>(ADMIN)"]
     end
 
     %% Customer Associations
-    CUST --- UC01
-    CUST --- UC02
-    CUST --- UC03
-    CUST --- UC04
-    CUST --- UC05
-    CUST --- UC06
-    CUST --- UC07
-
+    CUST --- UC01 & UC02 & UC03 & UC04 & UC05 & UC06
+    %% Cashier Associations
+    CASH --- UC07 & UC08 & UC09
     %% Courier Associations
-    RIDER --- UC12
-    RIDER --- UC13
-    RIDER --- UC14
-
+    RIDER --- UC10 & UC11 & UC12
     %% Kitchen Staff Associations
-    CHEF --- UC08
-    CHEF --- UC09
-    CHEF --- UC10
-    CHEF --- UC11
-
+    CHEF --- UC13 & UC14 & UC15
     %% Admin Associations
-    ADMIN --- UC15
-    ADMIN --- UC16
-    ADMIN --- UC17
-    ADMIN --- UC18
-    ADMIN --- UC08
+    ADMIN --- UC18 & UC19 & UC20 & UC21 & UC22
+    %% Stereotype Links
+    UC04 -.->|"<<include>>"| UC16 -.->|"<<include>>"| UC17
+    UC06 -.->|"<<extend>>"| UC01
 
     style SYSTEM_BOUNDARY fill:#F8FAFC,stroke:#1E3A8A,stroke-width:2px
     style UC_CUST fill:#F0FDF4,stroke:#16A34A,stroke-width:1.5px

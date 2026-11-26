@@ -72,7 +72,7 @@ To realize the overarching aim of this project, the study is structured around t
    To implement robust client-side caching, offline-tolerant menu viewing via AsyncStorage, and secure credential storage using Expo SecureStore, ensuring seamless mobile user experiences even during intermittent campus Wi-Fi or cellular network drops in Sunyani.
 
 6. **Real-Time Kitchen State Machine and Administrative Dashboard:**  
-   To implement a state-driven kitchen and courier dispatch dashboard (`/admin` and `/rider`) that manages strict, unidirectional order lifecycle transitions (`PENDING_CONFIRMATION` $\rightarrow$ `CONFIRMED` $\rightarrow$ `PREPARING` $\rightarrow$ `READY_FOR_COLLECTION` / `OUT_FOR_DELIVERY` $\rightarrow$ `COMPLETED`) with immutable audit logging and real-time menu availability toggling.
+   To implement a state-driven operations and courier dispatch suite (`/admin`, `/kitchen`, `/cashier`, and `/rider`) that manages strict, unidirectional order lifecycle transitions (`PENDING` $\rightarrow$ `CONFIRMED` $\rightarrow$ `PREPARING` $\rightarrow$ `READY_FOR_PICKUP` / `OUT_FOR_DELIVERY` $\rightarrow$ `COLLECTED` / `DELIVERED`) with immutable audit logging and real-time menu availability toggling.
 
 7. **System Evaluation, Performance Testing, and Security Validation:**  
    To empirically evaluate the deployed web platform and mobile application through unit testing, end-to-end integration testing, cryptographic webhook verification, Core Web Vitals optimization, and User Acceptance Testing (UAT) with restaurant staff, dispatch couriers, and local customers in Sunyani.
@@ -213,15 +213,15 @@ Once the server establishes the authoritative order total, the financial settlem
 * **Offline Channel (Cash on Delivery/Collection):** If selected, the order enters the system with `paymentStatus: PENDING` and `paymentMethod: CASH_ON_DELIVERY`, requiring explicit staff authorization upon physical handover.
 
 ### 1.10.3 The Kitchen State Machine (Order Fulfilment Workflow)
-Once financial verification is complete, the order enters the strict, unidirectional Fulfilment State Machine managed via the `/admin` portal:
-1. **`PENDING_CONFIRMATION`:** Order has been logged and paid (or flagged for COD); kitchen staff inspect inventory.
-2. **`CONFIRMED`:** Staff acknowledge the order and schedule preparation.
+Once financial verification is complete, the order enters the strict, unidirectional Fulfilment State Machine managed across the `/cashier`, `/kitchen`, and `/rider` portals:
+1. **`PENDING`:** Order has been logged (awaiting Paystack webhook confirmation or cashier cash acceptance); staff inspect inventory.
+2. **`CONFIRMED`:** Payment is verified or cash is accepted, and the order is queued for culinary preparation.
 3. **`PREPARING`:** Chefs actively cook, assemble, and package the meal according to customer options.
-4. **`OUT_FOR_DELIVERY` / `READY_FOR_COLLECTION`:** For deliveries, the assigned dispatch rider collects the package; for pickups, the customer receives an alert that their meal is ready at the counter.
-5. **`COMPLETED`:** The customer receives their package, payment is confirmed, and the order lifecycle concludes.
+4. **`OUT_FOR_DELIVERY` / `READY_FOR_PICKUP`:** For deliveries, the assigned dispatch rider collects the package; for pickups, the customer receives an alert that their meal is ready at the counter.
+5. **`DELIVERED` / `COLLECTED`:** The customer receives their package, payment is confirmed, and the order lifecycle concludes.
 
 ### 1.10.4 Exception Handling, Cancellation, and Rejection Mechanisms
-In the event that the kitchen runs out of a key ingredient or an address lies outside reachable delivery limits, the system provides strict exception handling. Staff can transition the order from `PENDING_CONFIRMATION` to `REJECTED`, requiring a documented business reason. This action automatically marks the order for reversal, releases locked inventory, and notifies the customer via the tracking interface.
+In the event that the kitchen runs out of a key ingredient or an address lies outside reachable delivery limits, the system provides strict exception handling. Staff can transition the order from `PENDING` to `REJECTED`, requiring a documented business reason. This action automatically marks the order for reversal, releases locked inventory, and notifies the customer via the tracking interface.
 
 ---
 

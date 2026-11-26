@@ -46,11 +46,14 @@ Copy `apps/mobile/.env.example` to `apps/mobile/.env` and point `EXPO_PUBLIC_API
    ```bash
    npm test
    ```
-2. **Build and launch the Next.js 16 production server:**
+2. **Compile and launch the Next.js 16 production server:**
    ```bash
    npm run build
    npm start
    ```
+
+> **[Insert Terminal Screenshot Here: `npm run db:migrate:deploy` and `npm run build` completing successfully]**  
+> **Figure A.1: Production Database Migration and Next.js 16 Build Verification**
 
 ### A.5 Mobile Application Startup (`@sika/mobile`)
 1. **Start the Expo Metro bundler:**
@@ -66,6 +69,9 @@ Copy `apps/mobile/.env.example` to `apps/mobile/.env` and point `EXPO_PUBLIC_API
 ### A.6 Paystack Webhook & Deep-Link Configuration
 * **Paystack Webhook URL:** Register `https://<your-domain>/api/webhooks/paystack` in the Paystack Dashboard under **Settings → API Keys & Webhooks**. Incoming `charge.success` events are verified using HMAC SHA-512 (`crypto.timingSafeEqual()`).
 * **Mobile Deep-Link Scheme:** Configured in `apps/mobile/app.json` as `sikacuisine` (`sikacuisine://`), allowing `/api/v1/payments/mobile-callback` to return users cleanly to the mobile app after Paystack checkout.
+
+> **[Insert Screenshot Here: Paystack Dashboard Settings showing `/api/webhooks/paystack` registered]**  
+> **Figure A.2: Paystack Dashboard Webhook Endpoint Configuration**
 
 ---
 

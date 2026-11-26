@@ -16,8 +16,16 @@
 | **Figure 3.4** | Order Fulfilment State Machine Diagram | Chapter 3 | `docs/figures/figure_3_4_state_machine.png` | ___ |
 | **Figure 3.5** | Sika Cuisine Multi-Platform Modular System Architecture | Chapter 3 | `docs/figures/figure_3_5_architecture.png` | ___ |
 | **Figure 3.6** | Flowchart of Order Validation, Server-Authoritative Pricing, and Cryptographic Settlement Engine | Chapter 3 | `docs/figures/figure_3_6_flowchart.png` | ___ |
-| **Figure 4.1** | Production Deployment and Runtime Topology of the Sika Cuisine Platform | Chapter 4 | `docs/figures/figure_4_1_deployment_topology.png` | ___ |
-| **Figure 4.2** | Automated Test and Security Verification Matrix | Chapter 4 | `docs/figures/figure_4_2_test_verification.png` | ___ |
+| **Figure 4.1** | Sika Cuisine Web Storefront, Menu Catalog, and Interactive Cart Drawer | Chapter 4 | *Captured UI Screenshot* | ___ |
+| **Figure 4.2** | Sunyani Locality Checkout and Live Order Tracking Timeline | Chapter 4 | *Captured UI Screenshot* | ___ |
+| **Figure 4.3** | Role-Isolated Administrative Dashboard and Kitchen Display System | Chapter 4 | *Captured UI Screenshot* | ___ |
+| **Figure 4.4** | Courier Dispatch Portal for Sunyani Final-Mile Delivery | Chapter 4 | *Captured UI Screenshot* | ___ |
+| **Figure 4.5** | Cross-Platform Mobile Application Screens (`apps/mobile`, Expo SDK 58) | Chapter 4 | *Captured Mobile Screenshots* | ___ |
+| **Figure 4.6** | Terminal Execution of the Automated Verification Suite (`npm test`) | Chapter 4 | *Captured Terminal Screenshot* | ___ |
+| **Figure 4.7** | Production Deployment and Runtime Topology of the Sika Cuisine Platform | Chapter 4 | `docs/figures/figure_4_1_deployment_topology.png` | ___ |
+| **Figure 4.8** | Automated Test and Security Verification Matrix | Chapter 4 | `docs/figures/figure_4_2_test_verification.png` | ___ |
+| **Figure A.1** | Production Database Migration and Next.js 16 Build Verification | Appendix A | *Captured Terminal Screenshot* | ___ |
+| **Figure A.2** | Paystack Dashboard Webhook Endpoint Configuration | Appendix A | *Captured Dashboard Screenshot* | ___ |
 
 ---
 

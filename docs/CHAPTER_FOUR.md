@@ -25,11 +25,11 @@ To prevent logic divergence between the web storefront and the native mobile app
 
 The relational data model was implemented in `prisma/schema.prisma` targeting **PostgreSQL 16** via **Prisma ORM (`^6.4.1`)** [48]. To support serverless connection pooling in production alongside direct schema migrations (`prisma migrate deploy`), the datasource configuration explicitly separates `DATABASE_URL` (pooled runtime traffic) from `DIRECT_URL` (DDL migrations).
 
-Eleven core relational models and six domain enums (`Role`, `FulfilmentType`, `FulfilmentStatus`, `PaymentStatus`, `PaymentMethod`, `PaymentAttemptStatus`) enforce strict referential integrity:
+Eighteen core relational models and six domain enums (`Role`, `FulfilmentType`, `FulfilmentStatus`, `PaymentStatus`, `PaymentMethod`, `PaymentAttemptStatus`, including `REFUND_PENDING`) enforce strict referential integrity:
 
 * **Catalog & Option Modifiers:** `MenuCategory`, `MenuItem`, `MenuItemOptionGroup`, and `MenuItemOption` support multi-tier Ghanaian meal customization (such as spice tolerance levels, protein pairings, and extra accompaniments like fried plantain or banku) with `minSelect`, `maxSelect`, and `isRequired` cardinality constraints.
-* **Immutable Order Snapshotting:** `Order` and `OrderItem` capture `itemNameSnapshot`, `unitPricePesewas`, `subtotalPesewas`, and `selectedOptionsSnapshot` (JSON) at checkout time. If restaurant management later adjusts the price of charcoal-grilled tilapia or retires a seasonal dish, historical receipts and accounting ledgers remain completely unaltered.
-* **Financial & Audit Traceability:** `PaymentAttempt`, `PaystackWebhookEvent` (keyed by a unique `eventId` constraint for idempotent webhook processing), `OrderStatusHistory`, and `AuditLog` maintain a permanent forensic trail of every monetary event and state transition.
+* **Immutable Order Snapshotting:** `Order`, `OrderItem`, `DeliveryAddress`, and `DeliveryZone` capture `itemNameSnapshot`, `unitPricePesewas`, `subtotalPesewas`, and `selectedOptionsSnapshot` (JSON) at checkout time alongside configurable Sunyani locality tariffs and `RestaurantSettings`. If restaurant management later adjusts prices or retires a seasonal dish, historical receipts remain unaltered.
+* **Financial, Notification & Audit Traceability:** `PaymentAttempt`, `PaystackWebhookEvent` (keyed by a unique `eventId` constraint for idempotent webhook processing), `OrderStatusHistory`, `AuditLog`, `PasswordResetToken`, `PushDeviceToken`, `NotificationLog`, and `InAppNotification` maintain a permanent forensic and communication trail across web and mobile channels.
 
 ### 4.2.3 Shared Domain Core (`@sika/shared`)
 
@@ -52,6 +52,14 @@ The public storefront in `apps/web/src/app/` leverages Next.js 16 Server Compone
 * **Cart Persistence & Flying-Tray Feedback (`context/CartContext.tsx`, `components/cart/FlyingCartAnimation.tsx`):** Selecting a dish opens `DishDetailModal`, enforcing option-group bounds before dispatching items into the cart drawer. Adding a dish triggers a Bézier-curve visual animation toward the tray badge while respecting `prefers-reduced-motion` accessibility rules.
 * **Guest-to-Authenticated Checkout (`checkout/page.tsx`, `orders/[orderNumber]/page.tsx`):** Customers may place orders either as authenticated users or as guests (providing verified Ghanaian contact details and a Sunyani landmark). Post-checkout, `orders/[orderNumber]/page.tsx` renders a live fulfillment timeline synced with server state.
 
+Figures 4.1 and 4.2 illustrate the implemented web customer storefront, interactive cart drawer, Sunyani locality checkout, and live order tracking timeline.
+
+> **[Insert Screenshot Here: Web Storefront (`http://localhost:3000/menu`) showing dark crimson theme, Ghanaian menu cards, and open Cart Drawer]**  
+> **Figure 4.1: Sika Cuisine Web Storefront, Menu Catalog, and Interactive Cart Drawer**
+
+> **[Insert Screenshot Here: Web Checkout (`/checkout`) with Sunyani locality fee selected and/or Live Order Tracking (`/orders/[orderNumber]`)]**  
+> **Figure 4.2: Sunyani Locality Checkout and Live Order Tracking Timeline**
+
 ### 4.3.2 Role-Isolated Operations Portals
 
 Rather than exposing a monolithic back-office screen to all employees, operational access is partitioned by `Role` across dedicated Next.js routes:
@@ -60,6 +68,14 @@ Rather than exposing a monolithic back-office screen to all employees, operation
 * **Kitchen Display System (`/kitchen`):** Restricted to `STAFF_KITCHEN` and `ADMIN` roles. Kitchen staff view paid/confirmed tickets and advance meals strictly through `PREPARING` and `READY_FOR_DISPATCH` / `READY_FOR_PICKUP`, while being blocked by RBAC from altering payment statuses or marking deliveries completed.
 * **Cashier Counter (`/cashier`):** Enables front-of-house staff to confirm walk-in cash orders and log counter handovers (`COLLECTED`).
 * **Courier Dispatch (`/rider`):** Restricts `DELIVERY_RIDER` accounts strictly to their assigned Sunyani delivery queue (`/api/v1/rider/orders`), displaying customer phone links and landmark instructions for final-mile handover (`OUT_FOR_DELIVERY` $\rightarrow$ `DELIVERED`).
+
+Figures 4.3 and 4.4 present the implemented operational portals for kitchen/administrative management and courier dispatch.
+
+> **[Insert Screenshot Here: Admin Dashboard (`/admin`) and/or Kitchen Display System (`/kitchen`) showing active order tickets and state controls]**  
+> **Figure 4.3: Role-Isolated Administrative Dashboard and Kitchen Display System**
+
+> **[Insert Screenshot Here: Courier Dispatch Portal (`/rider`) showing assigned Sunyani delivery queue and recipient landmarks]**  
+> **Figure 4.4: Courier Dispatch Portal for Sunyani Final-Mile Delivery**
 
 ### 4.3.3 REST API v1 and Cryptographic Paystack Webhook
 
@@ -90,6 +106,11 @@ The mobile client (`apps/mobile`) was built using **React Native (`0.88`)** and 
 * **Cart & Sunyani Checkout (`CartScreen.tsx`, `CheckoutScreen.tsx`):** Synchronizes live item counts via `CartContext.tsx`, resolves Sunyani locality delivery fees locally for instant preview via `@sika/shared`, and initiates server-authoritative checkout against `/api/v1/orders`.
 * **Live Order Tracking & History (`OrderTrackingScreen.tsx`, `OrdersScreen.tsx`, `ProfileScreen.tsx`, `AuthScreen.tsx`):** Displays real-time fulfillment milestones via `OrderStatusTimeline.tsx`, supports one-tap reordering (`/api/v1/orders/[id]/reorder`), and registers device tokens for push updates (`/api/v1/notifications/devices`).
 
+Figure 4.5 presents the native Expo 58 mobile application screens side-by-side.
+
+> **[Insert 3 Mobile Screenshots Side-by-Side Here: `HomeScreen`, `DishDetailModal`/`CartScreen`, and `OrderTrackingScreen`]**  
+> **Figure 4.5: Cross-Platform Mobile Application Screens (`apps/mobile`, Expo SDK 58)**
+
 ### 4.4.2 Offline Resilience, Secure Storage, and Payment Deep-Linking
 
 Because tertiary students in Fiapre and commuters across Sunyani frequently experience intermittent 3G/4G handoffs, the mobile architecture implements three resilience mechanisms:
@@ -113,7 +134,10 @@ Software verification was conducted using Node.js's built-in test runner execute
 2. `api-integration.test.ts` — Integration assertions for order ownership, server-side cart recalculation, and workflow progression.
 3. `security-production.test.ts` — Production security, cryptographic verification, RBAC isolation, and Ghana localization hardening tests.
 
-Executing the full root test command (`npm test`) produced **43 deterministic test assertions with 43 passing, 0 failing, and 0 skipped**, completing in **1,665.13 ms**. Figure 4.2 summarizes the verified coverage across all three suites.
+Executing the full root test command (`npm test`) produced **43 deterministic test assertions with 43 passing, 0 failing, and 0 skipped**, completing in **1,665.13 ms**, as captured in Figure 4.6 and mapped across all three suites in Figure 4.8.
+
+> **[Insert Terminal Screenshot Here: PowerShell / VS Code terminal showing `npm test` output with `tests 43 | pass 43 | fail 0 | duration_ms 1665.127`]**  
+> **Figure 4.6: Terminal Execution of the Automated Verification Suite (`npm test`)**
 
 ### 4.5.2 Security and Penetration Verification Matrix
 
@@ -148,7 +172,7 @@ In addition to security checks, the test suite verified Sunyani-specific operati
 
 In production, the Sika Cuisine ecosystem operates across three interconnected layers: Sunyani client devices (browsers, Expo mobile apps, and staff tablets), the Next.js 16 application runtime (enforcing Edge middleware, REST API v1, `@sika/shared` domain rules, and Paystack webhook processing), and managed external services (PostgreSQL 16 via Prisma, Paystack Ghana, and Expo Push Notifications) [54], [55].
 
-Figure 4.1 illustrates this physical and logical deployment topology. A full-width, high-resolution rendering ($1920 \times 1280\text{ px}$ at 300 DPI) is available at [docs/figures/figure_4_1_deployment_topology.png](file:///C:/Users/CLm/Desktop/Sika%20Cuisine/docs/figures/figure_4_1_deployment_topology.png).
+Figure 4.7 illustrates this physical and logical deployment topology. A full-width, high-resolution rendering ($1920 \times 1280\text{ px}$ at 300 DPI) is available at [docs/figures/figure_4_1_deployment_topology.png](file:///C:/Users/CLm/Desktop/Sika%20Cuisine/docs/figures/figure_4_1_deployment_topology.png).
 
 ```mermaid
 flowchart LR
@@ -188,12 +212,12 @@ flowchart LR
     style EXTERNAL fill:#FAF5FF,stroke:#6B21A8,stroke-width:2px
 ```
 
-**Figure 4.1: Production Deployment and Runtime Topology of the Sika Cuisine Platform**  
+**Figure 4.7: Production Deployment and Runtime Topology of the Sika Cuisine Platform**  
 *(High-resolution 300 DPI master graphic: `docs/figures/figure_4_1_deployment_topology.png`)*
 
 ### 4.6.2 Automated Verification Coverage Matrix
 
-Figure 4.2 maps the **43 executed and passing test assertions** across the three verification suites (`shared.test.ts`, `api-integration.test.ts`, and `security-production.test.ts`). A full-width, high-resolution rendering ($1920 \times 1240\text{ px}$ at 300 DPI) is available at [docs/figures/figure_4_2_test_verification.png](file:///C:/Users/CLm/Desktop/Sika%20Cuisine/docs/figures/figure_4_2_test_verification.png).
+Figure 4.8 maps the **43 executed and passing test assertions** across the three verification suites (`shared.test.ts`, `api-integration.test.ts`, and `security-production.test.ts`). A full-width, high-resolution rendering ($1920 \times 1240\text{ px}$ at 300 DPI) is available at [docs/figures/figure_4_2_test_verification.png](file:///C:/Users/CLm/Desktop/Sika%20Cuisine/docs/figures/figure_4_2_test_verification.png).
 
 ```mermaid
 flowchart TB
@@ -233,7 +257,7 @@ flowchart TB
     style S3 fill:#FEF2F2,stroke:#B91C1C,stroke-width:2px
 ```
 
-**Figure 4.2: Automated Test and Security Verification Matrix**  
+**Figure 4.8: Automated Test and Security Verification Matrix**  
 *(High-resolution 300 DPI master graphic: `docs/figures/figure_4_2_test_verification.png`)*
 
 ---
@@ -261,7 +285,7 @@ In keeping with rigorous engineering transparency [56], three practical boundari
 
 This chapter documented the end-to-end implementation, verification, and evaluation of the Sika Cuisine multi-platform ordering and delivery tracking system:
 
-1. **Monorepo Implementation:** Unified `packages/shared`, `apps/web`, and `apps/mobile` under strict TypeScript, backed by a 11-model PostgreSQL 16 / Prisma 6 schema with immutable `OrderItem` snapshots.
+1. **Monorepo Implementation:** Unified `packages/shared`, `apps/web`, and `apps/mobile` under strict TypeScript, backed by an 18-model PostgreSQL 16 / Prisma 6 schema with immutable `OrderItem` snapshots.
 2. **Multi-Platform & Operations Delivery:** Delivered a responsive Next.js 16 customer storefront, role-isolated `/admin`, `/kitchen`, `/cashier`, and `/rider` portals, and an offline-tolerant Expo 58 React Native mobile application with SecureStore token encryption.
 3. **Empirical Verification:** Executed the automated `npx tsx --test` suite across domain, API integration, and production security modules, achieving **43/43 passing assertions in 1,665.13 ms** with zero failures.
 4. **Evaluation:** Confirmed full fulfillment of the project's technical objectives while transparently documenting operational scope around landmark navigation, telco USSD dependencies, and longitudinal field scaling.

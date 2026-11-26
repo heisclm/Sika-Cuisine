@@ -42,7 +42,7 @@ To ensure academic and conceptual clarity throughout this dissertation, the foll
 * **Deterministic Locality-Based Logistics Matrix:**  
   A discrete, pre-computed spatial model that divides an urban municipality into defined geographical neighborhood clusters, associating each zone with fixed delivery fees, transit estimates, and landmark descriptions to eliminate subjective price negotiations in informal addressing environments [10].
 * **Fulfilment State Machine:**  
-  A computational model composed of a finite number of discrete order states (`PENDING_CONFIRMATION`, `CONFIRMED`, `PREPARING`, `READY_FOR_COLLECTION`, `OUT_FOR_DELIVERY`, `COMPLETED`, `CANCELLED`, `REJECTED`), where transitions between states are strictly unidirectional and guarded by authorized user roles [15].
+  A computational model composed of a finite number of discrete order states (`PENDING`, `CONFIRMED`, `PREPARING`, `READY_FOR_DISPATCH`, `READY_FOR_PICKUP`, `OUT_FOR_DELIVERY`, `DELIVERED`, `COLLECTED`, `CANCELLED`, `REJECTED`), where transitions between states are strictly unidirectional and guarded by authorized user roles [15].
 
 ### 2.2.2 Current State of the Field
 
