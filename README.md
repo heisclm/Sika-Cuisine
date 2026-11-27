@@ -62,23 +62,41 @@ Copy the root environment template to `.env` and fill in your PostgreSQL, Auth, 
 ```bash
 cp .env.example .env
 ```
+Important `.env` rules for a new device:
+- Set **`DATABASE_URL`** (pooled runtime connection string) and **`DIRECT_URL`** (direct PostgreSQL URL for Prisma migrations).
+- Set **`AUTH_SECRET`** and **`JWT_SECRET`** to a random **32+ character** string (required for signing in when running `npm run build && npm start` or production deployments). Generate one cleanly with:
+  ```bash
+  node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+  ```
+- Keep **`NODE_ENV`** unset (or `"development"`) during local setup so `npm run db:seed` creates local test accounts and storefront fallback/logging behaves cleanly.
+
 For Mobile development, copy the mobile environment template:
 ```bash
 cp apps/mobile/.env.example apps/mobile/.env
 ```
-- Use `http://10.0.2.2:3000/api/v1` for the Android emulator, or your computer's LAN IP (e.g. `http://192.168.1.50:3000/api/v1`) when testing on a physical phone via Expo Go.
+- Use `http://10.0.2.2:3000/api/v1` for the Android emulator, your computer's LAN IP (e.g. `http://192.168.1.50:3000/api/v1`) when testing on a physical phone via Expo Go, or your live HTTPS URL (e.g. `https://sika-cuisine.vercel.app/api/v1`).
 
-### 4. Apply Migrations & Seed Local Data
+### 4. Verify Database, Apply Migrations & Seed Data
 ```bash
-# Generate Prisma Client
+# 1. Verify PostgreSQL connectivity from root .env
+npx tsx prisma/check-connection.ts
+
+# 2. Generate Prisma Client
 npx prisma generate
 
-# Apply versioned PostgreSQL migrations
+# 3. Apply versioned PostgreSQL migrations (creates User.passwordChangedAt, etc.)
 npm run db:migrate:deploy
 
-# Seed categories, dishes, Sunyani zones, and local dev role accounts
+# 4. Seed categories, dishes, Sunyani zones, and local dev role accounts
 npm run db:seed
 ```
+> **Note:** Both `prisma/check-connection.ts` and `npm run db:seed` automatically read root `.env`.
+> In development mode (`NODE_ENV` unset or not `"production"`), `npm run db:seed` provisions ready-to-test accounts:
+> - **Customer:** `customer@sikacuisine.com` / `Customer123!@#`
+> - **Admin:** `admin@sikacuisine.com` / `Admin123!@#` (`/admin/login`)
+> - **Kitchen Staff:** `staff@sikacuisine.com` / `Staff123!@#` (`/kitchen`)
+> - **Cashier:** `cashier@sikacuisine.com` / `Cashier123!@#` (`/cashier`)
+> - **Delivery Rider:** `rider@sikacuisine.com` / `Rider123!@#` (Mobile Rider Portal)
 
 ### 5. Run Verification Checks
 ```bash
@@ -109,7 +127,7 @@ You can compile a standalone installable Android **`.apk`** completely in the cl
 ### Step 1: Check Your API URL Before Building (Important!)
 A standalone `.apk` bakes in your backend URL (`EXPO_PUBLIC_API_URL`) at build time:
 - Your local `apps/mobile/.env` uses your computer's hotspot/Wi-Fi IP (e.g. `EXPO_PUBLIC_API_URL=http://10.117.133.3:3000/api/v1`).
-- However, `apps/mobile/eas.json` overrides `preview` builds with its `"env"` block (`"EXPO_PUBLIC_API_URL": "https://sikacuisine.com/api/v1"`).
+- However, `apps/mobile/eas.json` overrides `preview` builds with its `"env"` block (`"EXPO_PUBLIC_API_URL": "https://sika-cuisine.vercel.app/api/v1"`).
 
 Choose one of these two setups before running the build:
 1. **Option A — Web Backend Deployed Online (Recommended for 4G/5G & Any Wi-Fi):**
@@ -214,7 +232,7 @@ Before pointing live Sunyani traffic and real Mobile Money payments at your depl
 4. **Health & Uptime Verification:**
    - Point your uptime monitor at `GET https://sikacuisine.com/api/v1/health` and confirm `status: "healthy"`, `database: "connected"`, `authSecretStrong: true`, and `paystackMode: "live"`.
 5. **Mobile Release Builds (`apps/mobile/eas.json`):**
-   - `apps/mobile/eas.json` is preconfigured with `development`, `preview` (APK), and `production` profiles targeting `https://sika-cuisine.vercel.app//api/v1`. Run `npx eas build --platform android --profile production` from `apps/mobile` when ready to package native binaries.
+   - `apps/mobile/eas.json` is preconfigured with `development`, `preview` (APK), and `production` profiles targeting `https://sika-cuisine.vercel.app/api/v1`. Run `npx eas build --platform android --profile production` from `apps/mobile` when ready to package native binaries.
 
 ---
 

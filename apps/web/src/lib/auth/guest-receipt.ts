@@ -1,5 +1,6 @@
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
+import { shouldUseSecureCookies } from "@/lib/auth/session";
 
 const GUEST_RECEIPT_COOKIE_NAME = "sika_guest_receipts";
 const DEV_FALLBACK_SECRET =
@@ -54,10 +55,13 @@ export async function setGuestReceiptCookie(orderNumber: string): Promise<void> 
     .setExpirationTime("24h")
     .sign(getSigningKey());
 
-  const cookieStore = await cookies();
+  const [cookieStore, secure] = await Promise.all([
+    cookies(),
+    shouldUseSecureCookies(),
+  ]);
   cookieStore.set(GUEST_RECEIPT_COOKIE_NAME, token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure,
     sameSite: "lax",
     path: "/",
     maxAge: 60 * 60 * 24,

@@ -1,4 +1,7 @@
 import { PrismaClient } from "@prisma/client";
+import { loadRootEnvFile } from "./load-env";
+
+loadRootEnvFile();
 
 async function main() {
   const dbUrl = process.env.DATABASE_URL;

@@ -1,7 +1,8 @@
 import { SignJWT, jwtVerify } from "jose";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { Role } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { getAppUrl } from "@/lib/env";
 
 const SESSION_COOKIE_NAME = "sika_session_token";
 const DEV_FALLBACK_SECRET =
@@ -111,13 +112,54 @@ export async function verifySessionToken(token: string): Promise<SessionUser | n
 }
 
 /**
- * Sets an HTTP-only, secure, SameSite session cookie.
+ * Determines whether auth cookies should carry the `Secure` attribute.
+ * Enables `Secure` on HTTPS deployments while permitting local HTTP testing
+ * (e.g. `npm start` on `http://localhost:3000` or LAN IPs).
+ */
+export async function shouldUseSecureCookies(): Promise<boolean> {
+  if (process.env.NODE_ENV !== "production") return false;
+
+  try {
+    const headerStore = await headers();
+    const forwardedProto = headerStore
+      .get("x-forwarded-proto")
+      ?.split(",")[0]
+      ?.trim()
+      .toLowerCase();
+    if (forwardedProto === "https") return true;
+    if (forwardedProto === "http") return false;
+
+    const origin = headerStore.get("origin")?.trim().toLowerCase();
+    if (origin?.startsWith("https://")) return true;
+    if (origin?.startsWith("http://")) return false;
+
+    const host = headerStore.get("host")?.trim().toLowerCase() || "";
+    if (
+      host.startsWith("localhost") ||
+      host.startsWith("127.") ||
+      host.startsWith("10.") ||
+      host.startsWith("192.168.")
+    ) {
+      return false;
+    }
+  } catch {
+    // Outside request context; fall back to configured app URL protocol
+  }
+
+  return getAppUrl().startsWith("https://");
+}
+
+/**
+ * Sets an HTTP-only, SameSite session cookie (with `Secure` on HTTPS origins).
  */
 export async function setSessionCookie(token: string): Promise<void> {
-  const cookieStore = await cookies();
+  const [cookieStore, secure] = await Promise.all([
+    cookies(),
+    shouldUseSecureCookies(),
+  ]);
   cookieStore.set(SESSION_COOKIE_NAME, token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure,
     sameSite: "lax",
     path: "/",
     maxAge: 60 * 60 * 24 * 7,

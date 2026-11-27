@@ -17,12 +17,12 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://sika-cuisine.vercel.app//api/v1"
+        "EXPO_PUBLIC_API_URL": "https://sika-cuisine.vercel.app/api/v1"
       }
     },
     "production": {
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://sika-cuisine.vercel.app//api/v1"
+        "EXPO_PUBLIC_API_URL": "https://sika-cuisine.vercel.app/api/v1"
       }
     }
   },

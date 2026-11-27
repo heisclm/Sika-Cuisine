@@ -15,11 +15,14 @@ import {
   Role,
 } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import { loadRootEnvFile } from "./load-env";
 import {
   FALLBACK_MENU_CATEGORIES,
   FALLBACK_MENU_ITEMS,
 } from "../apps/web/src/lib/menu-catalog";
 import { SUNYANI_DELIVERY_ZONES } from "../packages/shared/src/utils/delivery-zones";
+
+loadRootEnvFile();
 
 const prisma = new PrismaClient();
 
